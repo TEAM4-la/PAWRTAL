@@ -1,9 +1,5 @@
-import React from 'react'
+import Welcome from "./welcome";
 
-const App = () => {
-  return (
-    <div>PROJECT:PAWRTAL</div>
-  )
+export default function App() {
+  return <Welcome />;
 }
-
-export default App
