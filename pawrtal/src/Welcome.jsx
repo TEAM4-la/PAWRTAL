@@ -2,22 +2,19 @@ import React from 'react';
 import { PawPrint, Heart, Calendar, QrCode, Stethoscope, ArrowRight, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Simple Button component (or install shadcn/ui)
+// Simple Button component
 const Button = ({ children, onClick, size = 'default', variant = 'default', className = '' }) => {
+  const baseClasses = "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors cursor-pointer";
+  
   const sizeClasses = {
     default: 'h-9 px-4 py-2',
-    lg: 'h-10 px-8',
-  }; 
-  
-  const variantClasses = {
-    default: 'bg-primary text-white',
-    outline: 'border-2 bg-transparent',
+    lg: 'h-14 px-8 text-lg',
   };
   
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={`${baseClasses} ${sizeClasses[size]} ${className}`}
     >
       {children}
     </button>
@@ -164,7 +161,7 @@ export default function Welcome() {
                 <Button 
                   onClick={handleSignIn}
                   size="lg"
-                  className="bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-600 hover:to-orange-500 text-white px-8 h-14 text-lg gap-2 rounded-full shadow-lg shadow-amber-300/50"
+                  className="bg-gradient-to-r from-amber-500 to-orange-400 hover:from-amber-600 hover:to-orange-500 text-white px-8 rounded-full shadow-lg shadow-amber-300/50"
                 >
                   Get Started
                   <ArrowRight className="w-5 h-5" />
@@ -172,7 +169,7 @@ export default function Welcome() {
                 <Button 
                   size="lg"
                   variant="outline"
-                  className="border-2 border-amber-300 text-amber-700 hover:bg-amber-50 h-14 text-lg rounded-full"
+                  className="border-2 border-amber-300 text-amber-700 hover:bg-amber-50 rounded-full"
                 >
                   Learn More
                 </Button>
@@ -304,13 +301,12 @@ export default function Welcome() {
               <p className="text-xl text-amber-100 mb-8 max-w-xl mx-auto">
                 Join PAWRTAL today and give your pet the care they deserve.
               </p>
-              <Button 
+              <button 
                 onClick={handleSignIn}
-                size="lg"
-                className="bg-white text-amber-600 hover:bg-amber-50 px-8 h-14 text-lg rounded-full shadow-lg"
+                className="bg-white text-amber-600 hover:bg-amber-50 px-8 py-4 text-lg rounded-full shadow-lg font-semibold transition-colors cursor-pointer"
               >
                 Create Free Account
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -326,7 +322,7 @@ export default function Welcome() {
             <span className="font-bold text-amber-900">PAWRTAL</span>
           </div>
           <p className="text-amber-600 text-sm">
-            © 2024 PAWRTAL by VM Veterinary Clinic. All rights reserved.
+            © 2026 PAWRTAL by VM Veterinary Clinic. All rights reserved.
           </p>
         </div>
       </footer>
