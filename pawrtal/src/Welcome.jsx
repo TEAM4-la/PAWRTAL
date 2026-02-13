@@ -21,7 +21,6 @@ const Button = ({ children, onClick, size = 'default', variant = 'default', clas
   );
 };
 
-// Cute paw print SVG component
 const CutePaw = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="currentColor">
     <ellipse cx="30" cy="38" rx="14" ry="12" />
@@ -32,7 +31,6 @@ const CutePaw = ({ className }) => (
   </svg>
 );
 
-// Cute cat face SVG component
 const CuteCat = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <ellipse cx="30" cy="35" rx="20" ry="16" />
@@ -45,7 +43,6 @@ const CuteCat = ({ className }) => (
   </svg>
 );
 
-// Cute dog face SVG component  
 const CuteDog = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <ellipse cx="30" cy="32" rx="18" ry="16" />
