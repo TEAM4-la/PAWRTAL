@@ -139,6 +139,11 @@ export default function SignIn() {
           break;
       }
 
+      // Persist role so mock (and real auth) can return correct user_type
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('pawrtal_role', selectedRole || 'owner');
+        window.sessionStorage.setItem('pawrtal_email', email || '');
+      }
       navigate(dashboardPath); // Redirect to the correct dashboard
     }, 1200);
   };
@@ -229,7 +234,7 @@ export default function SignIn() {
             </div>
             <div>
               <p className="font-semibold text-sm">VM Veterinary Clinic</p>
-              <p className="text-amber-200 text-xs">Trusted partner since 2024</p>
+              <p className="text-amber-200 text-xs">Trusted partner since 2025</p>
             </div>
           </div>
         </div>
