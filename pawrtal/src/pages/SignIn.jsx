@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; // ← React Router navigation
 import backgroundImg from '../assets/background.png';
 import {
   PawPrint,
@@ -21,33 +22,39 @@ const roles = [
     icon: PawPrint,
     title: 'Pet Owner',
     description: 'Manage your pets, track health records, and communicate with your vet.',
-    ring: 'ring-amber-400',
+    border: 'border-amber-400',
+    ring: 'ring-amber-400/60',
     bg: 'bg-amber-50',
     iconBg: 'bg-amber-100',
     iconColor: 'text-amber-600',
     dot: 'bg-amber-500',
+    accent: 'text-amber-700',
   },
   {
     id: 'vet',
     icon: Stethoscope,
     title: 'Veterinarian',
     description: 'Access patient records, manage appointments, and provide expert care.',
-    ring: 'ring-teal-400',
+    border: 'border-teal-400',
+    ring: 'ring-teal-400/60',
     bg: 'bg-teal-50',
     iconBg: 'bg-teal-100',
     iconColor: 'text-teal-600',
     dot: 'bg-teal-500',
+    accent: 'text-teal-700',
   },
   {
     id: 'admin',
     icon: ShieldCheck,
     title: 'Clinic Admin',
     description: 'Oversee clinic operations, manage staff, and access full system controls.',
-    ring: 'ring-violet-400',
+    border: 'border-violet-400',
+    ring: 'ring-violet-400/60',
     bg: 'bg-violet-50',
     iconBg: 'bg-violet-100',
     iconColor: 'text-violet-600',
     dot: 'bg-violet-500',
+    accent: 'text-violet-700',
   },
 ];
 
@@ -67,6 +74,7 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  const navigate = useNavigate(); // React Router hook for redirection
   const otpRefs = useRef([]);
 
   useEffect(() => {
@@ -89,8 +97,8 @@ export default function SignIn() {
     setLoading(true);
     setError('');
 
-    // Replace with real API call
-    await new Promise(r => setTimeout(r, 1200));
+    // Simulated delay (replace with real API call later)
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
     setLoading(false);
     setStep(STEP_OTP);
@@ -107,25 +115,31 @@ export default function SignIn() {
     setLoading(true);
     setError('');
 
-    // Replace with real API call
-    await new Promise(r => setTimeout(r, 1500));
+    // Simulated delay (replace with real API call later)
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     setLoading(false);
     setStep(STEP_DONE);
 
-    // Role-based redirect after success
+    // Role-based redirection using React Router
     setTimeout(() => {
-      let redirectPath = '/dashboard'; // default
+      let dashboardPath = '/dashboard'; // fallback
 
-      if (selectedRole === 'owner') {
-        redirectPath = '/dashboard'; // Pet Owner Dashboard
-      } else if (selectedRole === 'vet') {
-        redirectPath = '/vet-dashboard'; // Veterinarian Dashboard
-      } else if (selectedRole === 'admin') {
-        redirectPath = '/admin-dashboard'; // Clinic Admin Dashboard
+      switch (selectedRole) {
+        case 'owner':
+          dashboardPath = '/petowner-dashboard';
+          break;
+        case 'vet':
+          dashboardPath = '/vet-dashboard';
+          break;
+        case 'admin':
+          dashboardPath = '/clinic-admin-dashboard';
+          break;
+        default:
+          break;
       }
 
-      window.location.href = redirectPath;
+      navigate(dashboardPath); // Redirect to the correct dashboard
     }, 1200);
   };
 
@@ -155,7 +169,7 @@ export default function SignIn() {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
-      {/* Repeating background (same as Welcome) */}
+      {/* Repeating background */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -169,7 +183,7 @@ export default function SignIn() {
       {/* Light overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none bg-white/35" />
 
-      {/* Left branding panel (desktop only) */}
+      {/* Left branding panel */}
       <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 flex-col justify-between p-12 relative z-20 overflow-hidden bg-gradient-to-br from-amber-800 via-amber-600 to-amber-500 text-white">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           {[...Array(12)].map((_, i) => (
@@ -271,40 +285,48 @@ export default function SignIn() {
                   <p className="text-gray-500">Select your role to get started</p>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {roles.map((role) => {
                     const Icon = role.icon;
                     const isSelected = selectedRole === role.id;
 
                     return (
-                      <button
+                      <motion.button
                         key={role.id}
                         onClick={() => setSelectedRole(role.id)}
+                        whileTap={{ scale: 0.98 }}
+                        animate={isSelected ? { scale: 1.02, y: -2 } : { scale: 1, y: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         className={`
-                          group relative w-full flex items-center gap-4 p-5 rounded-xl 
-                          bg-white transition-all duration-200 text-left
+                          group relative w-full flex items-center gap-5 p-5 rounded-2xl 
+                          border-2 transition-all duration-300 text-left bg-white
                           ${isSelected 
-                            ? `ring-2 ring-offset-2 ${role.ring} shadow-md` 
-                            : 'border border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                            ? `${role.border} ring-2 ${role.ring} shadow-lg` 
+                            : `${role.border} hover:shadow-md hover:-translate-y-0.5`}
                         `}
                       >
-                        <div className={`w-14 h-14 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
-                          <Icon className={`w-7 h-7 ${role.iconColor}`} />
+                        <div className={`w-12 h-12 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
+                          <Icon className={`w-6 h-6 ${role.iconColor}`} />
                         </div>
 
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 text-base group-hover:text-gray-800">
+                        <div className="flex-1 pr-14">
+                          <p className="font-bold text-gray-900 text-base leading-tight">
                             {role.title}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                          <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                             {role.description}
                           </p>
                         </div>
 
                         {isSelected && (
-                          <div className={`absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full ${role.dot} ring-2 ring-white shadow-sm`} />
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25, delay: 0.1 }}
+                            className={`absolute right-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${role.dot} ring-2 ring-white shadow-sm`}
+                          />
                         )}
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -322,10 +344,7 @@ export default function SignIn() {
 
                 <p className="text-center text-sm text-gray-500 mt-6">
                   Don't have an account?{' '}
-                  <a
-                    href="#"
-                    className="text-amber-600 font-medium hover:underline"
-                  >
+                  <a href="#" className="text-amber-600 font-medium hover:underline">
                     Contact your clinic to get access.
                   </a>
                 </p>
@@ -335,9 +354,8 @@ export default function SignIn() {
             {/* Email + Password */}
             {step === STEP_EMAIL && (
               <motion.div key="email" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                {/* Selected role pill */}
                 {currentRole && (
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentRole.bg} mb-6`}>
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${currentRole.bg} border-2 ${currentRole.border} mb-6 shadow-sm`}>
                     <div className={`w-8 h-8 rounded-lg ${currentRole.iconBg} flex items-center justify-center`}>
                       <currentRole.icon className={`w-5 h-5 ${currentRole.iconColor}`} />
                     </div>
@@ -407,9 +425,8 @@ export default function SignIn() {
             {/* OTP */}
             {step === STEP_OTP && (
               <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                {/* Show selected role pill here too */}
                 {currentRole && (
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${currentRole.bg} mb-6`}>
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${currentRole.bg} border-2 ${currentRole.border} mb-6 shadow-sm`}>
                     <div className={`w-8 h-8 rounded-lg ${currentRole.iconBg} flex items-center justify-center`}>
                       <currentRole.icon className={`w-5 h-5 ${currentRole.iconColor}`} />
                     </div>
