@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Stethoscope, Users, Mail, Phone, Briefcase } from 'lucide-react';
 
 export default function AdminStaff() {
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: allUsers = [] } = useQuery({ queryKey: ['allUsers'], queryFn: () => base44.entities.User.list() });
-  const { data: allAppointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => base44.entities.Appointment.list() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+  const { data: allUsers = [] } = useQuery({ queryKey: ['allUsers'], queryFn: () => api.entities.User.list() });
+  const { data: allAppointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list() });
 
   const vets = allUsers.filter(u => u.user_type === 'veterinarian');
   const owners = allUsers.filter(u => u.user_type === 'pet_owner');

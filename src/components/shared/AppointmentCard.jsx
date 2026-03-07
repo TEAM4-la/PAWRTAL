@@ -121,7 +121,7 @@ export default function AppointmentCard({
               {onConfirm && appointment.status === 'pending' && (
                 <Button 
                   size="sm" 
-                  className="bg-teal-600 hover:bg-teal-700"
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
                   onClick={() => onConfirm(appointment)}
                 >
                   Confirm

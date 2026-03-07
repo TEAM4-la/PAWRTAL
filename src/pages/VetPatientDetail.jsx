@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   Plus
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import VetSidebar from '@/components/layout/VetSidebar';
 
 const speciesIcons = {
   dog: Dog,
@@ -41,41 +42,46 @@ export default function VetPatientDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const petId = urlParams.get('id');
 
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => api.auth.me(),
+  });
+
   const { data: pet, isLoading: petLoading } = useQuery({
     queryKey: ['pet', petId],
-    queryFn: () => base44.entities.Pet.filter({ id: petId }),
+    queryFn: () => api.entities.Pet.filter({ id: petId }),
     enabled: !!petId,
     select: (data) => data[0],
   });
 
   const { data: owner } = useQuery({
     queryKey: ['petOwner', pet?.owner_email],
-    queryFn: () => base44.entities.User.filter({ email: pet?.owner_email }),
+    queryFn: () => api.entities.User.filter({ email: pet?.owner_email }),
     enabled: !!pet?.owner_email,
     select: (data) => data[0],
   });
 
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['vaccinations', petId],
-    queryFn: () => base44.entities.Vaccination.filter({ pet_id: petId }, '-date_administered'),
+    queryFn: () => api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered'),
     enabled: !!petId,
   });
 
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', petId],
-    queryFn: () => base44.entities.Medication.filter({ pet_id: petId }),
+    queryFn: () => api.entities.Medication.filter({ pet_id: petId }),
     enabled: !!petId,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['petAppointments', petId],
-    queryFn: () => base44.entities.Appointment.filter({ pet_id: petId }, '-date'),
+    queryFn: () => api.entities.Appointment.filter({ pet_id: petId }, '-date'),
     enabled: !!petId,
   });
 
   const { data: healthRecords = [] } = useQuery({
     queryKey: ['healthRecords', petId],
-    queryFn: () => base44.entities.HealthRecord.filter({ pet_id: petId }, '-date'),
+    queryFn: () => api.entities.HealthRecord.filter({ pet_id: petId }, '-date'),
     enabled: !!petId,
   });
 
@@ -90,30 +96,35 @@ export default function VetPatientDetail() {
 
   if (petLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <VetSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </VetSidebar>
     );
   }
 
   if (!pet) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Patient not found</p>
-        <Link to={createPageUrl('Patients')}>
-          <Button className="mt-4">Back to Patients</Button>
-        </Link>
-      </div>
+      <VetSidebar user={user}>
+        <div className="p-6 text-center">
+          <p className="text-gray-500">Patient not found</p>
+          <Link to={createPageUrl('Patients')}>
+            <Button className="mt-4">Back to Patients</Button>
+          </Link>
+        </div>
+      </VetSidebar>
     );
   }
 
   const Icon = speciesIcons[pet.species] || Dog;
 
   return (
+    <VetSidebar user={user}>
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('VetDashboard'))}
         className="gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -142,7 +153,7 @@ export default function VetPatientDetail() {
                   <p className="text-gray-500">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
                 </div>
                 <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)}>
-                  <Button className="bg-teal-600 hover:bg-teal-700 gap-2">
+                  <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
                     <Plus className="w-4 h-4" />
                     Add Record
                   </Button>
@@ -358,5 +369,6 @@ export default function VetPatientDetail() {
         </div>
       </div>
     </div>
+    </VetSidebar>
   );
 }

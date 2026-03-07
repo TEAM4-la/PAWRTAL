@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, X, Calendar, Syringe, Pill, MessageSquare, FileText, CheckCheck, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -34,20 +34,20 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber' }) 
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', userEmail],
-    queryFn: () => base44.entities.Notification.filter({ user_email: userEmail }, '-created_date', 30),
+    queryFn: () => api.entities.Notification.filter({ user_email: userEmail }, '-created_date', 30),
     enabled: !!userEmail,
     refetchInterval: 30000,
   });
 
   const markReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.update(id, { is_read: true }),
+    mutationFn: (id) => api.entities.Notification.update(id, { is_read: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] }),
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
       const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(unread.map(n => base44.entities.Notification.update(n.id, { is_read: true })));
+      await Promise.all(unread.map(n => api.entities.Notification.update(n.id, { is_read: true })));
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] }),
   });

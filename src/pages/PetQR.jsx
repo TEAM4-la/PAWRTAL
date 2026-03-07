@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Share2, QrCode, Dog, Cat, Bird, Rabbit, Fish } from 'lucide-react';
 import { toast } from "sonner";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 
 const speciesIcons = {
   dog: Dog,
@@ -23,7 +24,7 @@ export default function PetQR() {
 
   const { data: pet, isLoading } = useQuery({
     queryKey: ['pet', petId],
-    queryFn: () => base44.entities.Pet.filter({ id: petId }),
+    queryFn: () => api.entities.Pet.filter({ id: petId }),
     enabled: !!petId,
     select: (data) => data[0],
   });
@@ -71,30 +72,34 @@ export default function PetQR() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <OwnerSidebar user={null}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
     );
   }
 
   if (!pet) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Pet not found</p>
-        <Link to={createPageUrl('MyPets')}>
-          <Button className="mt-4">Back to My Pets</Button>
-        </Link>
-      </div>
+      <OwnerSidebar user={null}>
+        <div className="p-6 text-center">
+          <p className="text-gray-500">Pet not found</p>
+          <Link to={createPageUrl('MyPets')}>
+            <Button className="mt-4">Back to My Pets</Button>
+          </Link>
+        </div>
+      </OwnerSidebar>
     );
   }
 
   const Icon = speciesIcons[pet.species] || Dog;
 
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-lg mx-auto space-y-6">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('Dashboard'))}
         className="gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -102,7 +107,7 @@ export default function PetQR() {
       </Button>
 
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center mx-auto shadow-lg shadow-teal-200">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center mx-auto shadow-lg shadow-teal-200 text-white">
           <QrCode className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Digital Pet ID</h1>
@@ -151,7 +156,7 @@ export default function PetQR() {
           </Button>
           <Button
             onClick={handleDownload}
-            className="flex-1 h-12 gap-2 bg-teal-600 hover:bg-teal-700"
+            className="flex-1 h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white"
           >
             <Download className="w-4 h-4" />
             Download
@@ -169,5 +174,11 @@ export default function PetQR() {
         </CardContent>
       </Card>
     </div>
+  );
+
+  return (
+    <OwnerSidebar user={null}>
+      {content}
+    </OwnerSidebar>
   );
 }

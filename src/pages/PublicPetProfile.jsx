@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,21 +35,21 @@ export default function PublicPetProfile() {
 
   const { data: pet, isLoading } = useQuery({
     queryKey: ['publicPet', petId],
-    queryFn: () => base44.entities.Pet.filter({ id: petId }),
+    queryFn: () => api.entities.Pet.filter({ id: petId }),
     enabled: !!petId,
     select: (data) => data[0],
   });
 
   const { data: owner } = useQuery({
     queryKey: ['petOwner', pet?.owner_email],
-    queryFn: () => base44.entities.User.filter({ email: pet?.owner_email }),
+    queryFn: () => api.entities.User.filter({ email: pet?.owner_email }),
     enabled: !!pet?.owner_email,
     select: (data) => data[0],
   });
 
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['publicVaccinations', petId],
-    queryFn: () => base44.entities.Vaccination.filter({ pet_id: petId }, '-date_administered', 5),
+    queryFn: () => api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered', 5),
     enabled: !!petId,
   });
 

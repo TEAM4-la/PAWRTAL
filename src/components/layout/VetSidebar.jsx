@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import {
   LayoutDashboard,
   Calendar,
@@ -41,7 +41,7 @@ export default function VetSidebar({ user, children }) {
   };
 
   async function handleLogout() {
-    await base44.auth.logout(createPageUrl('Welcome'));
+    await api.auth.logout(createPageUrl('Welcome'));
   }
 
   const SidebarContent = () => (
@@ -86,12 +86,18 @@ export default function VetSidebar({ user, children }) {
           const active = isActive(page);
           return (
             <Link key={label} to={createPageUrl(page)} onClick={() => setOpen(false)}>
-              <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer
-                ${active
-                  ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md shadow-teal-200'
-                  : 'text-teal-800 hover:bg-teal-50 hover:text-teal-900'
-                }`}>
-                <Icon className={`flex-shrink-0 ${active ? 'text-white' : 'text-teal-500 group-hover:text-teal-700'}`} style={{width:'18px',height:'18px'}} />
+              <div
+                className={`relative ml-2 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer
+                  before:absolute before:-left-2 before:top-1/2 before:-translate-y-1/2 before:h-8 before:rounded-r-full before:transition-all before:duration-300
+                  ${active
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md shadow-teal-200 before:w-1 before:bg-teal-500'
+                    : 'text-teal-800 hover:bg-teal-50 hover:text-teal-900 before:w-0 before:bg-transparent'
+                  }`}
+              >
+                <Icon
+                  className={`flex-shrink-0 ${active ? 'text-white' : 'text-teal-500 group-hover:text-teal-700'}`}
+                  style={{ width: '18px', height: '18px' }}
+                />
                 <span className="text-sm font-medium flex-1">{label}</span>
                 {active && <ChevronRight className="w-3.5 h-3.5 text-white/70" />}
               </div>

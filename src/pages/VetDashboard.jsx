@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import VetSidebar from '@/components/layout/VetSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,18 +26,18 @@ export default function VetDashboard() {
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: ['vetAppointments'],
-    queryFn: () => base44.entities.Appointment.list('-date', 100),
+    queryFn: () => api.entities.Appointment.list('-date', 100),
     enabled: !!user,
   });
 
   const { data: pets = [] } = useQuery({
     queryKey: ['allPets'],
-    queryFn: () => base44.entities.Pet.list('-created_date', 100),
+    queryFn: () => api.entities.Pet.list('-created_date', 100),
     enabled: !!user,
   });
 

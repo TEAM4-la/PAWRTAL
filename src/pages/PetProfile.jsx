@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 
 const speciesIcons = {
   dog: Dog,
@@ -55,37 +56,37 @@ export default function PetProfile() {
 
   const { data: pet, isLoading: petLoading } = useQuery({
     queryKey: ['pet', petId],
-    queryFn: () => base44.entities.Pet.filter({ id: petId }),
+    queryFn: () => api.entities.Pet.filter({ id: petId }),
     enabled: !!petId,
     select: (data) => data[0],
   });
 
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['vaccinations', petId],
-    queryFn: () => base44.entities.Vaccination.filter({ pet_id: petId }, '-date_administered'),
+    queryFn: () => api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered'),
     enabled: !!petId,
   });
 
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', petId],
-    queryFn: () => base44.entities.Medication.filter({ pet_id: petId }),
+    queryFn: () => api.entities.Medication.filter({ pet_id: petId }),
     enabled: !!petId,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['petAppointments', petId],
-    queryFn: () => base44.entities.Appointment.filter({ pet_id: petId }, '-date'),
+    queryFn: () => api.entities.Appointment.filter({ pet_id: petId }, '-date'),
     enabled: !!petId,
   });
 
   const { data: healthRecords = [] } = useQuery({
     queryKey: ['healthRecords', petId],
-    queryFn: () => base44.entities.HealthRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date'),
+    queryFn: () => api.entities.HealthRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date'),
     enabled: !!petId,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => base44.entities.Pet.delete(petId),
+    mutationFn: () => api.entities.Pet.delete(petId),
     onSuccess: () => {
       toast.success('Pet removed');
       navigate(createPageUrl('MyPets'));
@@ -103,31 +104,35 @@ export default function PetProfile() {
 
   if (petLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <OwnerSidebar user={null}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
     );
   }
 
   if (!pet) {
     return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Pet not found</p>
-        <Link to={createPageUrl('MyPets')}>
-          <Button className="mt-4">Back to My Pets</Button>
-        </Link>
-      </div>
+      <OwnerSidebar user={null}>
+        <div className="p-6 text-center">
+          <p className="text-gray-500">Pet not found</p>
+          <Link to={createPageUrl('MyPets')}>
+            <Button className="mt-4">Back to My Pets</Button>
+          </Link>
+        </div>
+      </OwnerSidebar>
     );
   }
 
   const Icon = speciesIcons[pet.species] || Dog;
   const activeMeds = medications.filter(m => m.is_active);
 
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('Dashboard'))}
         className="gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -175,7 +180,7 @@ export default function PetProfile() {
                 </Button>
               </Link>
               <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-                <Button className="gap-2 bg-teal-600 hover:bg-teal-700">
+              <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
                   <Calendar className="w-4 h-4" />
                   Book
                 </Button>
@@ -451,5 +456,11 @@ export default function PetProfile() {
         </CardContent>
       </Card>
     </div>
+  );
+
+  return (
+    <OwnerSidebar user={null}>
+      {content}
+    </OwnerSidebar>
   );
 }

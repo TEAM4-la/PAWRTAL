@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,18 +30,18 @@ export default function Dashboard() {
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['appointments', user?.email],
-    queryFn: () => base44.entities.Appointment.filter({ owner_email: user?.email }, '-date', 10),
+    queryFn: () => api.entities.Appointment.filter({ owner_email: user?.email }, '-date', 10),
     enabled: !!user?.email,
   });
 
@@ -49,7 +49,7 @@ export default function Dashboard() {
     queryKey: ['vaccinations', pets],
     queryFn: async () => {
       const allVaccinations = await Promise.all(
-        pets.map(pet => base44.entities.Vaccination.filter({ pet_id: pet.id }))
+        pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id }))
       );
       return allVaccinations.flat();
     },
@@ -60,7 +60,7 @@ export default function Dashboard() {
     queryKey: ['medications', pets],
     queryFn: async () => {
       const allMeds = await Promise.all(
-        pets.map(pet => base44.entities.Medication.filter({ pet_id: pet.id, is_active: true }))
+        pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id, is_active: true }))
       );
       return allMeds.flat();
     },

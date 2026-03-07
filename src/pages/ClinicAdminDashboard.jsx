@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { Users, Calendar, PawPrint, Stethoscope, ClipboardList, Clock, CheckCircle, AlertCircle, TrendingUp, ChevronRight } from 'lucide-react';
@@ -11,10 +11,10 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import { format, isToday, isTomorrow } from 'date-fns';
 
 export default function ClinicAdminDashboard() {
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: allPets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => base44.entities.Pet.list() });
-  const { data: allAppointments = [] } = useQuery({ queryKey: ['allAppointments'], queryFn: () => base44.entities.Appointment.list('-date', 200) });
-  const { data: allUsers = [] } = useQuery({ queryKey: ['allUsers'], queryFn: () => base44.entities.User.list() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+  const { data: allPets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
+  const { data: allAppointments = [] } = useQuery({ queryKey: ['allAppointments'], queryFn: () => api.entities.Appointment.list('-date', 200) });
+  const { data: allUsers = [] } = useQuery({ queryKey: ['allUsers'], queryFn: () => api.entities.User.list() });
 
   const vets = allUsers.filter(u => u.user_type === 'veterinarian');
   const owners = allUsers.filter(u => u.user_type === 'pet_owner');

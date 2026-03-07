@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 
 const appointmentTypes = [
   { value: 'checkup', label: 'General Checkup', icon: Stethoscope, color: 'bg-teal-100 text-teal-700' },
@@ -70,17 +71,17 @@ export default function BookAppointment() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Appointment.create({
+    mutationFn: (data) => api.entities.Appointment.create({
       ...data,
       owner_email: user?.email,
       status: 'pending',
@@ -107,19 +108,11 @@ export default function BookAppointment() {
   const selectedPet = pets.find(p => p.id === formData.pet_id);
   const SelectedPetIcon = selectedPet ? (speciesIcons[selectedPet.species] || Dog) : Dog;
 
-  if (petsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('Dashboard'))}
         className="mb-6 gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -129,7 +122,7 @@ export default function BookAppointment() {
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
           <CardTitle className="text-2xl flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center text-white">
               <CalendarIcon className="w-6 h-6 text-white" />
             </div>
             Book Appointment
@@ -297,7 +290,7 @@ export default function BookAppointment() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(createPageUrl('Dashboard'))}
                 className="flex-1 h-12"
               >
                 Cancel
@@ -305,7 +298,7 @@ export default function BookAppointment() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending || pets.length === 0}
-                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
               >
                 {createMutation.isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -318,5 +311,21 @@ export default function BookAppointment() {
         </CardContent>
       </Card>
     </div>
+  );
+
+  if (petsLoading) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
+  return (
+    <OwnerSidebar user={user}>
+      {content}
+    </OwnerSidebar>
   );
 }

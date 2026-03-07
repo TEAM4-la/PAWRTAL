@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PetCard from "@/components/shared/PetCard";
 import EmptyState from "@/components/shared/EmptyState";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { Plus, Search, PawPrint, Grid, List, ChevronLeft } from 'lucide-react';
 
 export default function MyPets() {
@@ -18,12 +19,12 @@ export default function MyPets() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [], isLoading } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
@@ -36,17 +37,9 @@ export default function MyPets() {
 
   const speciesList = [...new Set(pets.map(p => p.species))];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -55,7 +48,7 @@ export default function MyPets() {
           <p className="text-gray-500 mt-1">{pets.length} pet{pets.length !== 1 ? 's' : ''} registered</p>
         </div>
         <Link to={createPageUrl('AddPet')}>
-          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 gap-2">
+          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
             <Plus className="w-5 h-5" />
             Add New Pet
           </Button>
@@ -137,5 +130,21 @@ export default function MyPets() {
         </div>
       )}
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
+  return (
+    <OwnerSidebar user={user}>
+      {content}
+    </OwnerSidebar>
   );
 }
