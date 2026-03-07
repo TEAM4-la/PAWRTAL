@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,11 +46,11 @@ export default function AddPet() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const createPetMutation = useMutation({
-    mutationFn: (data) => base44.entities.Pet.create({
+    mutationFn: (data) => api.entities.Pet.create({
       ...data,
       owner_email: user?.email,
       weight: data.weight ? parseFloat(data.weight) : null,
@@ -70,7 +70,7 @@ export default function AddPet() {
 
     setIsUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await api.integrations.Core.UploadFile({ file });
       setFormData(prev => ({ ...prev, photo_url: file_url }));
       toast.success('Photo uploaded!');
     } catch (error) {
@@ -127,7 +127,7 @@ export default function AddPet() {
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('Dashboard'))}
         className="mb-6 gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -152,7 +152,7 @@ export default function AddPet() {
                     <Dog className="w-12 h-12 text-teal-300" />
                   )}
                 </div>
-                <label className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center cursor-pointer hover:bg-teal-600 transition-colors shadow-md">
+                <label className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center cursor-pointer hover:bg-teal-600 transition-colors shadow-md text-white">
                   {isUploading ? (
                     <Loader2 className="w-5 h-5 text-white animate-spin" />
                   ) : (
@@ -357,7 +357,7 @@ export default function AddPet() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(createPageUrl('Dashboard'))}
                 className="flex-1 h-12"
               >
                 Cancel
@@ -365,7 +365,7 @@ export default function AddPet() {
               <Button
                 type="submit"
                 disabled={createPetMutation.isPending}
-                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
               >
                 {createPetMutation.isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

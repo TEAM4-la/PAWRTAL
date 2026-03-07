@@ -1,5 +1,5 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
@@ -10,9 +10,9 @@ import { format, subDays } from 'date-fns';
 const COLORS = ['#7c3aed', '#0d9488', '#f59e0b', '#3b82f6', '#ec4899', '#6b7280'];
 
 export default function AdminReports() {
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => base44.entities.Appointment.list('-date', 300) });
-  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => base44.entities.Pet.list() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list('-date', 300) });
+  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
 
   // Appointments by type
   const byType = appointments.reduce((acc, a) => {

@@ -23,7 +23,7 @@ export default function EmptyState({
       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-500 max-w-sm mb-6">{description}</p>
       {actionLabel && onAction && (
-        <Button onClick={onAction} className="bg-teal-600 hover:bg-teal-700">
+        <Button onClick={onAction} className="bg-teal-600 hover:bg-teal-700 text-white">
           {actionLabel}
         </Button>
       )}

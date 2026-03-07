@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EmptyState from "@/components/shared/EmptyState";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { 
   FileText, 
   Syringe, 
@@ -52,12 +53,12 @@ export default function HealthRecords() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
@@ -66,11 +67,11 @@ export default function HealthRecords() {
     queryFn: async () => {
       if (selectedPet === 'all') {
         const allRecords = await Promise.all(
-          pets.map(pet => base44.entities.HealthRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }))
+          pets.map(pet => api.entities.HealthRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }))
         );
         return allRecords.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
       } else {
-        return base44.entities.HealthRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
+        return api.entities.HealthRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
       }
     },
     enabled: pets.length > 0,
@@ -81,11 +82,11 @@ export default function HealthRecords() {
     queryFn: async () => {
       if (selectedPet === 'all') {
         const allVax = await Promise.all(
-          pets.map(pet => base44.entities.Vaccination.filter({ pet_id: pet.id }))
+          pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id }))
         );
         return allVax.flat().sort((a, b) => new Date(b.date_administered) - new Date(a.date_administered));
       } else {
-        return base44.entities.Vaccination.filter({ pet_id: selectedPet }, '-date_administered');
+        return api.entities.Vaccination.filter({ pet_id: selectedPet }, '-date_administered');
       }
     },
     enabled: pets.length > 0,
@@ -96,11 +97,11 @@ export default function HealthRecords() {
     queryFn: async () => {
       if (selectedPet === 'all') {
         const allMeds = await Promise.all(
-          pets.map(pet => base44.entities.Medication.filter({ pet_id: pet.id }))
+          pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id }))
         );
         return allMeds.flat().sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
       } else {
-        return base44.entities.Medication.filter({ pet_id: selectedPet }, '-start_date');
+        return api.entities.Medication.filter({ pet_id: selectedPet }, '-start_date');
       }
     },
     enabled: pets.length > 0,
@@ -115,17 +116,9 @@ export default function HealthRecords() {
     vax => vax.next_due_date && isBefore(new Date(vax.next_due_date), addDays(new Date(), 60))
   );
 
-  if (petsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -334,5 +327,21 @@ export default function HealthRecords() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+
+  if (petsLoading) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
+  return (
+    <OwnerSidebar user={user}>
+      {content}
+    </OwnerSidebar>
   );
 }

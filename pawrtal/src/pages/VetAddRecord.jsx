@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { format, addMonths, addYears } from 'date-fns';
 import { toast } from "sonner";
+import VetSidebar from '@/components/layout/VetSidebar';
 
 const recordTypes = [
   { value: 'lab_result', label: 'Lab Result' },
@@ -87,17 +88,17 @@ export default function VetAddRecord() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [] } = useQuery({
     queryKey: ['allPets'],
-    queryFn: () => base44.entities.Pet.list(),
+    queryFn: () => api.entities.Pet.list(),
     enabled: !!user,
   });
 
   const createRecordMutation = useMutation({
-    mutationFn: (data) => base44.entities.HealthRecord.create({
+    mutationFn: (data) => api.entities.HealthRecord.create({
       ...data,
       vet_email: user?.email,
       vet_name: user?.full_name,
@@ -110,7 +111,7 @@ export default function VetAddRecord() {
   });
 
   const createVaccinationMutation = useMutation({
-    mutationFn: (data) => base44.entities.Vaccination.create({
+    mutationFn: (data) => api.entities.Vaccination.create({
       ...data,
       administered_by: user?.full_name,
     }),
@@ -122,7 +123,7 @@ export default function VetAddRecord() {
   });
 
   const createMedicationMutation = useMutation({
-    mutationFn: (data) => base44.entities.Medication.create({
+    mutationFn: (data) => api.entities.Medication.create({
       ...data,
       prescribed_by: user?.full_name,
     }),
@@ -139,7 +140,7 @@ export default function VetAddRecord() {
 
     setIsUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await api.integrations.Core.UploadFile({ file });
       setRecordForm(prev => ({ ...prev, file_url }));
       toast.success('File uploaded!');
     } catch (error) {
@@ -179,10 +180,11 @@ export default function VetAddRecord() {
   const selectedPet = pets.find(p => p.id === (recordForm.pet_id || vaccinationForm.pet_id || medicationForm.pet_id));
 
   return (
+    <VetSidebar user={user}>
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
       <Button
         variant="ghost"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate(createPageUrl('VetDashboard'))}
         className="mb-6 gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -480,5 +482,6 @@ export default function VetAddRecord() {
         </CardContent>
       </Card>
     </div>
+    </VetSidebar>
   );
 }

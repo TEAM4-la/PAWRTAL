@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EmptyState from "@/components/shared/EmptyState";
+import VetSidebar from '@/components/layout/VetSidebar';
 import { 
   Search, 
   PawPrint, 
@@ -51,18 +52,18 @@ export default function Patients() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [], isLoading } = useQuery({
     queryKey: ['allPets'],
-    queryFn: () => base44.entities.Pet.list('-created_date'),
+    queryFn: () => api.entities.Pet.list('-created_date'),
     enabled: !!user,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['allAppointments'],
-    queryFn: () => base44.entities.Appointment.list('-date'),
+    queryFn: () => api.entities.Appointment.list('-date'),
     enabled: !!user,
   });
 
@@ -92,17 +93,9 @@ export default function Patients() {
 
   const speciesList = [...new Set(pets.map(p => p.species))];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('VetDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -221,5 +214,21 @@ export default function Patients() {
         </div>
       )}
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <VetSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </VetSidebar>
+    );
+  }
+
+  return (
+    <VetSidebar user={user}>
+      {content}
+    </VetSidebar>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Badge } from "@/components/ui/badge";
@@ -22,12 +22,12 @@ export default function AdminAppointments() {
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
 
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => base44.entities.Appointment.list('-date', 200) });
-  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => base44.entities.Pet.list() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list('-date', 200) });
+  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.Appointment.update(id, { status }),
+    mutationFn: ({ id, status }) => api.entities.Appointment.update(id, { status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['allAppts'] }),
   });
 

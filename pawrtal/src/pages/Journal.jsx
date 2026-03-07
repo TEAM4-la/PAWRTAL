@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import EmptyState from "@/components/shared/EmptyState";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -79,12 +80,12 @@ export default function Journal() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: pets = [] } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
@@ -94,12 +95,12 @@ export default function Journal() {
       let allEntries = [];
       if (selectedPet === 'all') {
         const entriesPromises = pets.map(pet => 
-          base44.entities.JournalEntry.filter({ pet_id: pet.id })
+          api.entities.JournalEntry.filter({ pet_id: pet.id })
         );
         const results = await Promise.all(entriesPromises);
         allEntries = results.flat();
       } else {
-        allEntries = await base44.entities.JournalEntry.filter({ pet_id: selectedPet });
+        allEntries = await api.entities.JournalEntry.filter({ pet_id: selectedPet });
       }
       
       if (selectedType !== 'all') {
@@ -112,7 +113,7 @@ export default function Journal() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.JournalEntry.create(data),
+    mutationFn: (data) => api.entities.JournalEntry.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['journalEntries']);
       setIsDialogOpen(false);
@@ -150,17 +151,9 @@ export default function Journal() {
     return moodOptions.find(m => m.value === mood);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -170,7 +163,7 @@ export default function Journal() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 gap-2">
+            <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
               <Plus className="w-5 h-5" />
               Add Entry
             </Button>
@@ -274,7 +267,7 @@ export default function Journal() {
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
                   {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
                 </Button>
               </div>
@@ -360,5 +353,21 @@ export default function Journal() {
         </div>
       )}
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
+  return (
+    <OwnerSidebar user={user}>
+      {content}
+    </OwnerSidebar>
   );
 }

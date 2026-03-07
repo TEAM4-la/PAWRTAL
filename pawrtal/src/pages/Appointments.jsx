@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
+import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { Plus, Calendar, Clock, CheckCircle, ChevronLeft } from 'lucide-react';
 import { isAfter, isBefore } from 'date-fns';
 import { toast } from "sonner";
@@ -19,23 +20,23 @@ export default function Appointments() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['appointments', user?.email],
-    queryFn: () => base44.entities.Appointment.filter({ owner_email: user?.email }, '-date'),
+    queryFn: () => api.entities.Appointment.filter({ owner_email: user?.email }, '-date'),
     enabled: !!user?.email,
   });
 
   const { data: pets = [] } = useQuery({
     queryKey: ['pets', user?.email],
-    queryFn: () => base44.entities.Pet.filter({ owner_email: user?.email }),
+    queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (apt) => base44.entities.Appointment.update(apt.id, { status: 'cancelled' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['appointments']);
       toast.success('Appointment cancelled');
@@ -55,17 +56,9 @@ export default function Appointments() {
 
   const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled');
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -74,7 +67,7 @@ export default function Appointments() {
           <p className="text-gray-500 mt-1">Manage your veterinary appointments</p>
         </div>
         <Link to={createPageUrl('BookAppointment')}>
-          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 gap-2">
+          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
             <Plus className="w-5 h-5" />
             Book Appointment
           </Button>
@@ -175,5 +168,21 @@ export default function Appointments() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
+  return (
+    <OwnerSidebar user={user}>
+      {content}
+    </OwnerSidebar>
   );
 }

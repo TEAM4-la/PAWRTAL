@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
+import VetSidebar from '@/components/layout/VetSidebar';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
@@ -26,23 +27,23 @@ export default function VetAppointments() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => api.auth.me(),
   });
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['vetAppointments'],
-    queryFn: () => base44.entities.Appointment.list('-date', 200),
+    queryFn: () => api.entities.Appointment.list('-date', 200),
     enabled: !!user,
   });
 
   const { data: pets = [] } = useQuery({
     queryKey: ['allPets'],
-    queryFn: () => base44.entities.Pet.list(),
+    queryFn: () => api.entities.Pet.list(),
     enabled: !!user,
   });
 
   const confirmMutation = useMutation({
-    mutationFn: (apt) => base44.entities.Appointment.update(apt.id, { status: 'confirmed' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'confirmed' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment confirmed');
@@ -50,7 +51,7 @@ export default function VetAppointments() {
   });
 
   const completeMutation = useMutation({
-    mutationFn: (apt) => base44.entities.Appointment.update(apt.id, { status: 'completed' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'completed' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment marked as completed');
@@ -58,7 +59,7 @@ export default function VetAppointments() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (apt) => base44.entities.Appointment.update(apt.id, { status: 'cancelled' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment cancelled');
@@ -113,14 +114,6 @@ export default function VetAppointments() {
     appointments.filter(apt => apt.status === 'completed')
   );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
@@ -154,9 +147,9 @@ export default function VetAppointments() {
     );
   };
 
-  return (
+  const content = (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('VetDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -245,5 +238,21 @@ export default function VetAppointments() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+
+  if (isLoading) {
+    return (
+      <VetSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </VetSidebar>
+    );
+  }
+
+  return (
+    <VetSidebar user={user}>
+      {content}
+    </VetSidebar>
   );
 }

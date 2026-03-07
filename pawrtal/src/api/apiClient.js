@@ -1,8 +1,15 @@
-// Lightweight mock Base44 client so the UI can run locally.
-// Replace this with the real SDK-backed implementation when wiring to your backend.
+// Lightweight mock API client so the UI can run locally without external services.
+// Replace this with a real backend-backed implementation when wiring to your own API.
 
-const getStoredRole = () => (typeof window !== 'undefined' ? window.sessionStorage.getItem('pawrtal_role') : null) || 'owner';
-const getStoredEmail = () => (typeof window !== 'undefined' ? window.sessionStorage.getItem('pawrtal_email') : null) || 'demo@example.com';
+const getStoredRole = () =>
+  (typeof window !== 'undefined'
+    ? window.sessionStorage.getItem('pawrtal_role')
+    : null) || 'owner';
+
+const getStoredEmail = () =>
+  (typeof window !== 'undefined'
+    ? window.sessionStorage.getItem('pawrtal_email')
+    : null) || 'demo@example.com';
 
 function mockUser(role) {
   const email = getStoredEmail();
@@ -16,18 +23,22 @@ function mockUser(role) {
     phone: '',
     address: '',
     avatar_url: null,
-    notification_preferences: { email: true, appointments: true, vaccinations: true, medications: true },
+    notification_preferences: {
+      email: true,
+      appointments: true,
+      vaccinations: true,
+      medications: true,
+    },
   };
 }
 
-export const base44 = {
+export const api = {
   auth: {
     async me() {
       const role = getStoredRole();
       return mockUser(role);
     },
     async updateMe(data) {
-      // Stub: in a real app this would persist to backend
       return { ...mockUser(getStoredRole()), ...data };
     },
     async logout(redirectUrl) {
@@ -38,17 +49,37 @@ export const base44 = {
       }
     },
     redirectToLogin(redirectUrl) {
-      if (typeof window !== 'undefined') window.location.href = '/sign-in';
+      if (typeof window !== 'undefined') {
+        window.location.href = redirectUrl || '/sign-in';
+      }
     },
   },
   entities: {
     Pet: {
       async filter(opts = {}) {
-        if (opts.id) return [{ id: opts.id, name: 'Demo Pet', species: 'dog', owner_email: getStoredEmail() }];
+        if (opts.id) {
+          return [
+            {
+              id: opts.id,
+              name: 'Demo Pet',
+              species: 'dog',
+              owner_email: getStoredEmail(),
+            },
+          ];
+        }
         return [];
       },
       async list(order, limit = 100) {
         return [];
+      },
+      async create(data) {
+        return { id: 'pet-' + Date.now(), ...data };
+      },
+      async update(id, data) {
+        return { id, ...data };
+      },
+      async delete(id) {
+        return { id };
       },
     },
     Appointment: {
@@ -57,6 +88,9 @@ export const base44 = {
       },
       async list(order, limit = 100) {
         return [];
+      },
+      async create(data) {
+        return { id: 'apt-' + Date.now(), ...data };
       },
       async update(id, data) {
         return { id, ...data };
@@ -120,7 +154,7 @@ export const base44 = {
   },
   appLogs: {
     async logUserInApp(pageName) {
-      console.log('[base44.appLogs.logUserInApp]', pageName);
+      console.log('[api.appLogs.logUserInApp]', pageName);
     },
   },
 };

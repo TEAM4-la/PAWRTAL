@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
@@ -19,9 +19,9 @@ const speciesColors = {
 
 export default function AdminPatients() {
   const [search, setSearch] = useState('');
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
-  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => base44.entities.Pet.list() });
-  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => base44.entities.Appointment.list() });
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
+  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list() });
 
   const filtered = pets.filter(p =>
     !search || p.name?.toLowerCase().includes(search.toLowerCase()) ||

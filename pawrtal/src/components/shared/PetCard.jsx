@@ -96,7 +96,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
         {showActions && (
           <div className="flex gap-2 pt-3 border-t border-gray-100">
             <Link to={createPageUrl(`PetProfile?id=${pet.id}`)} className="flex-1">
-              <Button variant="outline" className="w-full gap-2 text-teal-600 border-teal-200 hover:bg-teal-50">
+          <Button variant="outline" className="w-full gap-2 text-teal-600 border-teal-200 hover:bg-teal-50">
                 <Eye className="w-4 h-4" />
                 View
               </Button>
@@ -107,7 +107,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
               </Button>
             </Link>
             <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-              <Button className="gap-2 bg-teal-600 hover:bg-teal-700">
+              <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
                 <Calendar className="w-4 h-4" />
               </Button>
             </Link>
