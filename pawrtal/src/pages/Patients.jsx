@@ -133,7 +133,7 @@ export default function Patients() {
 
       {/* Patients List */}
       {filteredPets.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
           <EmptyState
             icon={PawPrint}
             title="No patients found"

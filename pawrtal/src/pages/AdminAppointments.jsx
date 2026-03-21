@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, Calendar, Clock, Check, X } from 'lucide-react';
+import { Search, Calendar, Clock, Check, X, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -18,6 +20,7 @@ const statusConfig = {
 };
 
 export default function AdminAppointments() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
@@ -41,6 +44,9 @@ export default function AdminAppointments() {
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-6 max-w-6xl mx-auto">
+        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">All Appointments</h1>
           <p className="text-gray-500 mt-1">Manage clinic-wide appointments</p>

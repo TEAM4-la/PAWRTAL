@@ -2,14 +2,17 @@ import React from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { TrendingUp, Calendar, PawPrint, CheckCircle } from 'lucide-react';
+import { TrendingUp, Calendar, PawPrint, CheckCircle, ChevronLeft } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
 const COLORS = ['#7c3aed', '#0d9488', '#f59e0b', '#3b82f6', '#ec4899', '#6b7280'];
 
 export default function AdminReports() {
+  const navigate = useNavigate();
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
   const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list('-date', 300) });
   const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
@@ -45,6 +48,9 @@ export default function AdminReports() {
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-6 max-w-6xl mx-auto">
+        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
           <p className="text-gray-500 mt-1">Clinic performance overview</p>

@@ -91,9 +91,11 @@ export default function Dashboard() {
     vax => vax.next_due_date && isBefore(new Date(vax.next_due_date), addDays(new Date(), 30))
   );
 
+  const todayDate = format(new Date(), 'EEEE, MMMM d, yyyy');
+
   return (
     <OwnerSidebar user={user}>
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-4">
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -101,10 +103,12 @@ export default function Dashboard() {
             Welcome back, {user?.full_name?.split(' ')[0] || 'Pet Parent'}! 
             <span className="ml-2">👋</span>
           </h1>
-          <p className="text-gray-500 mt-1">Here's what's happening with your pets today</p>
+          <p className="text-sm text-gray-500 mt-1">{todayDate}</p>
         </div>
         <NotificationPanel userEmail={user?.email} accentColor="amber" />
       </div>
+
+      <p className="text-gray-500 mt-0">Here's what's happening with your pets today</p>
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -198,7 +202,7 @@ export default function Dashboard() {
           </div>
 
           {pets.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
               <EmptyState
                 icon={PawPrint}
                 title="No pets yet"
@@ -228,7 +232,7 @@ export default function Dashboard() {
           </div>
 
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
               <EmptyState
                 icon={Calendar}
                 title="No appointments"

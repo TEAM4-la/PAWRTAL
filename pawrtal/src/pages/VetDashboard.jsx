@@ -146,7 +146,7 @@ export default function VetDashboard() {
           </div>
 
           {todayAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+              <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
               <CardContent className="py-12 text-center">
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No appointments scheduled for today</p>
@@ -184,7 +184,7 @@ export default function VetDashboard() {
           </div>
 
           {tomorrowAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
               <CardContent className="py-12 text-center">
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No appointments scheduled for tomorrow</p>

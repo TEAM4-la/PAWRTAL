@@ -173,7 +173,7 @@ export default function SignIn() {
   const currentRole = roles.find(r => r.id === selectedRole);
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+      <div className="page-reset min-h-screen flex relative overflow-hidden">
       {/* Repeating background */}
       <div
         className="absolute inset-0 z-0"

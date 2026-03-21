@@ -122,7 +122,7 @@ export default function OwnerSidebar({ user, children }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white">
                 Sign Out
               </AlertDialogAction>
             </AlertDialogFooter>

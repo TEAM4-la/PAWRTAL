@@ -208,7 +208,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="records">
               {healthRecords.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
                   <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No health records yet</p>
                 </Card>

@@ -111,7 +111,9 @@ export default function AdminSidebar({ children, currentUser }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">Sign Out</AlertDialogAction>
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white">
+                Sign Out
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

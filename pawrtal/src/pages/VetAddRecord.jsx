@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ToggleSwitch from '@/components/shared/ToggleSwitch';
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -304,13 +305,10 @@ export default function VetAddRecord() {
                     <p className="font-medium text-gray-900">Visible to Owner</p>
                     <p className="text-sm text-gray-500">Owner can view this record</p>
                   </div>
-                  <Switch
-                    checked={recordForm.is_visible_to_owner}
-                    onCheckedChange={(checked) => setRecordForm({...recordForm, is_visible_to_owner: checked})}
-                  />
+                  <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} />
                 </div>
 
-                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
                   {createRecordMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Record'}
                 </Button>
               </form>
@@ -386,7 +384,7 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createVaccinationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createVaccinationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
                   {createVaccinationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Record Vaccination'}
                 </Button>
               </form>
@@ -473,7 +471,7 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createMedicationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createMedicationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
                   {createMedicationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Prescribe Medication'}
                 </Button>
               </form>

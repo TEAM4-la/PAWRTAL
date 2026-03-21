@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { 
   Plus, 
   BookOpen, 
@@ -67,6 +68,14 @@ export default function Journal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleBack = () => {
+    if (user?.user_type === 'veterinarian') {
+      navigate(createPageUrl('VetDashboard'));
+      return;
+    }
+    navigate(createPageUrl('Dashboard'));
+  };
   const [selectedPet, setSelectedPet] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [formData, setFormData] = useState({
@@ -153,7 +162,7 @@ export default function Journal() {
 
   const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={handleBack} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -304,7 +313,7 @@ export default function Journal() {
 
       {/* Entries */}
       {entries.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
           <EmptyState
             icon={BookOpen}
             title="No journal entries yet"

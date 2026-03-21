@@ -5,12 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
+import MiniCalendar from "@/components/shared/MiniCalendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
 import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
 import { toast } from "sonner";
@@ -117,7 +118,7 @@ export default function VetAppointments() {
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
           <EmptyState
             icon={CalendarIcon}
             title="No appointments found"
@@ -178,13 +179,8 @@ export default function VetAppointments() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              initialFocus
-            />
-            {selectedDate && (
+            <MiniCalendar selected={selectedDate} onSelect={setSelectedDate} />
+             {selectedDate && (
               <div className="p-3 border-t">
                 <Button variant="ghost" size="sm" onClick={() => setSelectedDate(null)} className="w-full">
                   Clear filter

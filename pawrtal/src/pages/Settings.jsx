@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import ToggleSwitch from '@/components/shared/ToggleSwitch';
 import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { User, Bell, Shield, Upload, Loader2, Check, LogOut, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -95,6 +97,18 @@ export default function Settings() {
     api.auth.logout();
   };
 
+  const handleBack = () => {
+    if (user?.user_type === 'veterinarian') {
+      navigate(createPageUrl('VetDashboard'));
+      return;
+    }
+    if (user?.user_type === 'admin') {
+      navigate(createPageUrl('ClinicAdminDashboard'));
+      return;
+    }
+    navigate(createPageUrl('Dashboard'));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,7 +119,7 @@ export default function Settings() {
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={handleBack} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div>
@@ -194,10 +208,7 @@ export default function Settings() {
               <p className="font-medium text-gray-900">Email Notifications</p>
               <p className="text-sm text-gray-500">Receive updates via email</p>
             </div>
-            <Switch
-              checked={formData.notification_preferences.email}
-              onCheckedChange={(checked) => handleNotificationToggle('email', checked)}
-            />
+            <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -205,10 +216,7 @@ export default function Settings() {
               <p className="font-medium text-gray-900">Appointment Reminders</p>
               <p className="text-sm text-gray-500">Get notified about upcoming appointments</p>
             </div>
-            <Switch
-              checked={formData.notification_preferences.appointments}
-              onCheckedChange={(checked) => handleNotificationToggle('appointments', checked)}
-            />
+            <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -216,10 +224,7 @@ export default function Settings() {
               <p className="font-medium text-gray-900">Vaccination Reminders</p>
               <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
             </div>
-            <Switch
-              checked={formData.notification_preferences.vaccinations}
-              onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
-            />
+            <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -227,10 +232,7 @@ export default function Settings() {
               <p className="font-medium text-gray-900">Medication Reminders</p>
               <p className="text-sm text-gray-500">Reminders for pet medications</p>
             </div>
-            <Switch
-              checked={formData.notification_preferences.medications}
-              onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
-            />
+            <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} /> 
           </div>
         </CardContent>
       </Card>
@@ -240,7 +242,7 @@ export default function Settings() {
         <Button 
           onClick={handleSave}
           disabled={updateMutation.isPending}
-          className="bg-teal-600 hover:bg-teal-700 gap-2"
+          className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
         >
           {updateMutation.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />

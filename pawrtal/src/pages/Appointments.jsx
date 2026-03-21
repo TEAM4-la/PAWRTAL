@@ -91,7 +91,7 @@ export default function Appointments() {
 
         <TabsContent value="upcoming" className="mt-6">
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
               <EmptyState
                 icon={Calendar}
                 title="No upcoming appointments"
