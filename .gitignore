@@ -1,0 +1,5 @@
+node_modules
+/.vs
+/PawtralWeb/bin/Debug/net9.0
+/PawtralWeb/obj
+/node_modules/.package-lock.json
