@@ -1,4 +1,4 @@
-namespace PawtralWeb.Models
+namespace PawrtalWeb.Models
 {
     public class ErrorViewModel
     {
