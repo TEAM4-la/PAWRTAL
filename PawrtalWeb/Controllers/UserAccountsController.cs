@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PawtralWeb.Models;
+using PawrtalWeb.Models;
 
-namespace PawtralWeb.Controllers
+namespace PawrtalWeb.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

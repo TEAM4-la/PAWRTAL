@@ -13,7 +13,7 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, 'src') },
   },
   build: {
-    outDir: path.resolve(__dirname, '../PawtralWeb/wwwroot'),
+    outDir: path.resolve(__dirname, '../PawrtalWeb/wwwroot'),
     emptyOutDir: true, // Clears the folder before each build
   },
 })
