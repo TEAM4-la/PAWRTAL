@@ -330,7 +330,7 @@ export default function SignIn() {
                 <p className="text-center text-sm text-gray-500 mt-6">
                   New pet owner?{' '}
                   <Link to="/create-account" className="text-amber-600 font-medium hover:underline">
-                    Create an account
+                    Create a Pet Owner account
                   </Link>
                 </p>
               </motion.div>
