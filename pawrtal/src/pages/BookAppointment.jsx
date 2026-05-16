@@ -8,14 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   ArrowLeft, 
   Calendar as CalendarIcon, 
-  Clock, 
   Loader2,
   Stethoscope,
   Syringe,
@@ -28,7 +23,7 @@ import {
   Rabbit,
   Fish
 } from 'lucide-react';
-import { format, addDays, isBefore, startOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
@@ -38,7 +33,6 @@ const appointmentTypes = [
   { value: 'vaccination', label: 'Vaccination', icon: Syringe, color: 'bg-purple-100 text-purple-700' },
   { value: 'grooming', label: 'Grooming', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
   { value: 'dental', label: 'Dental Care', icon: Heart, color: 'bg-blue-100 text-blue-700' },
-  { value: 'emergency', label: 'Emergency', icon: AlertTriangle, color: 'bg-red-100 text-red-700' },
   { value: 'follow_up', label: 'Follow-up', icon: CalendarIcon, color: 'bg-gray-100 text-gray-700' },
   { value: 'consultation', label: 'Consultation', icon: Stethoscope, color: 'bg-indigo-100 text-indigo-700' },
 ];
@@ -105,8 +99,9 @@ export default function BookAppointment() {
     createMutation.mutate(formData);
   };
 
-  const selectedPet = pets.find(p => p.id === formData.pet_id);
-  const SelectedPetIcon = selectedPet ? (speciesIcons[selectedPet.species] || Dog) : Dog;
+  /** Earliest selectable day (today); same pattern as Add Pet DOB but with a minimum instead of max. */
+  const minAppointmentDateStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
+  const maxAppointmentDateStr = `${new Date().getFullYear()}-12-31`;
 
   const content = (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
@@ -215,34 +210,28 @@ export default function BookAppointment() {
               </div>
             </div>
 
-            {/* Date Selection */}
+            {/* Date Selection — native picker like Add Pet (Date of birth); min = today, no past dates */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">
+              <Label htmlFor="appointment-date" className="text-sm font-medium mb-3 block">
                 Preferred Date <span className="text-red-500">*</span>
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-12",
-                      !formData.date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.date ? format(formData.date, 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => setFormData({ ...formData, date })}
-                    disabled={(date) => isBefore(date, startOfDay(new Date()))}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="appointment-date"
+                type="date"
+                min={minAppointmentDateStr}
+                max={maxAppointmentDateStr}
+                value={formData.date ? format(formData.date, 'yyyy-MM-dd') : ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) {
+                    setFormData({ ...formData, date: null });
+                    return;
+                  }
+                  const [y, m, d] = v.split('-').map(Number);
+                  setFormData({ ...formData, date: new Date(y, m - 1, d) });
+                }}
+                className="h-12 mt-0"
+              />
             </div>
 
             {/* Time Selection */}

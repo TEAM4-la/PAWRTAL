@@ -1,17 +1,18 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Syringe, 
-  Pill, 
+import {
+  ArrowLeft,
+  Calendar,
+  Syringe,
+  Pill,
+  Scissors,
   FileText,
   Clock,
   Weight,
@@ -26,7 +27,7 @@ import {
   Mail,
   Plus
 } from 'lucide-react';
-import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fns';
 import VetSidebar from '@/components/layout/VetSidebar';
 
 const speciesIcons = {
@@ -82,6 +83,12 @@ export default function VetPatientDetail() {
   const { data: healthRecords = [] } = useQuery({
     queryKey: ['healthRecords', petId],
     queryFn: () => api.entities.HealthRecord.filter({ pet_id: petId }, '-date'),
+    enabled: !!petId,
+  });
+
+  const { data: groomingRecords = [] } = useQuery({
+    queryKey: ['groomingRecords', petId],
+    queryFn: () => api.entities.GroomingRecord.filter({ pet_id: petId }, '-date'),
     enabled: !!petId,
   });
 
@@ -204,11 +211,12 @@ export default function VetPatientDetail() {
               <TabsTrigger value="vaccinations">Vaccinations ({vaccinations.length})</TabsTrigger>
               <TabsTrigger value="medications">Medications ({medications.length})</TabsTrigger>
               <TabsTrigger value="appointments">Visits ({appointments.length})</TabsTrigger>
+              <TabsTrigger value="grooming">Grooming ({groomingRecords.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="records">
               {healthRecords.length === 0 ? (
-                <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+                <Card className="p-8 text-center border-dashed border-2">
                   <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No health records yet</p>
                 </Card>
@@ -221,7 +229,7 @@ export default function VetPatientDetail() {
                           <div>
                             <h4 className="font-semibold text-gray-900">{record.title}</h4>
                             <p className="text-sm text-gray-500">
-                              {record.record_type.replace('_', ' ')} • {format(new Date(record.date), 'MMM d, yyyy')}
+                              {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                             </p>
                           </div>
                           <Badge variant="outline">{record.is_visible_to_owner ? 'Visible' : 'Hidden'}</Badge>
@@ -241,23 +249,42 @@ export default function VetPatientDetail() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {vaccinations.map((vax) => (
+                  {vaccinations.map((vax) => {
+                    const isLatest = !vaccinations.some(v => 
+                      v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
+                      new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+                    );
+                    return (
                     <Card key={vax.id} className="border-0 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold text-gray-900">{vax.vaccine_name}</h4>
                             <p className="text-sm text-gray-500">
-                              {format(new Date(vax.date_administered), 'MMM d, yyyy')}
+                              {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                             </p>
                           </div>
-                          {vax.next_due_date && (
-                            <Badge variant="outline">Next: {format(new Date(vax.next_due_date), 'MMM d, yyyy')}</Badge>
+                          {vax.next_due_date && isLatest && (
+                            <Badge 
+                              variant="outline"
+                              className={
+                                isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                              }
+                            >
+                              {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                            </Badge>
+                          )}
+                          {vax.next_due_date && !isLatest && (
+                            <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                              Renewed
+                            </Badge>
                           )}
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                  )})}
                 </div>
               )}
             </TabsContent>
@@ -270,7 +297,9 @@ export default function VetPatientDetail() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {medications.map((med) => (
+                  {medications.map((med) => {
+                    const isStillActive = med.is_active && (!med.end_date || new Date(med.end_date + 'T00:00:00') >= new Date());
+                    return (
                     <Card key={med.id} className="border-0 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -280,13 +309,14 @@ export default function VetPatientDetail() {
                               {med.dosage} • {med.frequency}
                             </p>
                           </div>
-                          <Badge className={med.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
-                            {med.is_active ? 'Active' : 'Completed'}
+                          <Badge className={isStillActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+                            {isStillActive ? 'Active' : 'Completed'}
                           </Badge>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -299,23 +329,68 @@ export default function VetPatientDetail() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {appointments.map((apt) => (
+                  {appointments.map((apt) => {
+                    const status = getAppointmentStatus(apt);
+                    return (
                     <Card key={apt.id} className="border-0 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-semibold text-gray-900 capitalize">{apt.type.replace('_', ' ')}</h4>
                             <p className="text-sm text-gray-500">
-                              {format(new Date(apt.date), 'MMM d, yyyy')} at {apt.time}
+                              {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
                             </p>
                           </div>
                           <Badge variant="outline" className={
-                            apt.status === 'completed' ? 'bg-green-50 text-green-700' :
-                            apt.status === 'cancelled' ? 'bg-red-50 text-red-700' :
+                            status === 'completed' ? 'bg-green-50 text-green-700' :
+                            status === 'cancelled' ? 'bg-red-50 text-red-700' :
+                            status === 'expired' ? 'bg-gray-50 text-gray-700' :
                             'bg-blue-50 text-blue-700'
                           }>
-                            {apt.status}
+                            {status}
                           </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="grooming">
+              {groomingRecords.length === 0 ? (
+                <Card className="p-8 text-center border-dashed border-2">
+                  <Scissors className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500">No grooming records</p>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {groomingRecords.map((record) => (
+                    <Card key={record.id} className="border-0 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</h4>
+                            <p className="text-sm text-gray-500">
+                              {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
+                              {record.groomer_name && ` • By: ${record.groomer_name}`}
+                            </p>
+                            {record.coat_style_notes && (
+                              <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
+                            )}
+                            {record.observations && (
+                              <p className="text-sm text-gray-500 mt-1">{record.observations}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {record.coat_condition_before && (
+                              <Badge variant="outline" className="capitalize">{record.coat_condition_before.replace(/_/g, ' ')}</Badge>
+                            )}
+                            <Badge className={record.is_visible_to_owner ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}>
+                              {record.is_visible_to_owner ? 'Visible' : 'Hidden'}
+                            </Badge>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

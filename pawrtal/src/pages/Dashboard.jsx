@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
@@ -11,7 +11,6 @@ import StatsCard from "@/components/shared/StatsCard";
 import PetCard from "@/components/shared/PetCard";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
-import NotificationPanel from "@/components/dashboard/NotificationPanel";
 import { 
   PawPrint, 
   Calendar, 
@@ -56,7 +55,7 @@ export default function Dashboard() {
     enabled: pets.length > 0,
   });
 
-  const { data: medications = [] } = useQuery({
+  const { data: allMedications = [] } = useQuery({
     queryKey: ['medications', pets],
     queryFn: async () => {
       const allMeds = await Promise.all(
@@ -66,6 +65,11 @@ export default function Dashboard() {
     },
     enabled: pets.length > 0,
   });
+
+  // Client-side safety filter: only count medications that are truly active
+  const medications = allMedications.filter(
+    m => m.is_active && (!m.end_date || new Date(m.end_date) >= new Date())
+  );
 
   useEffect(() => {
     if (!userLoading && user && !user.user_type) {
@@ -83,19 +87,38 @@ export default function Dashboard() {
     );
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const upcomingAppointments = appointments.filter(
-    apt => apt.status !== 'cancelled' && apt.status !== 'completed' && isAfter(new Date(apt.date), new Date())
+    apt => {
+      const status = getAppointmentStatus(apt);
+      return status !== 'cancelled' && status !== 'completed' && status !== 'expired' && !isBefore(new Date(apt.date + 'T00:00:00'), today);
+    }
   ).slice(0, 3);
 
-  const upcomingVaccinations = vaccinations.filter(
-    vax => vax.next_due_date && isBefore(new Date(vax.next_due_date), addDays(new Date(), 30))
-  );
+  const upcomingVaccinations = vaccinations.filter(vax => {
+    if (!vax.next_due_date) return false;
+    
+    const isLatest = !vaccinations.some(v => 
+      v.pet_id === vax.pet_id &&
+      v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
+      new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+    );
+    
+    if (!isLatest) return false;
 
-  const todayDate = format(new Date(), 'EEEE, MMMM d, yyyy');
+    const dueDate = new Date(vax.next_due_date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const thirtyDaysFromNow = addDays(today, 30);
+
+    return dueDate >= today && dueDate <= thirtyDaysFromNow;
+  });
 
   return (
     <OwnerSidebar user={user}>
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-4">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
       {/* Welcome Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -103,12 +126,9 @@ export default function Dashboard() {
             Welcome back, {user?.full_name?.split(' ')[0] || 'Pet Parent'}! 
             <span className="ml-2">👋</span>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{todayDate}</p>
+          <p className="text-gray-500 mt-1">Here's what's happening with your pets today</p>
         </div>
-        <NotificationPanel userEmail={user?.email} accentColor="amber" />
       </div>
-
-      <p className="text-gray-500 mt-0">Here's what's happening with your pets today</p>
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -153,7 +173,7 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-600 mt-1">
                       {upcomingVaccinations.length} vaccination(s) due in the next 30 days
                     </p>
-                    <Link to={createPageUrl('HealthRecords')}>
+                    <Link to={`${createPageUrl('HealthRecords')}?tab=vaccinations`}>
                       <Button variant="link" className="p-0 h-auto text-purple-600 mt-2">
                         View details <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>
@@ -202,7 +222,7 @@ export default function Dashboard() {
           </div>
 
           {pets.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={PawPrint}
                 title="No pets yet"
@@ -232,7 +252,7 @@ export default function Dashboard() {
           </div>
 
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={Calendar}
                 title="No appointments"

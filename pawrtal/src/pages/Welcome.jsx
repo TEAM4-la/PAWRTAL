@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';  
+import { Link } from 'react-router-dom';  // ← added for navigation
 import { motion } from 'framer-motion';
 import backgroundImg from '../assets/background.png';  
 import {
@@ -12,6 +12,7 @@ import {
   Check,
 } from 'lucide-react';
 
+// Cute paw print SVG
 const CutePaw = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="currentColor">
     <ellipse cx="30" cy="38" rx="14" ry="12" />
@@ -22,6 +23,7 @@ const CutePaw = ({ className }) => (
   </svg>
 );
 
+// Cute cat face SVG
 const CuteCat = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <ellipse cx="30" cy="35" rx="20" ry="16" />
@@ -34,6 +36,7 @@ const CuteCat = ({ className }) => (
   </svg>
 );
 
+// Cute dog face SVG
 const CuteDog = ({ className }) => (
   <svg viewBox="0 0 60 60" className={className} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <ellipse cx="30" cy="32" rx="18" ry="16" />
@@ -294,7 +297,7 @@ export default function Welcome() {
                   Join PAWRTAL today and give your pet the care they deserve.
                 </p>
                 {/* Create Free Account button with routing */}
-                <Link to="/sign-in">
+                <Link to="/create-account">
                   <button className="bg-white text-amber-600 hover:bg-amber-50 px-8 py-4 text-lg rounded-full shadow-lg font-semibold transition-colors">
                     Create Free Account
                   </button>

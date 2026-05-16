@@ -1,3 +1,5 @@
+import { parse, isPast } from 'date-fns';
+
 /**
  * Build a path for a page name (and optional query).
  * e.g. createPageUrl('HealthRecords') -> '/health-records'
@@ -11,4 +13,19 @@ export function createPageUrl(pageSpec) {
     .replace(/^-/, '')
   const path = pathSegment === 'welcome' ? '/' : `/${pathSegment}`
   return query ? `${path}?${query}` : path
+}
+
+export function getAppointmentStatus(appointment) {
+  let derivedStatus = appointment.status;
+  if (derivedStatus === 'pending') {
+    try {
+      const appointmentDateTime = parse(`${appointment.date} ${appointment.time}`, 'yyyy-MM-dd hh:mm a', new Date());
+      if (isPast(appointmentDateTime)) {
+        derivedStatus = 'expired';
+      }
+    } catch (e) {
+      console.error('Error parsing appointment datetime:', e);
+    }
+  }
+  return derivedStatus;
 }

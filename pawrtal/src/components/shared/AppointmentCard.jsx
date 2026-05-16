@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Clock, User, Stethoscope, Check, X, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { getAppointmentStatus } from "@/utils";
 
 const statusConfig = {
   pending: { 
@@ -26,6 +27,11 @@ const statusConfig = {
     color: 'bg-red-100 text-red-700 border-red-200', 
     icon: X,
     label: 'Cancelled'
+  },
+  expired: {
+    color: 'bg-gray-100 text-gray-700 border-gray-200',
+    icon: Clock,
+    label: 'Expired'
   },
 };
 
@@ -49,7 +55,9 @@ export default function AppointmentCard({
   onComplete,
   isVetView = false 
 }) {
-  const status = statusConfig[appointment.status] || statusConfig.pending;
+  const derivedStatus = getAppointmentStatus(appointment);
+
+  const status = statusConfig[derivedStatus] || statusConfig.pending;
   const StatusIcon = status.icon;
 
   return (
@@ -57,10 +65,11 @@ export default function AppointmentCard({
       <div className="flex">
         <div className={cn(
           "w-2",
-          appointment.status === 'pending' && "bg-amber-400",
-          appointment.status === 'confirmed' && "bg-blue-500",
-          appointment.status === 'completed' && "bg-green-500",
-          appointment.status === 'cancelled' && "bg-red-400",
+          derivedStatus === 'pending' && "bg-amber-400",
+          derivedStatus === 'confirmed' && "bg-blue-500",
+          derivedStatus === 'completed' && "bg-green-500",
+          derivedStatus === 'cancelled' && "bg-red-400",
+          derivedStatus === 'expired' && "bg-gray-400",
         )} />
         
         <div className="flex-1 p-5">
@@ -95,7 +104,7 @@ export default function AppointmentCard({
             <div className="flex items-center gap-2 text-gray-600">
               <Calendar className="w-4 h-4 text-gray-400" />
               <span className="text-sm">
-                {format(new Date(appointment.date), 'EEEE, MMMM d, yyyy')}
+                {format(new Date(appointment.date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
               </span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
@@ -116,18 +125,18 @@ export default function AppointmentCard({
             </p>
           )}
 
-          {(onConfirm || onCancel || onComplete) && appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+          {(onConfirm || onCancel || onComplete) && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
             <div className="flex gap-2 pt-4 border-t border-gray-100">
-              {onConfirm && appointment.status === 'pending' && (
+              {onConfirm && derivedStatus === 'pending' && (
                 <Button 
                   size="sm" 
-                  className="bg-teal-600 hover:bg-teal-700"
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
                   onClick={() => onConfirm(appointment)}
                 >
                   Confirm
                 </Button>
               )}
-              {onComplete && appointment.status === 'confirmed' && (
+              {onComplete && derivedStatus === 'confirmed' && (
                 <Button 
                   size="sm" 
                   className="bg-green-600 hover:bg-green-700"

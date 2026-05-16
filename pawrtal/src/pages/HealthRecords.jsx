@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
@@ -10,10 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
-import { 
-  FileText, 
-  Syringe, 
-  Pill, 
+import {
+  FileText,
+  Syringe,
+  Pill,
+  Scissors,
   Download,
   Calendar,
   Dog,
@@ -48,8 +49,19 @@ const recordTypeColors = {
 
 export default function HealthRecords() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('tab') || 'records';
+
   const [selectedPet, setSelectedPet] = useState('all');
-  const [activeTab, setActiveTab] = useState('records');
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -107,14 +119,44 @@ export default function HealthRecords() {
     enabled: pets.length > 0,
   });
 
+  const { data: groomingRecords = [] } = useQuery({
+    queryKey: ['groomingRecords', pets, selectedPet],
+    queryFn: async () => {
+      if (selectedPet === 'all') {
+        const allGroom = await Promise.all(
+          pets.map(pet => api.entities.GroomingRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }))
+        );
+        return allGroom.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
+      } else {
+        return api.entities.GroomingRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
+      }
+    },
+    enabled: pets.length > 0,
+  });
+
   const getPetName = (petId) => {
     const pet = pets.find(p => p.id === petId);
     return pet?.name || 'Unknown';
   };
 
-  const upcomingVaccinations = vaccinations.filter(
-    vax => vax.next_due_date && isBefore(new Date(vax.next_due_date), addDays(new Date(), 60))
-  );
+  const upcomingVaccinations = vaccinations.filter(vax => {
+    if (!vax.next_due_date) return false;
+    
+    const isLatest = !vaccinations.some(v => 
+      v.pet_id === vax.pet_id &&
+      v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
+      new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+    );
+    
+    if (!isLatest) return false;
+
+    const dueDate = new Date(vax.next_due_date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sixtyDaysFromNow = addDays(today, 60);
+
+    return dueDate >= today && dueDate <= sixtyDaysFromNow;
+  });
 
   const content = (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
@@ -153,7 +195,7 @@ export default function HealthRecords() {
                 <p className="text-sm text-gray-600 mt-1">
                   {upcomingVaccinations.map(vax => (
                     <span key={vax.id} className="block">
-                      {getPetName(vax.pet_id)}: {vax.vaccine_name} due {format(new Date(vax.next_due_date), 'MMM d, yyyy')}
+                      {getPetName(vax.pet_id)}: {vax.vaccine_name} due {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
                     </span>
                   ))}
                 </p>
@@ -177,11 +219,15 @@ export default function HealthRecords() {
             <Pill className="w-4 h-4" />
             Medications
           </TabsTrigger>
+          <TabsTrigger value="grooming" className="gap-2">
+            <Scissors className="w-4 h-4" />
+            Grooming
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="records" className="mt-6">
           {healthRecords.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={FileText}
                 title="No health records yet"
@@ -206,7 +252,7 @@ export default function HealthRecords() {
                             </Badge>
                           </div>
                           <p className="text-sm text-gray-500">
-                            {getPetName(record.pet_id)} • {format(new Date(record.date), 'MMMM d, yyyy')}
+                            {getPetName(record.pet_id)} • {format(new Date(record.date + 'T00:00:00'), 'MMMM d, yyyy')}
                           </p>
                           {record.description && (
                             <p className="text-sm text-gray-600 mt-2">{record.description}</p>
@@ -234,7 +280,7 @@ export default function HealthRecords() {
 
         <TabsContent value="vaccinations" className="mt-6">
           {vaccinations.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={Syringe}
                 title="No vaccination records"
@@ -243,7 +289,12 @@ export default function HealthRecords() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {vaccinations.map((vax) => (
+              {vaccinations.map((vax) => {
+                const isLatest = !vaccinations.some(v => 
+                  v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
+                  new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+                );
+                return (
                 <Card key={vax.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -254,37 +305,42 @@ export default function HealthRecords() {
                         <div>
                           <h4 className="font-semibold text-gray-900">{vax.vaccine_name}</h4>
                           <p className="text-sm text-gray-500">
-                            {getPetName(vax.pet_id)} • Administered {format(new Date(vax.date_administered), 'MMM d, yyyy')}
+                            {getPetName(vax.pet_id)} • Administered {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                           </p>
                           {vax.administered_by && (
                             <p className="text-sm text-gray-400">By: {vax.administered_by}</p>
                           )}
                         </div>
                       </div>
-                      {vax.next_due_date && (
+                      {vax.next_due_date && isLatest && (
                         <Badge 
                           variant="outline" 
                           className={
-                            isBefore(new Date(vax.next_due_date), new Date())
+                            isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
                               ? 'bg-red-50 text-red-700 border-red-200'
                               : 'bg-blue-50 text-blue-700 border-blue-200'
                           }
                         >
                           <Calendar className="w-3 h-3 mr-1" />
-                          Next: {format(new Date(vax.next_due_date), 'MMM d, yyyy')}
+                          {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                        </Badge>
+                      )}
+                      {vax.next_due_date && !isLatest && (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                          Renewed
                         </Badge>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )})}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="medications" className="mt-6">
           {medications.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={Pill}
                 title="No medications"
@@ -293,13 +349,16 @@ export default function HealthRecords() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {medications.map((med) => (
+              {medications.map((med) => {
+                // Compute active status dynamically: if end_date is past, medication is completed
+                const isStillActive = med.is_active && (!med.end_date || !isBefore(new Date(med.end_date + 'T00:00:00'), new Date()));
+                return (
                 <Card key={med.id} className="border-0 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${med.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          <Pill className={`w-6 h-6 ${med.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          <Pill className={`w-6 h-6 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
                         </div>
                         <div>
                           <h4 className="font-semibold text-gray-900">{med.name}</h4>
@@ -307,17 +366,63 @@ export default function HealthRecords() {
                             {getPetName(med.pet_id)} • {med.dosage} • {med.frequency}
                           </p>
                           <p className="text-sm text-gray-400">
-                            {format(new Date(med.start_date), 'MMM d, yyyy')}
-                            {med.end_date && ` - ${format(new Date(med.end_date), 'MMM d, yyyy')}`}
+                            {format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}
+                            {med.end_date && ` - ${format(new Date(med.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
                           </p>
                         </div>
                       </div>
                       <Badge 
                         variant="outline" 
-                        className={med.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}
+                        className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}
                       >
-                        {med.is_active ? 'Active' : 'Completed'}
+                        {isStillActive ? 'Active' : 'Completed'}
                       </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="grooming" className="mt-6">
+          {groomingRecords.length === 0 ? (
+            <Card className="border-dashed border-2">
+              <EmptyState
+                icon={Scissors}
+                title="No grooming records"
+                description="Grooming history will appear here after sessions"
+              />
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {groomingRecords.map((record) => (
+                <Card key={record.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center">
+                          <Scissors className="w-6 h-6 text-pink-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</h4>
+                          <p className="text-sm text-gray-500">
+                            {getPetName(record.pet_id)} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
+                          </p>
+                          {record.groomer_name && (
+                            <p className="text-sm text-gray-400">By: {record.groomer_name}</p>
+                          )}
+                          {record.coat_style_notes && (
+                            <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      {record.coat_condition_before && (
+                        <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize">
+                          {record.coat_condition_before.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

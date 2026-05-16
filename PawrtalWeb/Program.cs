@@ -31,9 +31,20 @@
 
 //app.Run();
 
+using Microsoft.EntityFrameworkCore;
+using PawrtalWeb.Shared;
+using PawtralWeb.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<PawrtalDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("PawrtalDB"));
+});
+
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

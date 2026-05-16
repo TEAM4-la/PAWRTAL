@@ -1,7 +1,7 @@
 import React from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
-import { createPageUrl } from '@/utils';
+import { createPageUrl, getAppointmentStatus } from '@/utils';
 import { Users, Calendar, PawPrint, Stethoscope, ClipboardList, Clock, CheckCircle, AlertCircle, TrendingUp, ChevronRight } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +19,9 @@ export default function ClinicAdminDashboard() {
   const vets = allUsers.filter(u => u.user_type === 'veterinarian');
   const owners = allUsers.filter(u => u.user_type === 'pet_owner');
   const todayAppts = allAppointments.filter(a => isToday(new Date(a.date)));
-  const pendingAppts = allAppointments.filter(a => a.status === 'pending');
-  const confirmedAppts = allAppointments.filter(a => a.status === 'confirmed');
-  const completedAppts = allAppointments.filter(a => a.status === 'completed');
+  const pendingAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'pending');
+  const confirmedAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'confirmed');
+  const completedAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'completed');
 
   const stats = [
     { label: 'Total Pets', value: allPets.length, icon: PawPrint, color: 'from-amber-400 to-orange-400', bg: 'bg-amber-50', text: 'text-amber-700' },
@@ -35,6 +35,7 @@ export default function ClinicAdminDashboard() {
     confirmed: { color: 'bg-blue-100 text-blue-700', label: 'Confirmed' },
     completed: { color: 'bg-green-100 text-green-700', label: 'Completed' },
     cancelled: { color: 'bg-red-100 text-red-700', label: 'Cancelled' },
+    expired: { color: 'bg-gray-100 text-gray-700', label: 'Expired' },
   };
 
   return (
@@ -108,7 +109,8 @@ export default function ClinicAdminDashboard() {
                 <div className="py-10 text-center text-gray-400 text-sm">No appointments today</div>
               ) : todayAppts.map(appt => {
                 const pet = allPets.find(p => p.id === appt.pet_id);
-                const status = statusConfig[appt.status] || statusConfig.pending;
+                const derivedStatus = getAppointmentStatus(appt);
+                const status = statusConfig[derivedStatus] || statusConfig.pending;
                 return (
                   <div key={appt.id} className="px-5 py-3 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm flex-shrink-0">

@@ -1,12 +1,18 @@
 import { Routes, Route } from 'react-router-dom';
 import Welcome from './pages/Welcome';
 import SignIn from './pages/SignIn';
+import CreateAccount from './pages/CreateAccount';
+import StaffCreateAccount from './pages/StaffCreateAccount';
 import Dashboard from './pages/Dashboard';
 import MyPets from './pages/MyPets';
 import HealthRecords from './pages/HealthRecords';
 import Medications from './pages/Medications';
 import Journal from './pages/Journal';
 import AddPet from './pages/AddPet';
+import EditPet from './pages/EditPet';
+import PetProfile from './pages/PetProfile';
+import PetQR from './pages/PetQR';
+import PublicPetProfile from './pages/PublicPetProfile';
 import Appointments from './pages/Appointments';
 import BookAppointment from './pages/BookAppointment';
 import Onboarding from './pages/Onboarding';
@@ -22,6 +28,7 @@ import AdminAppointments from './pages/AdminAppointments';
 import AdminStaff from './pages/AdminStaff';
 import AdminPatients from './pages/AdminPatients';
 import AdminReports from './pages/AdminReports';
+import Messages from './pages/Messages';
 
 // Optional: 404 page (you can create this later)
 const NotFound = () => (
@@ -35,16 +42,23 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Welcome />} />
       <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/create-account" element={<CreateAccount />} />
+      <Route path="/staff/create-account" element={<StaffCreateAccount />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/my-pets" element={<MyPets />} />
       <Route path="/add-pet" element={<AddPet />} />
+      <Route path="/edit-pet" element={<EditPet />} />
+      <Route path="/pet-profile" element={<PetProfile />} />
+      <Route path="/pet-qr" element={<PetQR />} />
+      <Route path="/public-pet-profile" element={<PublicPetProfile />} />
       <Route path="/health-records" element={<HealthRecords />} />
       <Route path="/medications" element={<Medications />} />
       <Route path="/journal" element={<Journal />} />
       <Route path="/appointments" element={<Appointments />} />
       <Route path="/book-appointment" element={<BookAppointment />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/messages" element={<Messages />} />
       {/* Owner dashboards */}
       <Route path="/petowner-dashboard" element={<Dashboard />} />
       {/* Vet routes */}

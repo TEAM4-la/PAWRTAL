@@ -9,16 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ToggleSwitch from '@/components/shared/ToggleSwitch';
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Upload, 
-  Loader2, 
+import {
+  ArrowLeft,
+  Upload,
+  Loader2,
   FileText,
   Syringe,
   Pill,
+  Scissors,
   Dog,
   Cat,
   Bird,
@@ -87,6 +87,17 @@ export default function VetAddRecord() {
     is_active: true,
   });
 
+  const [groomingForm, setGroomingForm] = useState({
+    pet_id: preselectedPetId || '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    groomer_name: '',
+    grooming_type: '',
+    coat_condition_before: '',
+    coat_style_notes: '',
+    observations: '',
+    is_visible_to_owner: true,
+  });
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
@@ -105,9 +116,13 @@ export default function VetAddRecord() {
       vet_name: user?.full_name,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['allHealthRecords']);
+      queryClient.invalidateQueries({ queryKey: ['allHealthRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['healthRecords'] });
       toast.success('Health record added!');
       navigate(createPageUrl('VetRecords'));
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to save record');
     }
   });
 
@@ -117,9 +132,12 @@ export default function VetAddRecord() {
       administered_by: user?.full_name,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['vaccinations']);
+      queryClient.invalidateQueries({ queryKey: ['vaccinations'] });
       toast.success('Vaccination recorded!');
       navigate(createPageUrl('VetRecords'));
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to save vaccination');
     }
   });
 
@@ -129,9 +147,24 @@ export default function VetAddRecord() {
       prescribed_by: user?.full_name,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['medications']);
+      queryClient.invalidateQueries({ queryKey: ['medications'] });
       toast.success('Medication prescribed!');
       navigate(createPageUrl('VetRecords'));
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to save medication');
+    }
+  });
+
+  const createGroomingMutation = useMutation({
+    mutationFn: (data) => api.entities.GroomingRecord.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groomingRecords'] });
+      toast.success('Grooming record added!');
+      navigate(createPageUrl('VetRecords'));
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to save grooming record');
     }
   });
 
@@ -178,6 +211,15 @@ export default function VetAddRecord() {
     createMedicationMutation.mutate(medicationForm);
   };
 
+  const handleGroomingSubmit = (e) => {
+    e.preventDefault();
+    if (!groomingForm.pet_id || !groomingForm.grooming_type) {
+      toast.error('Please select a patient and grooming type');
+      return;
+    }
+    createGroomingMutation.mutate(groomingForm);
+  };
+
   const selectedPet = pets.find(p => p.id === (recordForm.pet_id || vaccinationForm.pet_id || medicationForm.pet_id));
 
   return (
@@ -202,7 +244,7 @@ export default function VetAddRecord() {
 
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-3 mb-6">
+            <TabsList className="w-full grid grid-cols-4 mb-6">
               <TabsTrigger value="record" className="gap-2">
                 <FileText className="w-4 h-4" />
                 Health Record
@@ -214,6 +256,10 @@ export default function VetAddRecord() {
               <TabsTrigger value="medication" className="gap-2">
                 <Pill className="w-4 h-4" />
                 Medication
+              </TabsTrigger>
+              <TabsTrigger value="grooming" className="gap-2">
+                <Scissors className="w-4 h-4" />
+                Grooming
               </TabsTrigger>
             </TabsList>
 
@@ -305,10 +351,13 @@ export default function VetAddRecord() {
                     <p className="font-medium text-gray-900">Visible to Owner</p>
                     <p className="text-sm text-gray-500">Owner can view this record</p>
                   </div>
-                  <ToggleSwitch defaultOn={false} onChange={(val) => console.log(val)} />
+                  <Switch
+                    checked={recordForm.is_visible_to_owner}
+                    onCheckedChange={(checked) => setRecordForm({...recordForm, is_visible_to_owner: checked})}
+                  />
                 </div>
 
-                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
                   {createRecordMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Record'}
                 </Button>
               </form>
@@ -384,7 +433,7 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createVaccinationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button type="submit" disabled={createVaccinationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
                   {createVaccinationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Record Vaccination'}
                 </Button>
               </form>
@@ -471,8 +520,121 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createMedicationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button type="submit" disabled={createMedicationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
                   {createMedicationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Prescribe Medication'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Grooming Form */}
+            <TabsContent value="grooming">
+              <form onSubmit={handleGroomingSubmit} className="space-y-5">
+                <div>
+                  <Label className="text-sm font-medium">Patient *</Label>
+                  <Select value={groomingForm.pet_id} onValueChange={(v) => setGroomingForm({...groomingForm, pet_id: v})}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pets.map(pet => (
+                        <SelectItem key={pet.id} value={pet.id}>
+                          {pet.name} ({pet.species})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Date</Label>
+                    <Input
+                      type="date"
+                      value={groomingForm.date}
+                      onChange={(e) => setGroomingForm({...groomingForm, date: e.target.value})}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Groomer Name</Label>
+                    <Input
+                      value={groomingForm.groomer_name}
+                      onChange={(e) => setGroomingForm({...groomingForm, groomer_name: e.target.value})}
+                      placeholder="Who performed the grooming"
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Grooming Type *</Label>
+                    <Select value={groomingForm.grooming_type} onValueChange={(v) => setGroomingForm({...groomingForm, grooming_type: v})}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full_groom">Full Groom</SelectItem>
+                        <SelectItem value="bath_and_dry">Bath & Dry</SelectItem>
+                        <SelectItem value="haircut_only">Haircut Only</SelectItem>
+                        <SelectItem value="nail_trim">Nail Trim</SelectItem>
+                        <SelectItem value="ear_cleaning">Ear Cleaning</SelectItem>
+                        <SelectItem value="teeth_brushing">Teeth Brushing</SelectItem>
+                        <SelectItem value="deshedding">De-shedding</SelectItem>
+                        <SelectItem value="flea_treatment">Flea Treatment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Coat Condition (Before)</Label>
+                    <Select value={groomingForm.coat_condition_before} onValueChange={(v) => setGroomingForm({...groomingForm, coat_condition_before: v})}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="good">Good</SelectItem>
+                        <SelectItem value="matted">Matted</SelectItem>
+                        <SelectItem value="dirty">Dirty</SelectItem>
+                        <SelectItem value="flea_infested">Flea-infested</SelectItem>
+                        <SelectItem value="dry_flaky">Dry/Flaky</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Coat Style / Cut Notes</Label>
+                  <Input
+                    value={groomingForm.coat_style_notes}
+                    onChange={(e) => setGroomingForm({...groomingForm, coat_style_notes: e.target.value})}
+                    placeholder="e.g., Teddy bear cut, trimmed around ears"
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Observations</Label>
+                  <Textarea
+                    value={groomingForm.observations}
+                    onChange={(e) => setGroomingForm({...groomingForm, observations: e.target.value})}
+                    placeholder="Any observations during grooming..."
+                    className="mt-1.5 min-h-[120px]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="font-medium text-gray-900">Visible to Owner</p>
+                    <p className="text-sm text-gray-500">Owner can view this record</p>
+                  </div>
+                  <Switch
+                    checked={groomingForm.is_visible_to_owner}
+                    onCheckedChange={(checked) => setGroomingForm({...groomingForm, is_visible_to_owner: checked})}
+                  />
+                </div>
+
+                <Button type="submit" disabled={createGroomingMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                  {createGroomingMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Grooming Record'}
                 </Button>
               </form>
             </TabsContent>

@@ -101,7 +101,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
                 View
               </Button>
             </Link>
-            <Link to={createPageUrl(`PetQR?id=${pet.id}`)}>
+            <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
               <Button variant="outline" className="gap-2 border-gray-200">
                 <QrCode className="w-4 h-4" />
               </Button>

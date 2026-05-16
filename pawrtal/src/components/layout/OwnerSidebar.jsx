@@ -16,8 +16,10 @@ import {
   Heart,
   Plus,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import NotificationPanel from '@/components/dashboard/NotificationPanel';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
@@ -25,6 +27,7 @@ const navItems = [
   { label: 'Appointments', icon: Calendar, page: 'Appointments' },
   { label: 'Health Records', icon: Syringe, page: 'HealthRecords' },
   { label: 'Pet Journal', icon: BookOpen, page: 'Journal' },
+  { label: 'Messages', icon: MessageSquare, page: 'Messages' },
 ];
 
 const bottomItems = [
@@ -58,14 +61,17 @@ export default function OwnerSidebar({ user, children }) {
       </div>
 
       {/* User info */}
-      <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {user?.full_name?.[0] || '?'}
+      <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {user?.full_name?.[0] || '?'}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-amber-900 text-sm truncate">{user?.full_name || 'Pet Parent'}</p>
+            <p className="text-amber-600 text-xs truncate">Pet Owner</p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-amber-900 text-sm truncate">{user?.full_name || 'Pet Parent'}</p>
-          <p className="text-amber-600 text-xs truncate">Pet Owner</p>
-        </div>
+        <NotificationPanel userEmail={user?.email} accentColor="amber" alignPopover="left" />
       </div>
 
       {/* Nav */}
@@ -122,7 +128,7 @@ export default function OwnerSidebar({ user, children }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white">
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
                 Sign Out
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -161,11 +167,14 @@ export default function OwnerSidebar({ user, children }) {
               alt="PAWRTAL" className="w-7 h-7 object-contain" />
             <span className="font-bold text-amber-900 tracking-wider text-sm">PAWRTAL</span>
           </div>
-          <Link to={createPageUrl('Settings')}>
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
-              {user?.full_name?.[0] || '?'}
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            <NotificationPanel userEmail={user?.email} accentColor="amber" />
+            <Link to={createPageUrl('Settings')}>
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
+                {user?.full_name?.[0] || '?'}
+              </div>
+            </Link>
+          </div>
         </header>
 
         <main className="flex-1">

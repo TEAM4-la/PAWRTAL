@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { api } from '@/api/apiClient';
 import {
   LayoutDashboard, Calendar, Users, Stethoscope, BarChart2,
-  Settings, LogOut, Menu, ShieldCheck, ChevronRight,
+  Settings, LogOut, Menu, ShieldCheck, ChevronRight, UserPlus,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -82,6 +82,22 @@ export default function AdminSidebar({ children, currentUser }) {
             </Link>
           );
         })}
+        <Link to="/staff/create-account" onClick={() => setOpen(false)}>
+          <div
+            className={`relative ml-2 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer
+              before:absolute before:-left-2 before:top-1/2 before:-translate-y-1/2 before:h-8 before:rounded-r-full before:transition-all before:duration-300
+              ${path.startsWith('/staff/create-account')
+                ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-200 before:w-1 before:bg-violet-500'
+                : 'text-violet-900 hover:bg-violet-50 before:w-0 before:bg-transparent'
+              }`}
+          >
+            <UserPlus
+              className={`flex-shrink-0 ${path.startsWith('/staff/create-account') ? 'text-white' : 'text-violet-400 group-hover:text-violet-600'}`}
+              style={{ width: '18px', height: '18px' }}
+            />
+            <span className="text-sm font-medium flex-1">Create staff account</span>
+          </div>
+        </Link>
       </nav>
 
       {/* Bottom */}
@@ -111,9 +127,7 @@ export default function AdminSidebar({ children, currentUser }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white">
-                Sign Out
-              </AlertDialogAction>
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">Sign Out</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

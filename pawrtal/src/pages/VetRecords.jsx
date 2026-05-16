@@ -106,7 +106,8 @@ export default function VetRecords() {
       vet_name: user?.full_name,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['allHealthRecords']);
+      queryClient.invalidateQueries({ queryKey: ['allHealthRecords'] });
+      queryClient.invalidateQueries({ queryKey: ['healthRecords'] });
       setIsDialogOpen(false);
       resetForm();
       toast.success('Record added successfully!');
@@ -328,7 +329,7 @@ export default function VetRecords() {
 
       {/* Records List */}
       {filteredRecords.length === 0 ? (
-        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+        <Card className="border-dashed border-2">
           <EmptyState
             icon={FileText}
             title="No records found"
@@ -362,7 +363,7 @@ export default function VetRecords() {
                           )}
                         </div>
                         <p className="text-sm text-gray-500">
-                          {pet?.name || 'Unknown pet'} • {format(new Date(record.date), 'MMMM d, yyyy')}
+                          {pet?.name || 'Unknown pet'} • {format(new Date(record.date + 'T00:00:00'), 'MMMM d, yyyy')}
                         </p>
                         {record.description && (
                           <p className="text-sm text-gray-600 mt-2 line-clamp-2">{record.description}</p>

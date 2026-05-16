@@ -133,7 +133,7 @@ export default function Patients() {
 
       {/* Patients List */}
       {filteredPets.length === 0 ? (
-        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+        <Card className="border-dashed border-2">
           <EmptyState
             icon={PawPrint}
             title="No patients found"
@@ -172,7 +172,7 @@ export default function Patients() {
                         {lastVisit && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
-                            Last visit: {format(new Date(lastVisit), 'MMM d, yyyy')}
+                            Last visit: {format(new Date(lastVisit + 'T00:00:00'), 'MMM d, yyyy')}
                           </span>
                         )}
                       </div>

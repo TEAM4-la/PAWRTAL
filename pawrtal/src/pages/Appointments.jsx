@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from "@/components/ui/card";
@@ -47,14 +47,20 @@ export default function Appointments() {
   today.setHours(0, 0, 0, 0);
 
   const upcomingAppointments = appointments.filter(
-    apt => apt.status !== 'cancelled' && apt.status !== 'completed' && isAfter(new Date(apt.date), today)
+    apt => {
+      const status = getAppointmentStatus(apt);
+      return status !== 'cancelled' && status !== 'completed' && status !== 'expired' && !isBefore(new Date(apt.date + 'T00:00:00'), today);
+    }
   );
 
   const pastAppointments = appointments.filter(
-    apt => apt.status === 'completed' || isBefore(new Date(apt.date), today)
+    apt => {
+      const status = getAppointmentStatus(apt);
+      return status === 'completed' || status === 'expired' || isBefore(new Date(apt.date + 'T00:00:00'), today);
+    }
   );
 
-  const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled');
+  const cancelledAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'cancelled');
 
   const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
@@ -91,7 +97,7 @@ export default function Appointments() {
 
         <TabsContent value="upcoming" className="mt-6">
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <EmptyState
                 icon={Calendar}
                 title="No upcoming appointments"

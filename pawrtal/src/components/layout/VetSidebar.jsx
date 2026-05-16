@@ -15,8 +15,11 @@ import {
   Stethoscope,
   ChevronRight,
   Plus,
+  UserPlus,
+  MessageSquare,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import NotificationPanel from '@/components/dashboard/NotificationPanel';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'VetDashboard' },
@@ -24,6 +27,7 @@ const navItems = [
   { label: 'Patients', icon: PawPrint, page: 'Patients' },
   { label: 'Health Records', icon: ClipboardList, page: 'VetRecords' },
   { label: 'Add Record', icon: FileText, page: 'VetAddRecord' },
+  { label: 'Messages', icon: MessageSquare, page: 'Messages' },
 ];
 
 const bottomItems = [
@@ -57,16 +61,19 @@ export default function VetSidebar({ user, children }) {
       </div>
 
       {/* Vet badge */}
-      <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {user?.full_name?.[0] || 'V'}
+      <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {user?.full_name?.[0] || 'V'}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-teal-900 text-sm truncate">Dr. {user?.full_name?.split(' ').pop() || 'Veterinarian'}</p>
+            <p className="text-teal-600 text-xs truncate flex items-center gap-1">
+              <Stethoscope className="w-3 h-3" /> Veterinarian
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-teal-900 text-sm truncate">Dr. {user?.full_name?.split(' ').pop() || 'Veterinarian'}</p>
-          <p className="text-teal-600 text-xs truncate flex items-center gap-1">
-            <Stethoscope className="w-3 h-3" /> Veterinarian
-          </p>
-        </div>
+        <NotificationPanel userEmail={user?.email} accentColor="teal" alignPopover="left" />
       </div>
 
       {/* Quick action */}
@@ -133,7 +140,7 @@ export default function VetSidebar({ user, children }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 text-white">
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">
                 Sign Out
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -172,8 +179,11 @@ export default function VetSidebar({ user, children }) {
               alt="PAWRTAL" className="w-7 h-7 object-contain" />
             <span className="font-bold text-teal-900 tracking-wider text-sm">PAWRTAL</span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
-            {user?.full_name?.[0] || 'V'}
+          <div className="flex items-center gap-2">
+            <NotificationPanel userEmail={user?.email} accentColor="teal" />
+            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
+              {user?.full_name?.[0] || 'V'}
+            </div>
           </div>
         </header>
 
