@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { 
   Plus, 
   BookOpen, 
@@ -45,7 +44,7 @@ const entryTypes = [
   { value: 'behavior', label: 'Behavior', icon: Heart, color: 'bg-purple-100 text-purple-700' },
   { value: 'symptom', label: 'Symptom', icon: AlertCircle, color: 'bg-red-100 text-red-700' },
   { value: 'weight', label: 'Weight', icon: Weight, color: 'bg-teal-100 text-teal-700' },
-  { value: 'general', label: 'General', icon: BookOpen, color: 'bg-gray-100 text-gray-700' },
+  { value: 'general', label: 'General', icon: BookOpen, color: 'bg-yellow-100 text-yellow-700' },
 ];
 
 const moodOptions = [
@@ -68,14 +67,6 @@ export default function Journal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleBack = () => {
-    if (user?.user_type === 'veterinarian') {
-      navigate(createPageUrl('VetDashboard'));
-      return;
-    }
-    navigate(createPageUrl('Dashboard'));
-  };
   const [selectedPet, setSelectedPet] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [formData, setFormData] = useState({
@@ -135,6 +126,9 @@ export default function Journal() {
         mood: '',
       });
       toast.success('Journal entry added!');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to add entry');
     }
   });
 
@@ -160,9 +154,13 @@ export default function Journal() {
     return moodOptions.find(m => m.value === mood);
   };
 
+  const currentYear = new Date().getFullYear();
+  const minDate = `${currentYear}-01-01`;
+  const maxDate = `${currentYear}-12-31`;
+
   const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={handleBack} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
+      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -200,6 +198,8 @@ export default function Journal() {
                   <Label className="text-sm font-medium">Date *</Label>
                   <Input
                     type="date"
+                    min={minDate}
+                    max={maxDate}
                     value={formData.date}
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
                     className="mt-1.5"
@@ -313,7 +313,7 @@ export default function Journal() {
 
       {/* Entries */}
       {entries.length === 0 ? (
-        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+        <Card className="border-dashed border-2">
           <EmptyState
             icon={BookOpen}
             title="No journal entries yet"
@@ -348,7 +348,7 @@ export default function Journal() {
                         )}
                       </div>
                       <p className="text-sm text-gray-500 mb-2">
-                        {getPetName(entry.pet_id)} • {format(new Date(entry.date), 'MMMM d, yyyy')}
+                        {getPetName(entry.pet_id)} • {format(new Date(entry.date + 'T00:00:00'), 'MMMM d, yyyy')}
                       </p>
                       {entry.content && (
                         <p className="text-gray-600">{entry.content}</p>

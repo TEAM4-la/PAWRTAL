@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, PawPrint, ChevronLeft } from 'lucide-react';
+import { Search, PawPrint } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 
 const speciesColors = {
@@ -20,7 +18,6 @@ const speciesColors = {
 };
 
 export default function AdminPatients() {
-  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
   const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
@@ -35,9 +32,6 @@ export default function AdminPatients() {
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-6 max-w-6xl mx-auto">
-        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">All Patients</h1>
           <p className="text-gray-500 mt-1">{pets.length} pets registered in the clinic</p>
@@ -82,7 +76,7 @@ export default function AdminPatients() {
                   {age !== null && <p><span className="text-gray-400">Age:</span> {age} yr{age !== 1 ? 's' : ''}</p>}
                   <p><span className="text-gray-400">Owner:</span> <span className="truncate">{pet.owner_email}</span></p>
                   <p><span className="text-gray-400">Visits:</span> {petAppts.length}</p>
-                  {lastAppt && <p><span className="text-gray-400">Last visit:</span> {format(new Date(lastAppt.date), 'MMM d, yyyy')}</p>}
+                  {lastAppt && <p><span className="text-gray-400">Last visit:</span> {format(new Date(lastAppt.date + 'T00:00:00'), 'MMM d, yyyy')}</p>}
                 </div>
               </Card>
             );

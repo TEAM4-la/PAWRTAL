@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ArrowLeft, 
-  Edit, 
-  QrCode, 
-  Calendar, 
-  Syringe, 
-  Pill, 
+import {
+  ArrowLeft,
+  Edit,
+  QrCode,
+  Calendar,
+  Syringe,
+  Pill,
+  Scissors,
   FileText,
   Clock,
   Weight,
@@ -25,7 +26,7 @@ import {
   AlertTriangle,
   Trash2
 } from 'lucide-react';
-import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fns';
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -53,6 +54,8 @@ export default function PetProfile() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const petId = urlParams.get('id');
+
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
 
   const { data: pet, isLoading: petLoading } = useQuery({
     queryKey: ['pet', petId],
@@ -85,6 +88,12 @@ export default function PetProfile() {
     enabled: !!petId,
   });
 
+  const { data: groomingRecords = [] } = useQuery({
+    queryKey: ['groomingRecords', petId],
+    queryFn: () => api.entities.GroomingRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date'),
+    enabled: !!petId,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => api.entities.Pet.delete(petId),
     onSuccess: () => {
@@ -104,7 +113,7 @@ export default function PetProfile() {
 
   if (petLoading) {
     return (
-      <OwnerSidebar user={null}>
+      <OwnerSidebar user={user}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -114,7 +123,7 @@ export default function PetProfile() {
 
   if (!pet) {
     return (
-      <OwnerSidebar user={null}>
+      <OwnerSidebar user={user}>
         <div className="p-6 text-center">
           <p className="text-gray-500">Pet not found</p>
           <Link to={createPageUrl('MyPets')}>
@@ -167,7 +176,7 @@ export default function PetProfile() {
             </div>
 
             <div className="flex gap-2 sm:pb-2">
-              <Link to={createPageUrl(`PetQR?id=${pet.id}`)}>
+              <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
                 <Button variant="outline" className="gap-2">
                   <QrCode className="w-4 h-4" />
                   QR Code
@@ -266,6 +275,10 @@ export default function PetProfile() {
             <FileText className="w-4 h-4" />
             Records
           </TabsTrigger>
+          <TabsTrigger value="grooming" className="gap-2">
+            <Scissors className="w-4 h-4" />
+            Grooming
+          </TabsTrigger>
           <TabsTrigger value="appointments" className="gap-2">
             <Calendar className="w-4 h-4" />
             History
@@ -282,7 +295,12 @@ export default function PetProfile() {
                 <p className="text-gray-500 text-center py-8">No vaccination records yet</p>
               ) : (
                 <div className="space-y-3">
-                  {vaccinations.map((vax) => (
+                  {vaccinations.map((vax) => {
+                    const isLatest = !vaccinations.some(v => 
+                      v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
+                      new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+                    );
+                    return (
                     <div key={vax.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -291,17 +309,22 @@ export default function PetProfile() {
                         <div>
                           <p className="font-medium text-gray-900">{vax.vaccine_name}</p>
                           <p className="text-sm text-gray-500">
-                            {format(new Date(vax.date_administered), 'MMM d, yyyy')}
+                            {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
-                      {vax.next_due_date && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          Next: {format(new Date(vax.next_due_date), 'MMM d, yyyy')}
+                      {vax.next_due_date && isLatest && (
+                        <Badge variant="outline" className={isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "bg-red-50 text-red-700 border-red-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
+                          {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "Overdue:" : "Next dose:"} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                        </Badge>
+                      )}
+                      {vax.next_due_date && !isLatest && (
+                        <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                          Renewed
                         </Badge>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </CardContent>
@@ -318,22 +341,25 @@ export default function PetProfile() {
                 <p className="text-gray-500 text-center py-8">No medications</p>
               ) : (
                 <div className="space-y-3">
-                  {medications.map((med) => (
+                  {medications.map((med) => {
+                    const isStillActive = med.is_active && (!med.end_date || new Date(med.end_date + 'T00:00:00') >= new Date());
+                    return (
                     <div key={med.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${med.is_active ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          <Pill className={`w-5 h-5 ${med.is_active ? 'text-green-600' : 'text-gray-400'}`} />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          <Pill className={`w-5 h-5 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{med.name}</p>
                           <p className="text-sm text-gray-500">{med.dosage} • {med.frequency}</p>
                         </div>
                       </div>
-                      <Badge variant="outline" className={med.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}>
-                        {med.is_active ? 'Active' : 'Completed'}
+                      <Badge variant="outline" className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}>
+                        {isStillActive ? 'Active' : 'Completed'}
                       </Badge>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -359,7 +385,7 @@ export default function PetProfile() {
                         <div>
                           <p className="font-medium text-gray-900">{record.title}</p>
                           <p className="text-sm text-gray-500">
-                            {record.record_type.replace('_', ' ')} • {format(new Date(record.date), 'MMM d, yyyy')}
+                            {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
@@ -367,6 +393,46 @@ export default function PetProfile() {
                         <a href={record.file_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">View</Button>
                         </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="grooming">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Grooming History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {groomingRecords.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No grooming records yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {groomingRecords.map((record) => (
+                    <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                          <Scissors className="w-5 h-5 text-pink-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</p>
+                          <p className="text-sm text-gray-500">
+                            {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
+                            {record.groomer_name && ` \u2022 By: ${record.groomer_name}`}
+                          </p>
+                          {record.coat_style_notes && (
+                            <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      {record.coat_condition_before && (
+                        <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize">
+                          {record.coat_condition_before.replace(/_/g, ' ')}
+                        </Badge>
                       )}
                     </div>
                   ))}
@@ -386,7 +452,9 @@ export default function PetProfile() {
                 <p className="text-gray-500 text-center py-8">No appointments yet</p>
               ) : (
                 <div className="space-y-3">
-                  {appointments.map((apt) => (
+                  {appointments.map((apt) => {
+                    const status = getAppointmentStatus(apt);
+                    return (
                     <div key={apt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -395,23 +463,24 @@ export default function PetProfile() {
                         <div>
                           <p className="font-medium text-gray-900 capitalize">{apt.type.replace('_', ' ')}</p>
                           <p className="text-sm text-gray-500">
-                            {format(new Date(apt.date), 'MMM d, yyyy')} at {apt.time}
+                            {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
                           </p>
                         </div>
                       </div>
                       <Badge 
                         variant="outline" 
                         className={
-                          apt.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                          apt.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
-                          apt.status === 'confirmed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                          status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                          status === 'confirmed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          status === 'expired' ? 'bg-gray-50 text-gray-700 border-gray-200' :
                           'bg-amber-50 text-amber-700 border-amber-200'
                         }
                       >
-                        {apt.status}
+                        {status}
                       </Badge>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </CardContent>
@@ -459,7 +528,7 @@ export default function PetProfile() {
   );
 
   return (
-    <OwnerSidebar user={null}>
+    <OwnerSidebar user={user}>
       {content}
     </OwnerSidebar>
   );

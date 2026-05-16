@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import VetSidebar from '@/components/layout/VetSidebar';
@@ -18,7 +18,6 @@ import {
   CheckCircle,
   Stethoscope
 } from 'lucide-react';
-import NotificationPanel from '@/components/dashboard/NotificationPanel';
 import { format, isToday, isTomorrow, isAfter } from 'date-fns';
 
 export default function VetDashboard() {
@@ -62,16 +61,28 @@ export default function VetDashboard() {
   }
 
   const todayAppointments = appointments.filter(
-    apt => isToday(new Date(apt.date)) && apt.status !== 'cancelled'
+    apt => {
+      const status = getAppointmentStatus(apt);
+      return isToday(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
+    }
   );
 
   const tomorrowAppointments = appointments.filter(
-    apt => isTomorrow(new Date(apt.date)) && apt.status !== 'cancelled'
+    apt => {
+      const status = getAppointmentStatus(apt);
+      return isTomorrow(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
+    }
   );
 
-  const pendingAppointments = appointments.filter(apt => apt.status === 'pending');
-  const completedToday = todayAppointments.filter(apt => apt.status === 'completed');
-  const upcomingToday = todayAppointments.filter(apt => apt.status !== 'completed');
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const pendingAppointments = appointments.filter(apt => {
+    const status = getAppointmentStatus(apt);
+    return status === 'pending' && new Date(apt.date + 'T00:00:00') >= todayStart;
+  });
+  const completedToday = todayAppointments.filter(apt => getAppointmentStatus(apt) === 'completed');
+  const upcomingToday = todayAppointments.filter(apt => getAppointmentStatus(apt) !== 'completed');
 
   return (
     <VetSidebar user={user}>
@@ -84,7 +95,6 @@ export default function VetDashboard() {
           </h1>
           <p className="text-gray-500 mt-1">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
         </div>
-        {user && <NotificationPanel userEmail={user.email} accentColor="teal" />}
       </div>
 
       {/* Stats Grid */}
@@ -146,7 +156,7 @@ export default function VetDashboard() {
           </div>
 
           {todayAppointments.length === 0 ? (
-              <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <CardContent className="py-12 text-center">
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No appointments scheduled for today</p>
@@ -184,7 +194,7 @@ export default function VetDashboard() {
           </div>
 
           {tomorrowAppointments.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+            <Card className="border-dashed border-2">
               <CardContent className="py-12 text-center">
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No appointments scheduled for tomorrow</p>

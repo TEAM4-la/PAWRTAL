@@ -5,15 +5,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import MiniCalendar from "@/components/shared/MiniCalendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
+import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { toast } from "sonner";
 
 export default function VetAppointments() {
@@ -84,7 +84,7 @@ export default function VetAppointments() {
 
     if (selectedDate) {
       filtered = filtered.filter(apt => 
-        format(new Date(apt.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+        format(new Date(apt.date + 'T00:00:00'), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
       );
     }
 
@@ -92,33 +92,47 @@ export default function VetAppointments() {
   };
 
   const todayAppointments = filterAppointments(
-    appointments.filter(apt => isToday(new Date(apt.date)) && apt.status !== 'cancelled')
+    appointments.filter(apt => {
+      const status = getAppointmentStatus(apt);
+      return isToday(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
+    })
   );
 
   const tomorrowAppointments = filterAppointments(
-    appointments.filter(apt => isTomorrow(new Date(apt.date)) && apt.status !== 'cancelled')
+    appointments.filter(apt => {
+      const status = getAppointmentStatus(apt);
+      return isTomorrow(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
+    })
   );
 
   const pendingAppointments = filterAppointments(
-    appointments.filter(apt => apt.status === 'pending' && isAfter(new Date(apt.date), today))
+    appointments.filter(apt => {
+      const aptDate = new Date(apt.date + 'T00:00:00');
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const status = getAppointmentStatus(apt);
+      return status === 'pending' && aptDate >= todayStart;
+    })
   );
 
   const upcomingAppointments = filterAppointments(
-    appointments.filter(apt => 
-      apt.status !== 'cancelled' && 
-      apt.status !== 'completed' && 
-      isAfter(new Date(apt.date), today)
-    )
+    appointments.filter(apt => {
+      const status = getAppointmentStatus(apt);
+      return status !== 'cancelled' && 
+      status !== 'completed' && 
+      status !== 'expired' && 
+      !isBefore(new Date(apt.date + 'T00:00:00'), today);
+    })
   );
 
   const completedAppointments = filterAppointments(
-    appointments.filter(apt => apt.status === 'completed')
+    appointments.filter(apt => getAppointmentStatus(apt) === 'completed')
   );
 
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
-        <Card className="border-dashed border-2 border-gray-200 shadow-none bg-white">
+        <Card className="border-dashed border-2">
           <EmptyState
             icon={CalendarIcon}
             title="No appointments found"
@@ -179,8 +193,13 @@ export default function VetAppointments() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
-            <MiniCalendar selected={selectedDate} onSelect={setSelectedDate} />
-             {selectedDate && (
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              initialFocus
+            />
+            {selectedDate && (
               <div className="p-3 border-t">
                 <Button variant="ghost" size="sm" onClick={() => setSelectedDate(null)} className="w-full">
                   Clear filter

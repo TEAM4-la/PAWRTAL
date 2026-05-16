@@ -22,6 +22,8 @@ export default function PetQR() {
   const urlParams = new URLSearchParams(window.location.search);
   const petId = urlParams.get('id');
 
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
+
   const { data: pet, isLoading } = useQuery({
     queryKey: ['pet', petId],
     queryFn: () => api.entities.Pet.filter({ id: petId }),
@@ -29,15 +31,30 @@ export default function PetQR() {
     select: (data) => data[0],
   });
 
-  const getQRCodeUrl = () => {
+  const getPublicBaseUrl = () => {
+    const raw =
+      typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_PUBLIC_BASE_URL != null
+        ? String(import.meta.env.VITE_PUBLIC_BASE_URL)
+        : '';
+    const trimmed = raw.trim().replace(/\/$/, '');
+    return trimmed || window.location.origin;
+  };
+
+  /** Full URL encoded in the QR — opens the public pet profile page (for anyone who scans). */
+  const getPublicProfileUrl = () => {
     if (!pet) return '';
-    const profileUrl = `${window.location.origin}${createPageUrl(`PublicPetProfile?id=${pet.id}`)}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(profileUrl)}&color=0d9488`;
+    return `${getPublicBaseUrl()}${createPageUrl(`PublicPetProfile?id=${pet.id}`)}`;
+  };
+
+  const getQRCodeImageServiceUrl = () => {
+    const target = getPublicProfileUrl();
+    if (!target) return '';
+    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(target)}&color=0d9488`;
   };
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(getQRCodeUrl());
+      const response = await fetch(getQRCodeImageServiceUrl());
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -52,27 +69,28 @@ export default function PetQR() {
   };
 
   const handleShare = async () => {
-    const profileUrl = `${window.location.origin}${createPageUrl(`PublicPetProfile?id=${pet?.id}`)}`;
-    
+    const pageUrl = getPublicProfileUrl();
+    if (!pageUrl) return;
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${pet?.name}'s Pet Profile`,
-          text: `Check out ${pet?.name}'s digital pet profile on PAWRTAL`,
-          url: profileUrl,
+          title: `${pet?.name}'s public pet profile — PAWRTAL`,
+          text: `Open ${pet?.name}'s public pet profile on PAWRTAL`,
+          url: pageUrl,
         });
-      } catch (err) {
+      } catch {
         // User cancelled sharing
       }
     } else {
-      await navigator.clipboard.writeText(profileUrl);
+      await navigator.clipboard.writeText(pageUrl);
       toast.success('Link copied to clipboard!');
     }
   };
 
   if (isLoading) {
     return (
-      <OwnerSidebar user={null}>
+      <OwnerSidebar user={user}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="w-12 h-12 border-4 border-amber-700 border-t-transparent rounded-full animate-spin" />
         </div>
@@ -82,7 +100,7 @@ export default function PetQR() {
 
   if (!pet) {
     return (
-      <OwnerSidebar user={null}>
+      <OwnerSidebar user={user}>
         <div className="p-6 text-center">
           <p className="text-gray-500">Pet not found</p>
           <Link to={createPageUrl('MyPets')}>
@@ -111,7 +129,7 @@ export default function PetQR() {
           <QrCode className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Digital Pet ID</h1>
-        <p className="text-gray-500">Scan this QR code to access {pet.name}'s profile</p>
+        <p className="text-gray-500">Scan to open {pet.name}'s public pet profile on PAWRTAL</p>
       </div>
 
       <Card className="overflow-hidden border-0 shadow-xl">
@@ -133,11 +151,19 @@ export default function PetQR() {
 
         <CardContent className="p-8 flex flex-col items-center">
           <div className="bg-white p-4 rounded-2xl shadow-inner border-2 border-gray-100">
-            <img 
-              src={getQRCodeUrl()} 
-              alt="QR Code" 
-              className="rounded-lg w-[280px] h-[280px]"
-            />
+            <a
+              href={getPublicProfileUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              title="Open Pet QR link"
+            >
+              <img
+                src={getQRCodeImageServiceUrl()}
+                alt={`QR code linking to ${pet.name}'s public pet profile`}
+                className="rounded-lg w-[280px] h-[280px]"
+              />
+            </a>
           </div>
 
           <p className="text-xs text-gray-400 mt-4 text-center">
@@ -177,7 +203,7 @@ export default function PetQR() {
   );
 
   return (
-    <OwnerSidebar user={null}>
+    <OwnerSidebar user={user}>
       {content}
     </OwnerSidebar>
   );

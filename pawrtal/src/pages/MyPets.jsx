@@ -107,8 +107,7 @@ export default function MyPets() {
           description="Add your first furry friend to start tracking their health and appointments"
           actionLabel="Add Your First Pet"
           onAction={() => navigate(createPageUrl('AddPet'))}
-          className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16"
-          
+          className="bg-white rounded-2xl border border-dashed border-gray-300"
         />
       ) : filteredPets.length === 0 ? (
         <EmptyState
@@ -147,4 +146,5 @@ export default function MyPets() {
     <OwnerSidebar user={user}>
       {content}
     </OwnerSidebar>
-  );}
+  );
+}

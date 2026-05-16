@@ -19,6 +19,7 @@ import VetPatientDetail from './pages/VetPatientDetail';
 import VetRecords from './pages/VetRecords';
 import Dashboard from './pages/Dashboard';
 import Welcome from './pages/Welcome';
+import Messages from './pages/Messages';
 
 
 export const PAGES = {
@@ -43,6 +44,7 @@ export const PAGES = {
     "VetRecords": VetRecords,
     "Dashboard": Dashboard,
     "Welcome": Welcome,
+    "Messages": Messages,
 }
 
 export const pagesConfig = {

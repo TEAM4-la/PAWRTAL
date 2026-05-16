@@ -28,7 +28,7 @@ const typeColors = {
   reminder: 'bg-amber-100 text-amber-600',
 };
 
-export default function NotificationPanel({ userEmail, accentColor = 'amber' }) {
+export default function NotificationPanel({ userEmail, accentColor = 'amber', alignPopover = 'right' }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -36,7 +36,7 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber' }) 
     queryKey: ['notifications', userEmail],
     queryFn: () => api.entities.Notification.filter({ user_email: userEmail }, '-created_date', 30),
     enabled: !!userEmail,
-    refetchInterval: 30000,
+    refetchInterval: 3000,
   });
 
   const markReadMutation = useMutation({
@@ -69,8 +69,9 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber' }) 
       >
         <Bell className={cn("w-5 h-5", bellColor)} />
         {unreadCount > 0 && (
-          <span className={cn("absolute -top-1 -right-1 w-5 h-5 text-white text-xs font-bold rounded-full flex items-center justify-center", badgeBg)}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
           </span>
         )}
       </button>
@@ -91,7 +92,10 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber' }) 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 top-10 z-50 w-[460px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+              className={cn(
+                "absolute top-10 z-50 w-[460px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden",
+                alignPopover === 'left' ? 'left-0' : 'right-0'
+              )}
             >
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50/50">
