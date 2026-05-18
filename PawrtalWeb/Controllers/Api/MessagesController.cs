@@ -87,9 +87,11 @@ public class MessagesController : ControllerBase
 
         var message = new Message
         {
+            Id = Guid.NewGuid(),
             SenderEmail = senderEmail,
             ReceiverEmail = request.ReceiverEmail.Trim(),
             Content = request.Content.Trim(),
+            CreatedAt = DateTime.UtcNow
         };
 
         _db.Messages.Add(message);

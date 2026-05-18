@@ -36,6 +36,7 @@ namespace PawtralWeb.Services
 
             _db.Notifications.Add(new Notification
             {
+                Id = Guid.NewGuid(),
                 UserEmail = email,
                 Type = type,
                 Title = title,

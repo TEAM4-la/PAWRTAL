@@ -68,6 +68,7 @@ public class AppointmentsController : ControllerBase
 
         var appt = new Appointment
         {
+            Id = Guid.NewGuid(),
             PetId = petId,
             OwnerEmail = request.OwnerEmail,
             VetEmail = request.VetEmail,
