@@ -31,7 +31,9 @@ import {
   Bird,
   Rabbit,
   Fish,
-  ChevronLeft
+  ChevronLeft,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from "sonner";
@@ -69,6 +71,7 @@ export default function Journal() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedPet, setSelectedPet] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
+  const [editingEntry, setEditingEntry] = useState(null);
   const [formData, setFormData] = useState({
     pet_id: '',
     entry_type: 'general',
@@ -117,14 +120,7 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries(['journalEntries']);
       setIsDialogOpen(false);
-      setFormData({
-        pet_id: '',
-        entry_type: 'general',
-        title: '',
-        content: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        mood: '',
-      });
+      resetForm();
       toast.success('Journal entry added!');
     },
     onError: (err) => {
@@ -132,13 +128,72 @@ export default function Journal() {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => api.entities.JournalEntry.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['journalEntries']);
+      setIsDialogOpen(false);
+      resetForm();
+      toast.success('Journal entry updated!');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to update entry');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.entities.JournalEntry.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['journalEntries']);
+      toast.success('Journal entry deleted!');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to delete entry');
+    }
+  });
+
+  const resetForm = () => {
+    setEditingEntry(null);
+    setFormData({
+      pet_id: '',
+      entry_type: 'general',
+      title: '',
+      content: '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      mood: '',
+    });
+  };
+
+  const handleEditClick = (entry) => {
+    setEditingEntry(entry);
+    setFormData({
+      pet_id: entry.pet_id,
+      entry_type: entry.entry_type,
+      title: entry.title,
+      content: entry.content || '',
+      date: entry.date,
+      mood: entry.mood || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (id) => {
+    if (window.confirm('Are you sure you want to delete this journal entry?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.pet_id || !formData.title) {
       toast.error('Please fill in required fields');
       return;
     }
-    createMutation.mutate(formData);
+    if (editingEntry) {
+      updateMutation.mutate({ id: editingEntry.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
   };
 
   const getPetName = (petId) => {
@@ -168,7 +223,10 @@ export default function Journal() {
           <h1 className="text-3xl font-bold text-gray-900">Pet Journal</h1>
           <p className="text-gray-500 mt-1">Track daily activities and observations</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
               <Plus className="w-5 h-5" />
@@ -177,7 +235,7 @@ export default function Journal() {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>New Journal Entry</DialogTitle>
+              <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-5 pt-4">
               <div className="grid grid-cols-2 gap-4">
@@ -273,11 +331,14 @@ export default function Journal() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  resetForm();
+                }} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
-                  {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
+                  {createMutation.isPending || updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
                 </Button>
               </div>
             </form>
@@ -337,15 +398,35 @@ export default function Journal() {
                       <TypeIcon className={cn("w-6 h-6", typeConfig.color.split(' ')[1])} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h4 className="font-semibold text-gray-900">{entry.title}</h4>
-                        <Badge className={typeConfig.color}>{typeConfig.label}</Badge>
-                        {moodConfig && (
-                          <Badge variant="outline" className="gap-1">
-                            <moodConfig.icon className={cn("w-3 h-3", moodConfig.color)} />
-                            {moodConfig.label}
-                          </Badge>
-                        )}
+                      <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold text-gray-900">{entry.title}</h4>
+                          <Badge className={typeConfig.color}>{typeConfig.label}</Badge>
+                          {moodConfig && (
+                            <Badge variant="outline" className="gap-1">
+                              <moodConfig.icon className={cn("w-3 h-3", moodConfig.color)} />
+                              {moodConfig.label}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-8 h-8 text-gray-400 hover:text-teal-600"
+                            onClick={() => handleEditClick(entry)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-8 h-8 text-gray-400 hover:text-red-600"
+                            onClick={() => handleDeleteClick(entry.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-sm text-gray-500 mb-2">
                         {getPetName(entry.pet_id)} • {format(new Date(entry.date + 'T00:00:00'), 'MMMM d, yyyy')}

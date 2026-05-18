@@ -20,7 +20,7 @@ public class JournalEntriesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<JournalEntryDto>>> Filter([FromQuery(Name = "pet_id")] Guid? petId, [FromQuery] string? order)
     {
-        IQueryable<JournalEntry> q = _db.JournalEntries.AsNoTracking();
+        IQueryable<JournalEntry> q = _db.JournalEntries.AsNoTracking().Where(e => !e.IsDeleted);
 
         if (petId is not null)
             q = q.Where(e => e.PetId == petId.Value);
@@ -59,6 +59,41 @@ public class JournalEntriesController : ControllerBase
         _db.JournalEntries.Add(entry);
         await _db.SaveChangesAsync();
         return Ok(ToDto(entry));
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<JournalEntryDto>> Update([FromRoute] Guid id, [FromBody] JournalEntryCreateRequest request)
+    {
+        var entry = await _db.JournalEntries.FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+        if (entry is null) return NotFound();
+
+        if (request.Title is not null) entry.Title = request.Title;
+        if (request.Content is not null) entry.Content = request.Content;
+        if (request.EntryType is not null) entry.EntryType = request.EntryType;
+        if (request.Mood is not null) entry.Mood = request.Mood;
+
+        if (request.Date is not null)
+        {
+            if (!DateOnly.TryParse(request.Date, out var date))
+                return BadRequest(new { error = "date must be yyyy-MM-dd" });
+            entry.Date = date;
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(ToDto(entry));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<ActionResult> Delete([FromRoute] Guid id)
+    {
+        var entry = await _db.JournalEntries.FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+        if (entry is null) return NotFound();
+
+        entry.IsDeleted = true;
+        entry.DeletedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return NoContent();
     }
 
     private static JournalEntryDto ToDto(JournalEntry e) => new()

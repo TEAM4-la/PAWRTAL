@@ -237,6 +237,12 @@ export const api = {
       async create(data) {
         return await http('/api/journal-entries', { method: 'POST', body: data });
       },
+      async update(id, data) {
+        return await http(`/api/journal-entries/${id}`, { method: 'PUT', body: data });
+      },
+      async delete(id) {
+        return await http(`/api/journal-entries/${id}`, { method: 'DELETE' });
+      },
     },
     HealthRecord: {
       async filter(opts = {}, order, limit) {
