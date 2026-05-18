@@ -45,6 +45,7 @@ builder.Services.AddDbContext<PawrtalDbContext>(options =>
 });
 
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddHostedService<AppointmentExpirationService>();
 
 var app = builder.Build();
 

@@ -244,9 +244,25 @@ public class AppointmentsController : ControllerBase
     private static AppointmentDto ToDto(Appointment a) 
     {
         var status = a.Status;
-        if (status == "pending" && a.Date < DateOnly.FromDateTime(DateTime.UtcNow))
+        if (status == "pending")
         {
-            status = "expired";
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var now = DateTime.Now;
+
+            if (a.Date < today)
+            {
+                status = "expired";
+            }
+            else if (a.Date == today)
+            {
+                if (DateTime.TryParseExact($"{a.Date:yyyy-MM-dd} {a.TimeSlot}", "yyyy-MM-dd hh:mm tt", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var apptDateTime))
+                {
+                    if (apptDateTime <= now)
+                    {
+                        status = "expired";
+                    }
+                }
+            }
         }
 
         return new AppointmentDto
