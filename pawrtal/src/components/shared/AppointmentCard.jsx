@@ -1,7 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Calendar, Clock, User, Stethoscope, Check, X, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
@@ -55,6 +65,9 @@ export default function AppointmentCard({
   onComplete,
   isVetView = false 
 }) {
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  
   const derivedStatus = getAppointmentStatus(appointment);
 
   const status = statusConfig[derivedStatus] || statusConfig.pending;
@@ -145,7 +158,7 @@ export default function AppointmentCard({
                   Complete
                 </Button>
               )}
-              {onCancel && (
+              {onCancel && !isVetView && (
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -155,10 +168,60 @@ export default function AppointmentCard({
                   Cancel
                 </Button>
               )}
+              {onCancel && isVetView && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => setIsCancelOpen(true)}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Cancel Dialog (always rendered but controlled via state) */}
+      {isVetView && (
+        <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you sure you want to cancel?</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for cancelling this appointment. The pet owner will see this reason.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input 
+                placeholder="Cancellation reason..." 
+                value={cancelReason} 
+                onChange={(e) => setCancelReason(e.target.value)} 
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Back</Button>
+              <Button 
+                className="!bg-red-600 hover:!bg-red-700 !text-white"
+                disabled={!cancelReason.trim()}
+                onClick={() => {
+                  const newReason = appointment.reason 
+                    ? `${appointment.reason}\n\nCancellation Reason: ${cancelReason}`
+                    : `Cancellation Reason: ${cancelReason}`;
+                  setIsCancelOpen(false);
+                  setCancelReason("");
+                  setTimeout(() => {
+                    onCancel({ ...appointment, reason: newReason });
+                  }, 300);
+                }}
+              >
+                Confirm Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }

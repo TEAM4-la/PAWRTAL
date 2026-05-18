@@ -60,7 +60,7 @@ export default function VetAppointments() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled', reason: apt.reason }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment cancelled');

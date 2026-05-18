@@ -175,17 +175,31 @@ public class AppointmentsController : ControllerBase
             string petName = pet?.Name ?? "Your pet";
             string petNameForVet = pet?.Name ?? "A pet";
 
+            var currentUserEmail = ApiUserContext.GetUserEmail(Request);
+
             string msg = notifyTime 
                 ? $"The appointment for {petName} has been rescheduled to {appt.Date:MMM d, yyyy} at {appt.TimeSlot}."
                 : $"The appointment for {petName} on {appt.Date:MMM d, yyyy} is now {appt.Status}.";
 
-            await _notifications.CreateNotificationAsync(
-                appt.OwnerEmail,
-                "appointment",
-                "Appointment Updated",
-                msg,
-                "appointments"
-            );
+            if (notifyStatus && appt.Status == "cancelled" && !string.IsNullOrWhiteSpace(request.Reason))
+            {
+                var cancelIndex = request.Reason.LastIndexOf("Cancellation Reason: ");
+                if (cancelIndex >= 0)
+                {
+                    msg += $" {request.Reason.Substring(cancelIndex)}";
+                }
+            }
+
+            if (!string.Equals(appt.OwnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                await _notifications.CreateNotificationAsync(
+                    appt.OwnerEmail,
+                    "appointment",
+                    "Appointment Updated",
+                    msg,
+                    "appointments"
+                );
+            }
 
             // Notify vet if cancelled
             if (notifyStatus && appt.Status == "cancelled")
@@ -193,20 +207,23 @@ public class AppointmentsController : ControllerBase
                 string vetMsg = $"The appointment for {petNameForVet} on {appt.Date:MMM d, yyyy} has been cancelled.";
                 if (!string.IsNullOrWhiteSpace(appt.VetEmail))
                 {
-                    await _notifications.CreateNotificationAsync(
-                        appt.VetEmail,
-                        "appointment",
-                        "Appointment Cancelled",
-                        vetMsg,
-                        "appointments"
-                    );
+                    if (!string.Equals(appt.VetEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _notifications.CreateNotificationAsync(
+                            appt.VetEmail,
+                            "appointment",
+                            "Appointment Cancelled",
+                            vetMsg,
+                            "appointments"
+                        );
+                    }
                 }
                 else
                 {
                     var vets = await _db.Users.Where(u => u.UserType == "veterinarian").ToListAsync();
                     foreach (var vet in vets)
                     {
-                        if (!string.IsNullOrWhiteSpace(vet.Email))
+                        if (!string.IsNullOrWhiteSpace(vet.Email) && !string.Equals(vet.Email, currentUserEmail, StringComparison.OrdinalIgnoreCase))
                         {
                             await _notifications.CreateNotificationAsync(
                                 vet.Email,
