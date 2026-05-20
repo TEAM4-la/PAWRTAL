@@ -84,6 +84,7 @@ public class HealthRecordsController : ControllerBase
 
         var record = new HealthRecord
         {
+            Id = Guid.NewGuid(),
             PetId = petId,
             RecordType = recordType,
             Title = request.Title!,

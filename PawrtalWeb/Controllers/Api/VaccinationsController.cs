@@ -69,6 +69,7 @@ public class VaccinationsController : ControllerBase
 
         var v = new Vaccination
         {
+            Id = Guid.NewGuid(),
             PetId = petId,
             VaccineName = request.VaccineName!,
             DateAdministered = dateAdmin,

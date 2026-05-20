@@ -47,6 +47,7 @@ public class JournalEntriesController : ControllerBase
 
         var entry = new JournalEntry
         {
+            Id = Guid.NewGuid(),
             PetId = petId,
             EntryType = string.IsNullOrWhiteSpace(request.EntryType) ? "general" : request.EntryType!,
             Title = request.Title!,

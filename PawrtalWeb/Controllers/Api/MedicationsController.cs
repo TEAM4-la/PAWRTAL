@@ -75,6 +75,7 @@ public class MedicationsController : ControllerBase
 
         var med = new Medication
         {
+            Id = Guid.NewGuid(),
             PetId = petId,
             Name = request.Name!,
             Dosage = request.Dosage,

@@ -184,7 +184,7 @@ public class AppointmentsController : ControllerBase
 
             if (!string.Equals(appt.OwnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))
             {
-                if (notifyTime || (notifyStatus && (appt.Status == "confirmed" || appt.Status == "cancelled")))
+                if (notifyTime || (notifyStatus && (appt.Status == "confirmed" || appt.Status == "cancelled" || appt.Status == "completed")))
                 {
                     await _notifications.CreateNotificationAsync(
                         appt.OwnerEmail,

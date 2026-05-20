@@ -43,6 +43,7 @@ public class AuthController : ControllerBase
 
         var user = new User
         {
+            Id = Guid.NewGuid(),
             Email = originalEmail,
             FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
             UserType = "pet_owner",
@@ -92,6 +93,7 @@ public class AuthController : ControllerBase
 
         var user = new User
         {
+            Id = Guid.NewGuid(),
             Email = originalEmail,
             FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
             UserType = newType,
@@ -128,13 +130,14 @@ public class AuthController : ControllerBase
             user = null;
         }
 
+        if (user == null)
+            return Unauthorized(new { error = "Invalid email or password." });
 
         if(user.PasswordHash != null)
         {
             if (Utilities.Decrypt(user.PasswordHash) != request.Password)
                 return Unauthorized(new { error = "Invalid email or password." });
         }
-        
 
         return Ok(ToDto(user));
     }
@@ -151,6 +154,7 @@ public class AuthController : ControllerBase
         {
             user = new User
             {
+                Id = Guid.NewGuid(),
                 Email = rawEmail.Trim(),
                 FullName = "Demo User",
                 UserType = requestedUserType ?? "pet_owner",
@@ -183,7 +187,7 @@ public class AuthController : ControllerBase
         var user = await FindUserByEmailAsync(email);
         if (user is null)
         {
-            user = new User { Email = rawEmail.Trim(), CreatedAt = DateTime.UtcNow };
+            user = new User { Id = Guid.NewGuid(), Email = rawEmail.Trim(), CreatedAt = DateTime.UtcNow };
             _db.Users.Add(user);
         }
 

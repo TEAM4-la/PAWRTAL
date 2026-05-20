@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import { useNavigate } from 'react-router-dom';
@@ -69,6 +69,8 @@ export default function Journal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState(null);
   const [selectedPet, setSelectedPet] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
   const [editingEntry, setEditingEntry] = useState(null);
@@ -146,6 +148,8 @@ export default function Journal() {
     onSuccess: () => {
       queryClient.invalidateQueries(['journalEntries']);
       toast.success('Journal entry deleted!');
+      setIsDeleteOpen(false);
+      setEntryToDelete(null);
     },
     onError: (err) => {
       toast.error(err.message || 'Failed to delete entry');
@@ -178,9 +182,8 @@ export default function Journal() {
   };
 
   const handleDeleteClick = (id) => {
-    if (window.confirm('Are you sure you want to delete this journal entry?')) {
-      deleteMutation.mutate(id);
-    }
+    setEntryToDelete(id);
+    setIsDeleteOpen(true);
   };
 
   const handleSubmit = (e) => {
@@ -342,6 +345,34 @@ export default function Journal() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteOpen} onOpenChange={(open) => {
+          setIsDeleteOpen(open);
+          if (!open) setEntryToDelete(null);
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Are you sure you want to delete?</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this journal entry? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4 flex gap-3">
+              <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="bg-red-600 hover:bg-red-700 text-white flex-1"
+                onClick={() => deleteMutation.mutate(entryToDelete)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Delete'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

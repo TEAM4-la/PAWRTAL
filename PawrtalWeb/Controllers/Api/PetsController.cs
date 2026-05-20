@@ -70,6 +70,7 @@ public class PetsController : ControllerBase
 
         var pet = new Pet
         {
+            Id = Guid.NewGuid(),
             OwnerEmail = request.OwnerEmail,
             Name = request.Name.Trim(),
             Species = request.Species.Trim(),
