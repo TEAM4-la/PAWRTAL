@@ -21,15 +21,26 @@ export default function AdminReports() {
   }, {});
   const typeData = Object.entries(byType).map(([name, value]) => ({ name: name.replace('_', ' '), value }));
 
-  // Appointments last 7 days
+  // Appointments last 7 days — broken down by status
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
     const dateStr = format(date, 'yyyy-MM-dd');
+    const dayAppts = appointments.filter(a => a.date === dateStr);
     return {
       date: format(date, 'MMM d'),
-      count: appointments.filter(a => a.date === dateStr).length,
+      Completed: dayAppts.filter(a => a.status === 'completed').length,
+      Cancelled: dayAppts.filter(a => a.status === 'cancelled').length,
+      Expired: dayAppts.filter(a => a.status === 'expired').length,
+      Active: dayAppts.filter(a => !['completed', 'cancelled', 'expired'].includes(a.status)).length,
     };
   });
+
+  const STATUS_COLORS = {
+    Completed: '#10b981',
+    Active: '#7c3aed',
+    Cancelled: '#ef4444',
+    Expired: '#6b7280',
+  };
 
   // Species breakdown
   const bySpecies = pets.reduce((acc, p) => {
@@ -56,7 +67,7 @@ export default function AdminReports() {
             { label: 'Total Appointments', value: appointments.length, icon: Calendar, color: 'text-violet-600', bg: 'bg-violet-50' },
             { label: 'Completion Rate', value: `${completionRate}%`, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
             { label: 'Total Pets', value: pets.length, icon: PawPrint, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'This Week', value: last7.reduce((s, d) => s + d.count, 0), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'This Week', value: last7.reduce((s, d) => s + d.Completed + d.Active + d.Cancelled + d.Expired, 0), icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50' },
           ].map(m => (
             <Card key={m.label} className="border-0 shadow-sm p-5">
               <div className={`w-10 h-10 rounded-xl ${m.bg} flex items-center justify-center mb-3`}>
@@ -72,12 +83,16 @@ export default function AdminReports() {
           {/* Appointments Last 7 Days */}
           <Card className="border-0 shadow-sm p-5">
             <h2 className="font-semibold text-gray-900 mb-4">Appointments — Last 7 Days</h2>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={last7}>
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Active" stackId="a" fill={STATUS_COLORS.Active} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Completed" stackId="a" fill={STATUS_COLORS.Completed} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Cancelled" stackId="a" fill={STATUS_COLORS.Cancelled} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="Expired" stackId="a" fill={STATUS_COLORS.Expired} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>

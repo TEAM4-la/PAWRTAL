@@ -161,9 +161,11 @@ export default function Welcome() {
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </Link>
-                  <button className="btn-outline px-8 h-14 text-lg rounded-full">
-                    Learn More
-                  </button>
+                  <a href="https://share.google/Zwuj9pzFKEpv75TF1" target="_blank" rel="noopener noreferrer">
+                    <button className="btn-outline px-8 h-14 text-lg rounded-full">
+                      Learn More
+                    </button>
+                  </a>
                 </div>
               </motion.div>
 

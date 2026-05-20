@@ -29,7 +29,8 @@ import {
   ExternalLink,
   Syringe,
   Pill,
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from "sonner";
@@ -81,6 +82,7 @@ export default function VetRecords() {
     file_url: '',
     is_visible_to_owner: true,
   });
+  const [errors, setErrors] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -144,8 +146,13 @@ export default function VetRecords() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.pet_id || !formData.title) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!formData.pet_id) newErrors.pet_id = true;
+    if (!formData.title) newErrors.title = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createMutation.mutate(formData);
@@ -179,128 +186,10 @@ export default function VetRecords() {
           <h1 className="text-3xl font-bold text-gray-900">Health Records</h1>
           <p className="text-gray-500 mt-1">Manage patient medical records</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
-              <Plus className="w-5 h-5" />
-              Add Record
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add Health Record</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-5 pt-4">
-              <div>
-                <Label className="text-sm font-medium">Patient *</Label>
-                <Select value={formData.pet_id} onValueChange={(v) => setFormData({...formData, pet_id: v})}>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select patient" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pets.map(pet => (
-                      <SelectItem key={pet.id} value={pet.id}>
-                        {pet.name} ({pet.species})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Record Type</Label>
-                  <Select value={formData.record_type} onValueChange={(v) => setFormData({...formData, record_type: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {recordTypes.map(type => (
-                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="mt-1.5"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  placeholder="e.g., Annual checkup results"
-                  className="mt-1.5"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Enter detailed notes..."
-                  className="mt-1.5 min-h-[100px]"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Attachment</Label>
-                <div className="mt-1.5 flex items-center gap-3">
-                  <label className="flex-1">
-                    <div className="flex items-center justify-center px-4 py-3 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-teal-300 transition-colors">
-                      {isUploading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                      ) : formData.file_url ? (
-                        <span className="text-sm text-teal-600">File attached ✓</span>
-                      ) : (
-                        <span className="text-sm text-gray-500 flex items-center gap-2">
-                          <Upload className="w-4 h-4" />
-                          Upload file
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">Visible to Owner</p>
-                  <p className="text-xs text-gray-500">Owner can view this record</p>
-                </div>
-                <Switch
-                  checked={formData.is_visible_to_owner}
-                  onCheckedChange={(checked) => setFormData({...formData, is_visible_to_owner: checked})}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
-                  {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => navigate(createPageUrl('VetAddRecord'))} className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
+          <Plus className="w-5 h-5" />
+          Add Record
+        </Button>
       </div>
 
       {/* Filters */}

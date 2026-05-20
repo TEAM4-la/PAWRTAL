@@ -117,7 +117,7 @@ export default function PetQR() {
     <div className="p-6 lg:p-8 max-w-lg mx-auto space-y-6">
       <Button
         variant="ghost"
-        onClick={() => navigate(createPageUrl('Dashboard'))}
+        onClick={() => petId ? navigate(createPageUrl(`PetProfile?id=${petId}`)) : navigate(createPageUrl('Dashboard'))}
         className="gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />

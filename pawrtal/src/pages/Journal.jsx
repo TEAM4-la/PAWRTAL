@@ -20,6 +20,7 @@ import {
   Heart, 
   Activity, 
   AlertCircle,
+  AlertTriangle,
   Weight,
   Smile,
   Meh,
@@ -82,6 +83,7 @@ export default function Journal() {
     date: format(new Date(), 'yyyy-MM-dd'),
     mood: '',
   });
+  const [errors, setErrors] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -188,8 +190,14 @@ export default function Journal() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.pet_id || !formData.title) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!formData.pet_id) newErrors.pet_id = true;
+    if (!formData.date) newErrors.date = true;
+    if (!formData.title) newErrors.title = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     if (editingEntry) {
@@ -244,27 +252,52 @@ export default function Journal() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Pet *</Label>
-                  <Select value={formData.pet_id} onValueChange={(v) => setFormData({...formData, pet_id: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select pet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets.map(pet => (
-                        <SelectItem key={pet.id} value={pet.id}>{pet.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative mt-1.5">
+                    <Select
+                      value={formData.pet_id}
+                      onValueChange={(v) => {
+                        setFormData({...formData, pet_id: v});
+                        setErrors(prev => ({ ...prev, pet_id: false }));
+                      }}
+                    >
+                      <SelectTrigger className={cn("pr-10", errors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectValue placeholder="Select pet" />
+                      </SelectTrigger>
+                      {errors.pet_id && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      )}
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>{pet.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {errors.pet_id && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a pet.</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Date *</Label>
-                  <Input
-                    type="date"
-                    min={minDate}
-                    max={maxDate}
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      type="date"
+                      min={minDate}
+                      max={maxDate}
+                      value={formData.date}
+                      onChange={(e) => {
+                        setFormData({...formData, date: e.target.value});
+                        setErrors(prev => ({ ...prev, date: false }));
+                      }}
+                      className={cn("pr-10", errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                    />
+                    {errors.date && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
+                  {errors.date && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a date.</p>
+                  )}
                 </div>
               </div>
 
@@ -291,13 +324,24 @@ export default function Journal() {
 
               <div>
                 <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  placeholder="e.g., Morning walk"
-                  className="mt-1.5"
-                />
+                <div className="relative mt-1.5">
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => {
+                      setFormData({...formData, title: e.target.value});
+                      setErrors(prev => ({ ...prev, title: false }));
+                    }}
+                    placeholder="e.g., Morning walk"
+                    className={cn("pr-10", errors.title ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                  />
+                  {errors.title && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  )}
+                </div>
+                {errors.title && (
+                  <p className="text-sm text-red-600 mt-1.5">Please enter a title.</p>
+                )}
               </div>
 
               <div>

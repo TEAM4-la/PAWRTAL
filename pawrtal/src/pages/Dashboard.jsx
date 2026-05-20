@@ -132,30 +132,38 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Pets"
-          value={pets.length}
-          icon={PawPrint}
-          color="teal"
-        />
-        <StatsCard
-          title="Upcoming Appointments"
-          value={upcomingAppointments.length}
-          icon={Calendar}
-          color="orange"
-        />
-        <StatsCard
-          title="Due Vaccinations"
-          value={upcomingVaccinations.length}
-          icon={Syringe}
-          color="blue"
-        />
-        <StatsCard
-          title="Active Medications"
-          value={medications.length}
-          icon={Pill}
-          color="purple"
-        />
+        <Link to={createPageUrl('MyPets')} className="block hover:-translate-y-0.5 transition-transform duration-300">
+          <StatsCard
+            title="Total Pets"
+            value={pets.length}
+            icon={PawPrint}
+            color="teal"
+          />
+        </Link>
+        <Link to={createPageUrl('Appointments')} className="block hover:-translate-y-0.5 transition-transform duration-300">
+          <StatsCard
+            title="Upcoming Appointments"
+            value={upcomingAppointments.length}
+            icon={Calendar}
+            color="orange"
+          />
+        </Link>
+        <Link to={`${createPageUrl('HealthRecords')}?tab=vaccinations`} className="block hover:-translate-y-0.5 transition-transform duration-300">
+          <StatsCard
+            title="Due Vaccinations"
+            value={upcomingVaccinations.length}
+            icon={Syringe}
+            color="blue"
+          />
+        </Link>
+        <Link to={`${createPageUrl('HealthRecords')}?tab=medications`} className="block hover:-translate-y-0.5 transition-transform duration-300">
+          <StatsCard
+            title="Active Medications"
+            value={medications.length}
+            icon={Pill}
+            color="purple"
+          />
+        </Link>
       </div>
 
       {/* Alerts Section */}
@@ -196,7 +204,7 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-600 mt-1">
                       {medications.length} active medication(s) to track
                     </p>
-                    <Link to={createPageUrl('HealthRecords')}>
+                    <Link to={`${createPageUrl('HealthRecords')}?tab=medications`}>
                       <Button variant="link" className="p-0 h-auto text-orange-600 mt-2">
                         View all <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>

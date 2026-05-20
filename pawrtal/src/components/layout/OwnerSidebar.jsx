@@ -63,8 +63,12 @@ export default function OwnerSidebar({ user, children }) {
       {/* User info */}
       <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            {user?.full_name?.[0] || '?'}
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              user?.full_name?.[0] || '?'
+            )}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-amber-900 text-sm truncate">{user?.full_name || 'Pet Parent'}</p>
@@ -170,8 +174,12 @@ export default function OwnerSidebar({ user, children }) {
           <div className="flex items-center gap-2">
             <NotificationPanel userEmail={user?.email} accentColor="amber" />
             <Link to={createPageUrl('Settings')}>
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
-                {user?.full_name?.[0] || '?'}
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm overflow-hidden border border-amber-200">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  user?.full_name?.[0] || '?'
+                )}
               </div>
             </Link>
           </div>

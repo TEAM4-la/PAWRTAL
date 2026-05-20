@@ -134,6 +134,41 @@ export default function PetProfile() {
     );
   }
 
+  // Authorization check: only the pet's owner, vets, or admins can view the private profile
+  const userType = (user?.user_type || '').toLowerCase();
+  const isOwner = user?.email && pet?.owner_email && user.email.toLowerCase() === pet.owner_email.toLowerCase();
+  const isVetOrAdmin = userType === 'veterinarian' || userType === 'admin';
+
+  if (user && pet && !isOwner && !isVetOrAdmin) {
+    return (
+      <OwnerSidebar user={user}>
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="max-w-md text-center p-8 border-0 shadow-lg">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h1>
+            <p className="text-gray-500 mb-6">
+              You don't have permission to view this pet's private records. Only the pet's owner or veterinary staff can access this information.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link to={createPageUrl('Dashboard')}>
+                <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+                  Go to My Dashboard
+                </Button>
+              </Link>
+              <Link to={createPageUrl(`PublicPetProfile?id=${petId}`)}>
+                <Button variant="outline" className="w-full">
+                  View Public Profile
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </OwnerSidebar>
+    );
+  }
+
   const Icon = speciesIcons[pet.species] || Dog;
   const activeMeds = medications.filter(m => m.is_active);
 
@@ -298,7 +333,8 @@ export default function PetProfile() {
                   {vaccinations.map((vax) => {
                     const isLatest = !vaccinations.some(v => 
                       v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
-                      new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+                      (v.date_administered > vax.date_administered || 
+                      (v.date_administered === vax.date_administered && v.id > vax.id))
                     );
                     return (
                     <div key={vax.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -318,7 +354,12 @@ export default function PetProfile() {
                           {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "Overdue:" : "Next dose:"} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
                         </Badge>
                       )}
-                      {vax.next_due_date && !isLatest && (
+                      {!vax.next_due_date && isLatest && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          Up to date
+                        </Badge>
+                      )}
+                      {!isLatest && (
                         <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
                           Renewed
                         </Badge>

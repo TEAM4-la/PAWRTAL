@@ -62,6 +62,7 @@ export default function BookAppointment() {
     time: '',
     reason: '',
   });
+  const [errors, setErrors] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -75,6 +76,7 @@ export default function BookAppointment() {
   });
 
   const createMutation = useMutation({
+    queryKey: ['createAppointment'],
     mutationFn: (data) => api.entities.Appointment.create({
       ...data,
       owner_email: user?.email,
@@ -92,8 +94,15 @@ export default function BookAppointment() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.pet_id || !formData.type || !formData.date || !formData.time) {
-      toast.error('Please fill in all required fields');
+    const newErrors = {};
+    if (!formData.pet_id) newErrors.pet_id = true;
+    if (!formData.type) newErrors.type = true;
+    if (!formData.date) newErrors.date = true;
+    if (!formData.time) newErrors.time = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createMutation.mutate(formData);
@@ -107,7 +116,7 @@ export default function BookAppointment() {
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
       <Button
         variant="ghost"
-        onClick={() => navigate(createPageUrl('Dashboard'))}
+        onClick={() => preselectedPetId ? navigate(createPageUrl(`PetProfile?id=${preselectedPetId}`)) : navigate(createPageUrl('Dashboard'))}
         className="mb-6 gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -145,14 +154,17 @@ export default function BookAppointment() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className={cn("grid sm:grid-cols-2 gap-3 p-2 rounded-xl transition-all border", errors.pet_id ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                   {pets.map((pet) => {
                     const Icon = speciesIcons[pet.species] || Dog;
                     const isSelected = formData.pet_id === pet.id;
                     return (
                       <div
                         key={pet.id}
-                        onClick={() => setFormData({ ...formData, pet_id: pet.id })}
+                        onClick={() => {
+                          setFormData({ ...formData, pet_id: pet.id });
+                          setErrors(prev => ({ ...prev, pet_id: false }));
+                        }}
                         className={cn(
                           "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
                           isSelected
@@ -179,6 +191,9 @@ export default function BookAppointment() {
                   })}
                 </div>
               )}
+              {errors.pet_id && (
+                <p className="text-sm text-red-600 mt-1.5">Please select a pet.</p>
+              )}
             </div>
 
             {/* Appointment Type */}
@@ -186,13 +201,16 @@ export default function BookAppointment() {
               <Label className="text-sm font-medium mb-3 block">
                 Appointment Type <span className="text-red-500">*</span>
               </Label>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className={cn("grid sm:grid-cols-2 gap-3 p-2 rounded-xl transition-all border", errors.type ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {appointmentTypes.map((type) => {
                   const isSelected = formData.type === type.value;
                   return (
                     <div
                       key={type.value}
-                      onClick={() => setFormData({ ...formData, type: type.value })}
+                      onClick={() => {
+                        setFormData({ ...formData, type: type.value });
+                        setErrors(prev => ({ ...prev, type: false }));
+                      }}
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
                         isSelected
@@ -208,6 +226,9 @@ export default function BookAppointment() {
                   );
                 })}
               </div>
+              {errors.type && (
+                <p className="text-sm text-red-600 mt-1.5">Please select an appointment type.</p>
+              )}
             </div>
 
             {/* Date Selection — native picker like Add Pet (Date of birth); min = today, no past dates */}
@@ -215,23 +236,32 @@ export default function BookAppointment() {
               <Label htmlFor="appointment-date" className="text-sm font-medium mb-3 block">
                 Preferred Date <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="appointment-date"
-                type="date"
-                min={minAppointmentDateStr}
-                max={maxAppointmentDateStr}
-                value={formData.date ? format(formData.date, 'yyyy-MM-dd') : ''}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (!v) {
-                    setFormData({ ...formData, date: null });
-                    return;
-                  }
-                  const [y, m, d] = v.split('-').map(Number);
-                  setFormData({ ...formData, date: new Date(y, m - 1, d) });
-                }}
-                className="h-12 mt-0"
-              />
+              <div className="relative">
+                <Input
+                  id="appointment-date"
+                  type="date"
+                  min={minAppointmentDateStr}
+                  max={maxAppointmentDateStr}
+                  value={formData.date ? format(formData.date, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) {
+                      setFormData({ ...formData, date: null });
+                      return;
+                    }
+                    const [y, m, d] = v.split('-').map(Number);
+                    setFormData({ ...formData, date: new Date(y, m - 1, d) });
+                    setErrors(prev => ({ ...prev, date: false }));
+                  }}
+                  className={cn("h-12 mt-0 pr-10", errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                />
+                {errors.date && (
+                  <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                )}
+              </div>
+              {errors.date && (
+                <p className="text-sm text-red-600 mt-1.5">Please select a preferred date.</p>
+              )}
             </div>
 
             {/* Time Selection */}
@@ -239,7 +269,7 @@ export default function BookAppointment() {
               <Label className="text-sm font-medium mb-3 block">
                 Preferred Time <span className="text-red-500">*</span>
               </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className={cn("grid grid-cols-3 sm:grid-cols-4 gap-2 p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {timeSlots.map((time) => {
                   const isSelected = formData.time === time;
                   return (
@@ -247,7 +277,10 @@ export default function BookAppointment() {
                       key={time}
                       type="button"
                       variant={isSelected ? "default" : "outline"}
-                      onClick={() => setFormData({ ...formData, time })}
+                      onClick={() => {
+                        setFormData({ ...formData, time });
+                        setErrors(prev => ({ ...prev, time: false }));
+                      }}
                       className={cn(
                         "h-10",
                         isSelected && "bg-teal-500 hover:bg-teal-600"
@@ -258,6 +291,9 @@ export default function BookAppointment() {
                   );
                 })}
               </div>
+              {errors.time && (
+                <p className="text-sm text-red-600 mt-1.5">Please select a preferred time.</p>
+              )}
             </div>
 
             {/* Reason */}
@@ -279,7 +315,7 @@ export default function BookAppointment() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(createPageUrl('Dashboard'))}
+                onClick={() => preselectedPetId ? navigate(createPageUrl(`PetProfile?id=${preselectedPetId}`)) : navigate(createPageUrl('Dashboard'))}
                 className="flex-1 h-12"
               >
                 Cancel

@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus } from 'lucide-react';
+import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const speciesOptions = [
   { value: 'dog', label: 'Dog', icon: Dog },
@@ -41,6 +42,7 @@ export default function AddPet() {
     medical_conditions: [],
     is_neutered: false,
   });
+  const [errors, setErrors] = useState({});
   const [newAllergy, setNewAllergy] = useState('');
   const [newCondition, setNewCondition] = useState('');
 
@@ -116,8 +118,13 @@ export default function AddPet() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.species) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!formData.name) newErrors.name = true;
+    if (!formData.species) newErrors.species = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createPetMutation.mutate(formData);
@@ -175,34 +182,59 @@ export default function AddPet() {
                 <Label htmlFor="name" className="text-sm font-medium">
                   Pet Name <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Max"
-                  className="mt-1.5 h-11"
-                />
+                <div className="relative mt-1.5">
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      setErrors(prev => ({ ...prev, name: false }));
+                    }}
+                    placeholder="e.g., Max"
+                    className={cn("h-11 pr-10", errors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                  />
+                  {errors.name && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  )}
+                </div>
+                {errors.name && (
+                  <p className="text-sm text-red-600 mt-1.5">Please enter the pet's name.</p>
+                )}
               </div>
 
               <div>
                 <Label className="text-sm font-medium">
                   Species <span className="text-red-500">*</span>
                 </Label>
-                <Select value={formData.species} onValueChange={(v) => setFormData({ ...formData, species: v })}>
-                  <SelectTrigger className="mt-1.5 h-11">
-                    <SelectValue placeholder="Select species" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {speciesOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <div className="flex items-center gap-2">
-                          {option.icon && <option.icon className="w-4 h-4" />}
-                          {option.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative mt-1.5">
+                  <Select
+                    value={formData.species}
+                    onValueChange={(v) => {
+                      setFormData({ ...formData, species: v });
+                      setErrors(prev => ({ ...prev, species: false }));
+                    }}
+                  >
+                    <SelectTrigger className={cn("h-11 pr-10", errors.species ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectValue placeholder="Select species" />
+                    </SelectTrigger>
+                    {errors.species && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                    )}
+                    <SelectContent>
+                      {speciesOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            {option.icon && <option.icon className="w-4 h-4" />}
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {errors.species && (
+                  <p className="text-sm text-red-600 mt-1.5">Please select a species.</p>
+                )}
               </div>
 
               <div>

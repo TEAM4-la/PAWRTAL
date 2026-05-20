@@ -46,8 +46,12 @@ export default function AdminSidebar({ children, currentUser }) {
 
       {/* Admin badge */}
       <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {currentUser?.full_name?.[0] || 'A'}
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
+          {currentUser?.avatar_url ? (
+            <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+          ) : (
+            currentUser?.full_name?.[0] || 'A'
+          )}
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-violet-900 text-sm truncate">{currentUser?.full_name || 'Admin'}</p>
@@ -164,9 +168,15 @@ export default function AdminSidebar({ children, currentUser }) {
               alt="PAWRTAL" className="w-7 h-7 object-contain" />
             <span className="font-bold text-violet-900 tracking-wider text-sm">PAWRTAL</span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm">
-            {currentUser?.full_name?.[0] || 'A'}
-          </div>
+          <Link to={createPageUrl('Settings')}>
+            <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm overflow-hidden border border-violet-200">
+              {currentUser?.avatar_url ? (
+                <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                currentUser?.full_name?.[0] || 'A'
+              )}
+            </div>
+          </Link>
         </header>
 
         <main className="flex-1">

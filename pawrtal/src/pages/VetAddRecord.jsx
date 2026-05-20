@@ -23,10 +23,12 @@ import {
   Cat,
   Bird,
   Rabbit,
-  Fish
+  Fish,
+  AlertTriangle
 } from 'lucide-react';
 import { format, addMonths, addYears } from 'date-fns';
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import VetSidebar from '@/components/layout/VetSidebar';
 
 const recordTypes = [
@@ -97,6 +99,11 @@ export default function VetAddRecord() {
     observations: '',
     is_visible_to_owner: true,
   });
+
+  const [recordErrors, setRecordErrors] = useState({});
+  const [vaccinationErrors, setVaccinationErrors] = useState({});
+  const [medicationErrors, setMedicationErrors] = useState({});
+  const [groomingErrors, setGroomingErrors] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -186,8 +193,13 @@ export default function VetAddRecord() {
 
   const handleRecordSubmit = (e) => {
     e.preventDefault();
-    if (!recordForm.pet_id || !recordForm.title) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!recordForm.pet_id) newErrors.pet_id = true;
+    if (!recordForm.title) newErrors.title = true;
+
+    setRecordErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createRecordMutation.mutate(recordForm);
@@ -195,8 +207,13 @@ export default function VetAddRecord() {
 
   const handleVaccinationSubmit = (e) => {
     e.preventDefault();
-    if (!vaccinationForm.pet_id || !vaccinationForm.vaccine_name) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!vaccinationForm.pet_id) newErrors.pet_id = true;
+    if (!vaccinationForm.vaccine_name) newErrors.vaccine_name = true;
+
+    setVaccinationErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createVaccinationMutation.mutate(vaccinationForm);
@@ -204,8 +221,13 @@ export default function VetAddRecord() {
 
   const handleMedicationSubmit = (e) => {
     e.preventDefault();
-    if (!medicationForm.pet_id || !medicationForm.name) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!medicationForm.pet_id) newErrors.pet_id = true;
+    if (!medicationForm.name) newErrors.name = true;
+
+    setMedicationErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createMedicationMutation.mutate(medicationForm);
@@ -213,8 +235,13 @@ export default function VetAddRecord() {
 
   const handleGroomingSubmit = (e) => {
     e.preventDefault();
-    if (!groomingForm.pet_id || !groomingForm.grooming_type) {
-      toast.error('Please select a patient and grooming type');
+    const newErrors = {};
+    if (!groomingForm.pet_id) newErrors.pet_id = true;
+    if (!groomingForm.grooming_type) newErrors.grooming_type = true;
+
+    setGroomingErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     createGroomingMutation.mutate(groomingForm);
@@ -268,18 +295,32 @@ export default function VetAddRecord() {
               <form onSubmit={handleRecordSubmit} className="space-y-5">
                 <div>
                   <Label className="text-sm font-medium">Patient *</Label>
-                  <Select value={recordForm.pet_id} onValueChange={(v) => setRecordForm({...recordForm, pet_id: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets.map(pet => (
-                        <SelectItem key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.species})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative mt-1.5">
+                    <Select
+                      value={recordForm.pet_id}
+                      onValueChange={(v) => {
+                        setRecordForm({...recordForm, pet_id: v});
+                        setRecordErrors(prev => ({ ...prev, pet_id: false }));
+                      }}
+                    >
+                      <SelectTrigger className={cn("pr-10", recordErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      {recordErrors.pet_id && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      )}
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name} ({pet.species})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {recordErrors.pet_id && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a patient.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -309,12 +350,23 @@ export default function VetAddRecord() {
 
                 <div>
                   <Label className="text-sm font-medium">Title *</Label>
-                  <Input
-                    value={recordForm.title}
-                    onChange={(e) => setRecordForm({...recordForm, title: e.target.value})}
-                    placeholder="e.g., Annual checkup results"
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      value={recordForm.title}
+                      onChange={(e) => {
+                        setRecordForm({...recordForm, title: e.target.value});
+                        setRecordErrors(prev => ({ ...prev, title: false }));
+                      }}
+                      placeholder="e.g., Annual checkup results"
+                      className={cn("pr-10", recordErrors.title ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                    />
+                    {recordErrors.title && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
+                  {recordErrors.title && (
+                    <p className="text-sm text-red-600 mt-1.5">Please enter a title.</p>
+                  )}
                 </div>
 
                 <div>
@@ -368,28 +420,53 @@ export default function VetAddRecord() {
               <form onSubmit={handleVaccinationSubmit} className="space-y-5">
                 <div>
                   <Label className="text-sm font-medium">Patient *</Label>
-                  <Select value={vaccinationForm.pet_id} onValueChange={(v) => setVaccinationForm({...vaccinationForm, pet_id: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets.map(pet => (
-                        <SelectItem key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.species})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative mt-1.5">
+                    <Select
+                      value={vaccinationForm.pet_id}
+                      onValueChange={(v) => {
+                        setVaccinationForm({...vaccinationForm, pet_id: v});
+                        setVaccinationErrors(prev => ({ ...prev, pet_id: false }));
+                      }}
+                    >
+                      <SelectTrigger className={cn("pr-10", vaccinationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      {vaccinationErrors.pet_id && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      )}
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name} ({pet.species})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {vaccinationErrors.pet_id && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a patient.</p>
+                  )}
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium">Vaccine Name *</Label>
-                  <Input
-                    value={vaccinationForm.vaccine_name}
-                    onChange={(e) => setVaccinationForm({...vaccinationForm, vaccine_name: e.target.value})}
-                    placeholder="e.g., Rabies, DHPP, FVRCP"
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      value={vaccinationForm.vaccine_name}
+                      onChange={(e) => {
+                        setVaccinationForm({...vaccinationForm, vaccine_name: e.target.value});
+                        setVaccinationErrors(prev => ({ ...prev, vaccine_name: false }));
+                      }}
+                      placeholder="e.g., Rabies, DHPP, FVRCP"
+                      className={cn("pr-10", vaccinationErrors.vaccine_name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                    />
+                    {vaccinationErrors.vaccine_name && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
+                  {vaccinationErrors.vaccine_name && (
+                    <p className="text-sm text-red-600 mt-1.5">Please enter a vaccine name.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -444,28 +521,53 @@ export default function VetAddRecord() {
               <form onSubmit={handleMedicationSubmit} className="space-y-5">
                 <div>
                   <Label className="text-sm font-medium">Patient *</Label>
-                  <Select value={medicationForm.pet_id} onValueChange={(v) => setMedicationForm({...medicationForm, pet_id: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets.map(pet => (
-                        <SelectItem key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.species})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative mt-1.5">
+                    <Select
+                      value={medicationForm.pet_id}
+                      onValueChange={(v) => {
+                        setMedicationForm({...medicationForm, pet_id: v});
+                        setMedicationErrors(prev => ({ ...prev, pet_id: false }));
+                      }}
+                    >
+                      <SelectTrigger className={cn("pr-10", medicationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      {medicationErrors.pet_id && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      )}
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name} ({pet.species})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {medicationErrors.pet_id && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a patient.</p>
+                  )}
                 </div>
 
                 <div>
                   <Label className="text-sm font-medium">Medication Name *</Label>
-                  <Input
-                    value={medicationForm.name}
-                    onChange={(e) => setMedicationForm({...medicationForm, name: e.target.value})}
-                    placeholder="e.g., Amoxicillin"
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      value={medicationForm.name}
+                      onChange={(e) => {
+                        setMedicationForm({...medicationForm, name: e.target.value});
+                        setMedicationErrors(prev => ({ ...prev, name: false }));
+                      }}
+                      placeholder="e.g., Amoxicillin"
+                      className={cn("pr-10", medicationErrors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                    />
+                    {medicationErrors.name && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    )}
+                  </div>
+                  {medicationErrors.name && (
+                    <p className="text-sm text-red-600 mt-1.5">Please enter a medication name.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -531,18 +633,32 @@ export default function VetAddRecord() {
               <form onSubmit={handleGroomingSubmit} className="space-y-5">
                 <div>
                   <Label className="text-sm font-medium">Patient *</Label>
-                  <Select value={groomingForm.pet_id} onValueChange={(v) => setGroomingForm({...groomingForm, pet_id: v})}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pets.map(pet => (
-                        <SelectItem key={pet.id} value={pet.id}>
-                          {pet.name} ({pet.species})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative mt-1.5">
+                    <Select
+                      value={groomingForm.pet_id}
+                      onValueChange={(v) => {
+                        setGroomingForm({...groomingForm, pet_id: v});
+                        setGroomingErrors(prev => ({ ...prev, pet_id: false }));
+                      }}
+                    >
+                      <SelectTrigger className={cn("pr-10", groomingErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      {groomingErrors.pet_id && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      )}
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name} ({pet.species})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {groomingErrors.pet_id && (
+                    <p className="text-sm text-red-600 mt-1.5">Please select a patient.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -569,21 +685,35 @@ export default function VetAddRecord() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Grooming Type *</Label>
-                    <Select value={groomingForm.grooming_type} onValueChange={(v) => setGroomingForm({...groomingForm, grooming_type: v})}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="full_groom">Full Groom</SelectItem>
-                        <SelectItem value="bath_and_dry">Bath & Dry</SelectItem>
-                        <SelectItem value="haircut_only">Haircut Only</SelectItem>
-                        <SelectItem value="nail_trim">Nail Trim</SelectItem>
-                        <SelectItem value="ear_cleaning">Ear Cleaning</SelectItem>
-                        <SelectItem value="teeth_brushing">Teeth Brushing</SelectItem>
-                        <SelectItem value="deshedding">De-shedding</SelectItem>
-                        <SelectItem value="flea_treatment">Flea Treatment</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="relative mt-1.5">
+                      <Select
+                        value={groomingForm.grooming_type}
+                        onValueChange={(v) => {
+                          setGroomingForm({...groomingForm, grooming_type: v});
+                          setGroomingErrors(prev => ({ ...prev, grooming_type: false }));
+                        }}
+                      >
+                        <SelectTrigger className={cn("pr-10", groomingErrors.grooming_type ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        {groomingErrors.grooming_type && (
+                          <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        )}
+                        <SelectContent>
+                          <SelectItem value="full_groom">Full Groom</SelectItem>
+                          <SelectItem value="bath_and_dry">Bath & Dry</SelectItem>
+                          <SelectItem value="haircut_only">Haircut Only</SelectItem>
+                          <SelectItem value="nail_trim">Nail Trim</SelectItem>
+                          <SelectItem value="ear_cleaning">Ear Cleaning</SelectItem>
+                          <SelectItem value="teeth_brushing">Teeth Brushing</SelectItem>
+                          <SelectItem value="deshedding">De-shedding</SelectItem>
+                          <SelectItem value="flea_treatment">Flea Treatment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {groomingErrors.grooming_type && (
+                      <p className="text-sm text-red-600 mt-1.5">Please select a grooming type.</p>
+                    )}
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Coat Condition (Before)</Label>

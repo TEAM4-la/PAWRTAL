@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, Bell, Upload, Loader2, Check, ChevronLeft, Lock, Building2, Mail } from 'lucide-react';
+import { User, Bell, Upload, Loader2, Check, ChevronLeft, Lock, Building2, Mail, Eye, EyeOff } from 'lucide-react';
 import { toast } from "sonner";
 
 const notificationSwitchClassName =
@@ -41,6 +41,10 @@ export default function Settings() {
     next: '',
     confirm: '',
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -99,6 +103,7 @@ export default function Settings() {
       }),
     onSuccess: () => {
       setPasswordForm({ current: '', next: '', confirm: '' });
+      setPasswordSuccess(true);
       toast.success('Password updated');
     },
     onError: (err) => {
@@ -337,39 +342,81 @@ export default function Settings() {
           <CardDescription>Update the password you use to sign in</CardDescription>
         </CardHeader>
         <CardContent>
+          {passwordSuccess && (
+            <div className="mb-5 p-4 bg-teal-50 border border-teal-200 text-teal-800 text-sm rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+              <Check className="w-5 h-5 text-teal-600 flex-shrink-0" />
+              <span className="font-medium">Successfully changed password!</span>
+            </div>
+          )}
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
             <div>
               <Label htmlFor="current-password">Current password</Label>
-              <Input
-                id="current-password"
-                type="password"
-                autoComplete="current-password"
-                value={passwordForm.current}
-                onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                className="mt-1.5"
-              />
+              <div className="relative mt-1.5">
+                <Input
+                  id="current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={passwordForm.current}
+                  onChange={(e) => {
+                    setPasswordSuccess(false);
+                    setPasswordForm({ ...passwordForm, current: e.target.value });
+                  }}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <Label htmlFor="new-password">New password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                autoComplete="new-password"
-                value={passwordForm.next}
-                onChange={(e) => setPasswordForm({ ...passwordForm, next: e.target.value })}
-                className="mt-1.5"
-              />
+              <div className="relative mt-1.5">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.next}
+                  onChange={(e) => {
+                    setPasswordSuccess(false);
+                    setPasswordForm({ ...passwordForm, next: e.target.value });
+                  }}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
               <Label htmlFor="confirm-password">Confirm new password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                autoComplete="new-password"
-                value={passwordForm.confirm}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                className="mt-1.5"
-              />
+              <div className="relative mt-1.5">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordForm.confirm}
+                  onChange={(e) => {
+                    setPasswordSuccess(false);
+                    setPasswordForm({ ...passwordForm, confirm: e.target.value });
+                  }}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"

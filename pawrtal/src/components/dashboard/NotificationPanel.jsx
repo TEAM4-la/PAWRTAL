@@ -93,8 +93,8 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber', al
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                "absolute top-10 z-50 w-[460px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden",
-                alignPopover === 'left' ? 'left-0' : 'right-0'
+                "fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:top-10 z-50 sm:w-[460px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden",
+                alignPopover === 'left' ? 'sm:left-0' : 'sm:right-0'
               )}
             >
               {/* Header */}
@@ -125,9 +125,9 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber', al
                   </Button>
                 </div>
               </div>
-
+ 
               {/* Notifications List */}
-              <ScrollArea className="h-[500px]">
+              <ScrollArea className="h-[60vh] sm:h-[500px]">
                 {notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                     <Bell className="w-12 h-12 mb-3 text-gray-200" />

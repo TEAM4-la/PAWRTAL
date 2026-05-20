@@ -16,7 +16,8 @@ import {
   ArrowRight,
   AlertTriangle,
   CheckCircle,
-  Stethoscope
+  Stethoscope,
+  ChevronRight
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter } from 'date-fns';
 
@@ -149,22 +150,22 @@ export default function VetDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Today's Schedule */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Today's Schedule</h2>
-            <span className="text-sm text-gray-500">{upcomingToday.length} remaining</span>
+        <Card className="border-0 shadow-sm flex flex-col h-[550px]">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <h2 className="font-semibold text-gray-900 text-lg">Today's Schedule</h2>
+            <span className="text-xs bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full font-medium">
+              {upcomingToday.length} remaining
+            </span>
           </div>
 
-          {todayAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
-              <CardContent className="py-12 text-center">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <div className="flex-1 overflow-y-auto p-5 space-y-3 min-h-0">
+            {todayAppointments.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                <Calendar className="w-12 h-12 text-gray-300 mb-4 mx-auto" />
                 <p className="text-gray-500">No appointments scheduled for today</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {todayAppointments.slice(0, 5).map((appointment) => {
+              </div>
+            ) : (
+              todayAppointments.map((appointment) => {
                 const pet = pets.find(p => p.id === appointment.pet_id);
                 return (
                   <AppointmentCard
@@ -174,35 +175,36 @@ export default function VetDashboard() {
                     isVetView
                   />
                 );
-              })}
-              {todayAppointments.length > 5 && (
-                <Link to={createPageUrl('VetAppointments')}>
-                  <Button variant="outline" className="w-full">
-                    View all {todayAppointments.length} appointments
-                  </Button>
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
+              })
+            )}
+          </div>
+
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex-shrink-0">
+            <Link to={createPageUrl('VetAppointments?tab=today')}>
+              <Button variant="ghost" size="sm" className="text-teal-650 hover:text-teal-700 hover:bg-teal-50/50 w-full flex items-center justify-center gap-1 font-medium">
+                View All Appointments <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
 
         {/* Tomorrow's Preview */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Tomorrow's Preview</h2>
-            <span className="text-sm text-gray-500">{tomorrowAppointments.length} scheduled</span>
+        <Card className="border-0 shadow-sm flex flex-col h-[550px]">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <h2 className="font-semibold text-gray-900 text-lg">Tomorrow's Preview</h2>
+            <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium">
+              {tomorrowAppointments.length} scheduled
+            </span>
           </div>
 
-          {tomorrowAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
-              <CardContent className="py-12 text-center">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <div className="flex-1 overflow-y-auto p-5 space-y-3 min-h-0">
+            {tomorrowAppointments.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                <Calendar className="w-12 h-12 text-gray-300 mb-4 mx-auto" />
                 <p className="text-gray-500">No appointments scheduled for tomorrow</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {tomorrowAppointments.slice(0, 5).map((appointment) => {
+              </div>
+            ) : (
+              tomorrowAppointments.map((appointment) => {
                 const pet = pets.find(p => p.id === appointment.pet_id);
                 return (
                   <AppointmentCard
@@ -212,10 +214,18 @@ export default function VetDashboard() {
                     isVetView
                   />
                 );
-              })}
-            </div>
-          )}
-        </div>
+              })
+            )}
+          </div>
+
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex-shrink-0">
+            <Link to={createPageUrl('VetAppointments?tab=tomorrow')}>
+              <Button variant="ghost" size="sm" className="text-teal-650 hover:text-teal-700 hover:bg-teal-50/50 w-full flex items-center justify-center gap-1 font-medium">
+                View Tomorrow's Schedule <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
       </div>
 
       {/* Quick Actions */}

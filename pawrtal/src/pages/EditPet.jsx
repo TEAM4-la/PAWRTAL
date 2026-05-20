@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus } from 'lucide-react';
+import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const speciesOptions = [
   { value: 'dog', label: 'Dog', icon: Dog },
@@ -31,6 +32,7 @@ export default function EditPet() {
   
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [errors, setErrors] = useState({});
   const [newAllergy, setNewAllergy] = useState('');
   const [newCondition, setNewCondition] = useState('');
 
@@ -127,8 +129,13 @@ export default function EditPet() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.species) {
-      toast.error('Please fill in required fields');
+    const newErrors = {};
+    if (!formData.name) newErrors.name = true;
+    if (!formData.species) newErrors.species = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
     updateMutation.mutate(formData);
@@ -146,7 +153,7 @@ export default function EditPet() {
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
       <Button
         variant="ghost"
-        onClick={() => navigate(createPageUrl('Dashboard'))}
+        onClick={() => petId ? navigate(createPageUrl(`PetProfile?id=${petId}`)) : navigate(createPageUrl('Dashboard'))}
         className="mb-6 gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -194,30 +201,55 @@ export default function EditPet() {
                 <Label htmlFor="name" className="text-sm font-medium">
                   Pet Name <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1.5 h-11"
-                />
+                <div className="relative mt-1.5">
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      setErrors(prev => ({ ...prev, name: false }));
+                    }}
+                    className={cn("h-11 pr-10", errors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                  />
+                  {errors.name && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  )}
+                </div>
+                {errors.name && (
+                  <p className="text-sm text-red-600 mt-1.5">Please enter the pet's name.</p>
+                )}
               </div>
 
               <div>
                 <Label className="text-sm font-medium">
                   Species <span className="text-red-500">*</span>
                 </Label>
-                <Select value={formData.species} onValueChange={(v) => setFormData({ ...formData, species: v })}>
-                  <SelectTrigger className="mt-1.5 h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {speciesOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative mt-1.5">
+                  <Select
+                    value={formData.species}
+                    onValueChange={(v) => {
+                      setFormData({ ...formData, species: v });
+                      setErrors(prev => ({ ...prev, species: false }));
+                    }}
+                  >
+                    <SelectTrigger className={cn("h-11 pr-10", errors.species ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    {errors.species && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                    )}
+                    <SelectContent>
+                      {speciesOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {errors.species && (
+                  <p className="text-sm text-red-600 mt-1.5">Please select a species.</p>
+                )}
               </div>
 
               <div>
@@ -368,7 +400,7 @@ export default function EditPet() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate(createPageUrl('Dashboard'))}
+                onClick={() => petId ? navigate(createPageUrl(`PetProfile?id=${petId}`)) : navigate(createPageUrl('Dashboard'))}
                 className="flex-1 h-12"
               >
                 Cancel
