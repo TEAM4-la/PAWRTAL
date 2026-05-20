@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Calendar, Clock, User, Stethoscope, Check, X, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { getAppointmentStatus } from "@/utils";
 
@@ -72,6 +72,15 @@ export default function AppointmentCard({
 
   const status = statusConfig[derivedStatus] || statusConfig.pending;
   const StatusIcon = status.icon;
+
+  // The Complete Appointment button should only be clickable when the booked date and time have been reached.
+  let isTimeReached = true;
+  try {
+    const appointmentDateTime = parse(`${appointment.date} ${appointment.time}`, 'yyyy-MM-dd hh:mm a', new Date());
+    isTimeReached = new Date() >= appointmentDateTime;
+  } catch (e) {
+    console.error('Error parsing appointment datetime in AppointmentCard:', e);
+  }
 
   return (
     <Card className="overflow-hidden border-0 bg-white hover:shadow-md transition-all duration-300">
@@ -154,6 +163,7 @@ export default function AppointmentCard({
                   size="sm" 
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => onComplete(appointment)}
+                  disabled={!isTimeReached}
                 >
                   Complete
                 </Button>

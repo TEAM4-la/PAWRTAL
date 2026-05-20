@@ -88,14 +88,6 @@ public class AppointmentsController : ControllerBase
         string petName = pet?.Name ?? "Your pet";
         string petNameForVet = pet?.Name ?? "A pet";
 
-        await _notifications.CreateNotificationAsync(
-            appt.OwnerEmail,
-            "appointment",
-            "Appointment Scheduled",
-            $"An appointment ({appt.Type.Replace("_", " ")}) for {petName} has been scheduled for {appt.Date:MMM d, yyyy} at {appt.TimeSlot}.",
-            "appointments"
-        );
-
         if (!string.IsNullOrWhiteSpace(appt.VetEmail))
         {
             await _notifications.CreateNotificationAsync(
@@ -192,13 +184,16 @@ public class AppointmentsController : ControllerBase
 
             if (!string.Equals(appt.OwnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))
             {
-                await _notifications.CreateNotificationAsync(
-                    appt.OwnerEmail,
-                    "appointment",
-                    "Appointment Updated",
-                    msg,
-                    "appointments"
-                );
+                if (notifyTime || (notifyStatus && (appt.Status == "confirmed" || appt.Status == "cancelled")))
+                {
+                    await _notifications.CreateNotificationAsync(
+                        appt.OwnerEmail,
+                        "appointment",
+                        "Appointment Updated",
+                        msg,
+                        "appointments"
+                    );
+                }
             }
 
             // Notify vet if cancelled
