@@ -357,7 +357,7 @@ export default function Journal() {
             <DialogHeader>
               <DialogTitle>Are you sure you want to delete?</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete this journal entry? This action cannot be undone.
+                Are you sure you want to delete this journal entry?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-3">
