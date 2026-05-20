@@ -244,20 +244,20 @@ export default function VetAddRecord() {
 
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-4 mb-6">
-              <TabsTrigger value="record" className="gap-2">
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 h-auto p-1 gap-2 mb-6">
+              <TabsTrigger value="record" className="gap-2 py-2">
                 <FileText className="w-4 h-4" />
                 Health Record
               </TabsTrigger>
-              <TabsTrigger value="vaccination" className="gap-2">
+              <TabsTrigger value="vaccination" className="gap-2 py-2">
                 <Syringe className="w-4 h-4" />
                 Vaccination
               </TabsTrigger>
-              <TabsTrigger value="medication" className="gap-2">
+              <TabsTrigger value="medication" className="gap-2 py-2">
                 <Pill className="w-4 h-4" />
                 Medication
               </TabsTrigger>
-              <TabsTrigger value="grooming" className="gap-2">
+              <TabsTrigger value="grooming" className="gap-2 py-2">
                 <Scissors className="w-4 h-4" />
                 Grooming
               </TabsTrigger>

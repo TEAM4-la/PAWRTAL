@@ -206,20 +206,20 @@ export default function HealthRecords() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-gray-100 p-1">
-          <TabsTrigger value="records" className="gap-2">
+        <TabsList className="w-full flex overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
+          <TabsTrigger value="records" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
             <FileText className="w-4 h-4" />
             Medical Records
           </TabsTrigger>
-          <TabsTrigger value="vaccinations" className="gap-2">
+          <TabsTrigger value="vaccinations" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
             <Syringe className="w-4 h-4" />
             Vaccinations
           </TabsTrigger>
-          <TabsTrigger value="medications" className="gap-2">
+          <TabsTrigger value="medications" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
             <Pill className="w-4 h-4" />
             Medications
           </TabsTrigger>
-          <TabsTrigger value="grooming" className="gap-2">
+          <TabsTrigger value="grooming" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
             <Scissors className="w-4 h-4" />
             Grooming
           </TabsTrigger>

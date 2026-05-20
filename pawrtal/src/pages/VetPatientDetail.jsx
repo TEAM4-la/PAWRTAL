@@ -204,14 +204,13 @@ export default function VetPatientDetail() {
             </CardContent>
           </Card>
 
-          {/* Records Tabs */}
           <Tabs defaultValue="records" className="space-y-4">
-            <TabsList className="bg-gray-100 p-1">
-              <TabsTrigger value="records">Records ({healthRecords.length})</TabsTrigger>
-              <TabsTrigger value="vaccinations">Vaccinations ({vaccinations.length})</TabsTrigger>
-              <TabsTrigger value="medications">Medications ({medications.length})</TabsTrigger>
-              <TabsTrigger value="appointments">Visits ({appointments.length})</TabsTrigger>
-              <TabsTrigger value="grooming">Grooming ({groomingRecords.length})</TabsTrigger>
+            <TabsList className="w-full flex overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
+              <TabsTrigger value="records" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Records ({healthRecords.length})</TabsTrigger>
+              <TabsTrigger value="vaccinations" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Vaccinations ({vaccinations.length})</TabsTrigger>
+              <TabsTrigger value="medications" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Medications ({medications.length})</TabsTrigger>
+              <TabsTrigger value="appointments" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Visits ({appointments.length})</TabsTrigger>
+              <TabsTrigger value="grooming" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Grooming ({groomingRecords.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="records">

@@ -88,38 +88,40 @@ export default function AdminStaff() {
             <Badge className="bg-amber-100 text-amber-700">{owners.length}</Badge>
           </div>
           <Card className="border-0 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Name</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Email</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Phone</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Appointments</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {owners.length === 0 ? (
-                  <tr><td colSpan={4} className="text-center py-10 text-gray-400">No pet owners registered yet.</td></tr>
-                ) : owners.map(owner => {
-                  const ownerAppts = allAppointments.filter(a => a.owner_email === owner.email);
-                  return (
-                    <tr key={owner.id} className="hover:bg-gray-50/50">
-                      <td className="px-5 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
-                            {owner.full_name?.[0] || '?'}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[600px]">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Name</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Email</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Phone</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Appointments</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {owners.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center py-10 text-gray-400 whitespace-nowrap">No pet owners registered yet.</td></tr>
+                  ) : owners.map(owner => {
+                    const ownerAppts = allAppointments.filter(a => a.owner_email === owner.email);
+                    return (
+                      <tr key={owner.id} className="hover:bg-gray-50/50">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm flex-shrink-0">
+                              {owner.full_name?.[0] || '?'}
+                            </div>
+                            <span className="font-medium text-gray-900">{owner.full_name}</span>
                           </div>
-                          <span className="font-medium text-gray-900">{owner.full_name}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-gray-500">{owner.email}</td>
-                      <td className="px-5 py-3 text-gray-500">{owner.phone || '—'}</td>
-                      <td className="px-5 py-3 text-gray-700 font-medium">{ownerAppts.length}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.email}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.phone || '—'}</td>
+                        <td className="px-5 py-3 text-gray-700 font-medium whitespace-nowrap">{ownerAppts.length}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </Card>
         </div>
       </div>

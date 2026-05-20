@@ -211,22 +211,22 @@ export default function VetAppointments() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-gray-100 p-1 flex-wrap">
-          <TabsTrigger value="today" className="gap-2">
+        <TabsList className="w-full flex overflow-x-auto md:grid md:grid-cols-5 h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
+          <TabsTrigger value="today" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             <CalendarIcon className="w-4 h-4" />
             Today ({todayAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="tomorrow" className="gap-2">
+          <TabsTrigger value="tomorrow" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             Tomorrow ({tomorrowAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="pending" className="gap-2">
+          <TabsTrigger value="pending" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             <Clock className="w-4 h-4" />
             Pending ({pendingAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="gap-2">
+          <TabsTrigger value="upcoming" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             Upcoming ({upcomingAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="gap-2">
+          <TabsTrigger value="completed" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             <CheckCircle className="w-4 h-4" />
             Completed
           </TabsTrigger>

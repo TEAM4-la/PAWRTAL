@@ -149,44 +149,46 @@ export default function Patients() {
             return (
               <Card key={pet.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center flex-shrink-0">
-                      {pet.photo_url ? (
-                        <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Icon className="w-8 h-8 text-teal-400" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900 text-lg">{pet.name}</h3>
-                        <Badge className={speciesColors[pet.species]}>{pet.species}</Badge>
-                      </div>
-                      <p className="text-gray-600">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <User className="w-4 h-4" />
-                          {pet.owner_email}
-                        </span>
-                        {lastVisit && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            Last visit: {format(new Date(lastVisit + 'T00:00:00'), 'MMM d, yyyy')}
-                          </span>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center flex-shrink-0">
+                        {pet.photo_url ? (
+                          <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon className="w-8 h-8 text-teal-400" />
                         )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900 text-lg">{pet.name}</h3>
+                          <Badge className={speciesColors[pet.species]}>{pet.species}</Badge>
+                        </div>
+                        <p className="text-gray-600 text-sm">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
+                          <span className="flex items-center gap-1 truncate">
+                            <User className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{pet.owner_email}</span>
+                          </span>
+                          {lastVisit && (
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              <Calendar className="w-4 h-4" />
+                              Last visit: {format(new Date(lastVisit + 'T00:00:00'), 'MMM d, yyyy')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Link to={createPageUrl(`VetPatientDetail?id=${pet.id}`)}>
-                        <Button variant="outline" className="gap-2">
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
+                      <Link to={createPageUrl(`VetPatientDetail?id=${pet.id}`)} className="flex-1 md:flex-none">
+                        <Button variant="outline" className="w-full gap-2">
                           <FileText className="w-4 h-4" />
                           View Records
                         </Button>
                       </Link>
-                      <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)}>
-                        <Button className="bg-teal-600 hover:bg-teal-700">
+                      <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)} className="flex-1 md:flex-none">
+                        <Button className="w-full bg-teal-600 hover:bg-teal-700">
                           Add Record
                         </Button>
                       </Link>

@@ -71,15 +71,15 @@ export default function AdminAppointments() {
 
         <Card className="border-0 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Pet</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Owner</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Type</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Date & Time</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Status</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-500">Actions</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Pet</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Owner</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Type</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Date & Time</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Status</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -87,23 +87,23 @@ export default function AdminAppointments() {
                   const pet = pets.find(p => p.id === appt.pet_id);
                   return (
                     <tr key={appt.id} className="hover:bg-gray-50/50">
-                      <td className="px-5 py-3 font-medium text-gray-900">{pet?.name || '—'}</td>
-                      <td className="px-5 py-3 text-gray-500 text-xs">{appt.owner_email}</td>
-                      <td className="px-5 py-3 capitalize text-gray-700">{appt.type?.replace('_', ' ')}</td>
-                      <td className="px-5 py-3 text-gray-600">
+                      <td className="px-5 py-3 font-medium text-gray-900 whitespace-nowrap">{pet?.name || '—'}</td>
+                      <td className="px-5 py-3 text-gray-500 text-xs whitespace-nowrap">{appt.owner_email}</td>
+                      <td className="px-5 py-3 capitalize text-gray-700 whitespace-nowrap">{appt.type?.replace('_', ' ')}</td>
+                      <td className="px-5 py-3 text-gray-600 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                           {format(new Date(appt.date + 'T00:00:00'), 'MMM d, yyyy')}
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                           {appt.time}
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <Badge className={statusConfig[getAppointmentStatus(appt)]}>{getAppointmentStatus(appt)}</Badge>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <div className="flex gap-1">
                           {getAppointmentStatus(appt) === 'pending' && (
                             <Button size="sm" className="h-7 text-xs bg-blue-500 hover:bg-blue-600" onClick={() => updateMutation.mutate({ id: appt.id, status: 'confirmed' })}>
