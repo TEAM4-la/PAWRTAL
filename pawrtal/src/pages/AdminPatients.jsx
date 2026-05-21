@@ -49,7 +49,7 @@ export default function AdminPatients() {
               <p>No pets found</p>
             </div>
           ) : filtered.map(pet => {
-            const petAppts = appointments.filter(a => a.pet_id === pet.id);
+            const petAppts = appointments.filter(a => a.pet_id === pet.id && a.status === 'completed');
             const lastAppt = petAppts.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
             const age = pet.date_of_birth ? differenceInYears(new Date(), new Date(pet.date_of_birth)) : null;
             return (

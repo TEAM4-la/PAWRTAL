@@ -5,9 +5,10 @@ import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Share2, QrCode, Dog, Cat, Bird, Rabbit, Fish } from 'lucide-react';
+import { ArrowLeft, Download, Share2, QrCode, Dog, Cat, Bird, Rabbit, Fish, Printer } from 'lucide-react';
 import { toast } from "sonner";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
+import PrintablePetId from '@/components/shared/PrintablePetId';
 
 const speciesIcons = {
   dog: Dog,
@@ -171,21 +172,30 @@ export default function PetQR() {
           </p>
         </CardContent>
 
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="px-6 pb-6 flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3 w-full sm:w-2/3">
+            <Button
+              variant="outline"
+              onClick={handleShare}
+              className="flex-1 h-12 gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </Button>
+            <Button
+              onClick={handleDownload}
+              className="flex-1 h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+            >
+              <Download className="w-4 h-4" />
+              Download QR
+            </Button>
+          </div>
           <Button
-            variant="outline"
-            onClick={handleShare}
-            className="flex-1 h-12 gap-2"
+            onClick={() => window.print()}
+            className="w-full sm:w-1/3 h-12 gap-2 bg-orange-500 hover:bg-orange-600 text-white"
           >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
-          <Button
-            onClick={handleDownload}
-            className="flex-1 h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white"
-          >
-            <Download className="w-4 h-4" />
-            Download
+            <Printer className="w-4 h-4" />
+            Print ID
           </Button>
         </div>
       </Card>
@@ -205,6 +215,7 @@ export default function PetQR() {
   return (
     <OwnerSidebar user={user}>
       {content}
+      <PrintablePetId pet={pet} user={user} qrCodeUrl={getQRCodeImageServiceUrl()} />
     </OwnerSidebar>
   );
 }
