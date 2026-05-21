@@ -13,7 +13,8 @@ public class UploadsController : ControllerBase
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "file is required" });
 
-        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        // Store uploads OUTSIDE wwwroot so that Vite's emptyOutDir does not delete them.
+        var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
         Directory.CreateDirectory(uploadsDir);
 
         var ext = Path.GetExtension(file.FileName);

@@ -10,21 +10,58 @@ export default function PrintablePetId({ pet, user, qrCodeUrl }) {
   const sex = pet.gender === 'male' ? 'M' : pet.gender === 'female' ? 'F' : 'N/A';
   const color = pet.color || 'N/A';
 
+  const cardStyle = {
+    width: '85.6mm',
+    height: '53.98mm',
+    printColorAdjust: 'exact',
+    WebkitPrintColorAdjust: 'exact',
+    backgroundImage: `url(${background})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    fontFamily: 'Arial, sans-serif',
+  };
+
+  const Header = () => (
+    <div
+      style={{
+        background: '#f97316',
+        height: '12mm',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: '1mm',
+        paddingRight: '3mm',
+        gap: '2mm',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Logo — fully inside the header */}
+      <img
+        src={logo}
+        alt="Logo"
+        style={{ width: '11mm', height: '11mm', objectFit: 'contain', flexShrink: 0 }}
+      />
+      {/* Clinic name */}
+      <div style={{ color: '#fff', textAlign: 'center', flex: 1 }}>
+        <div style={{ fontWeight: 900, fontSize: '3.8mm', lineHeight: 1.2, letterSpacing: '0.3mm' }}>
+          VM VETERINARY CLINIC
+        </div>
+        <div style={{ fontWeight: 500, fontSize: '1.9mm', lineHeight: 1.2 }}>
+          Petshop &amp; Spa - Pet Grooming Center
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="hidden print:block w-full">
       <style>
         {`
           @media print {
-            @page {
-              size: 3.375in 2.125in landscape;
-              margin: 0;
-            }
-            body * {
-              visibility: hidden;
-            }
-            #printable-pet-id, #printable-pet-id * {
-              visibility: visible;
-            }
+            @page { margin: 10mm; }
+            body * { visibility: hidden; }
+            #printable-pet-id, #printable-pet-id * { visibility: visible; }
             #printable-pet-id {
               position: absolute;
               left: 0;
@@ -35,141 +72,141 @@ export default function PrintablePetId({ pet, user, qrCodeUrl }) {
         `}
       </style>
       <div id="printable-pet-id">
-        {/* Front Page */}
-        <div 
-          className="w-[3.375in] h-[2.125in] mx-auto border-2 border-gray-300 relative bg-white overflow-hidden"
-          style={{ 
-            pageBreakAfter: 'always', 
-            printColorAdjust: 'exact',
-            WebkitPrintColorAdjust: 'exact',
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
+
+        {/* ===== FRONT PAGE ===== */}
+        <div
+          style={{ ...cardStyle, pageBreakAfter: 'always', position: 'relative', overflow: 'hidden', border: '1.5px solid #ccc', borderRadius: '3mm' }}
         >
-          {/* Header */}
-          <div className="bg-[#f97316] h-[0.5in] w-full flex items-center justify-center relative">
-            {/* Logo overlapping header slightly */}
-            <div className="absolute -left-2 -top-1 w-[0.8in] h-[0.8in]">
-               <img src={logo} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
-            </div>
-            <div className="text-white text-center ml-12">
-              <h1 className="font-bold text-sm leading-tight tracking-wide">VM VETERINARY CLINIC</h1>
-              <p className="text-[0.45rem] font-medium">Petshop & Spa - Pet Grooming Center</p>
-            </div>
-          </div>
+          <Header />
 
           {/* Body */}
-          <div className="flex p-2 gap-3 h-[calc(100%-0.5in)] relative">
-             {/* Pet Photo */}
-             <div className="w-[1.2in] h-[1.3in] rounded-md border-2 border-black overflow-hidden bg-gray-100 z-10 flex-shrink-0 mt-2">
-               {pet.photo_url ? (
-                 <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-               ) : (
-                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Photo</div>
-               )}
-             </div>
+          <div style={{ display: 'flex', padding: '2mm 3mm', gap: '3mm', height: 'calc(100% - 12mm)', boxSizing: 'border-box' }}>
+            {/* Pet Photo */}
+            <div
+              style={{
+                width: '26mm',
+                height: '30mm',
+                flexShrink: 0,
+                border: '1.5px solid #333',
+                borderRadius: '1.5mm',
+                overflow: 'hidden',
+                background: '#e5e7eb',
+              }}
+            >
+              {pet.photo_url ? (
+                <img src={pet.photo_url} alt={pet.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '2.5mm' }}>
+                  No Photo
+                </div>
+              )}
+            </div>
 
-             {/* Pet Details */}
-             <div className="flex-1 mt-2 z-10 text-[#432c1a]">
-               <h2 className="font-black text-2xl leading-none truncate">{pet.name?.toUpperCase()}</h2>
-               <p className="font-bold text-[#f97316] text-sm mb-2 leading-none truncate">{pet.breed || pet.species}</p>
-               
-               <div className="grid grid-cols-2 gap-y-1 gap-x-2 mt-1">
-                  <div>
-                    <p className="text-[0.5rem] font-medium text-gray-500">Birthday</p>
-                    <p className="text-xs font-bold leading-none">{birthday}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.5rem] font-medium text-gray-500">Sex</p>
-                    <p className="text-xs font-bold leading-none">{sex}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.5rem] font-medium text-gray-500">Color</p>
-                    <p className="text-xs font-bold leading-none truncate">{color}</p>
-                  </div>
-               </div>
-             </div>
+            {/* Pet Details */}
+            <div style={{ flex: 1, color: '#432c1a', overflow: 'hidden' }}>
+              <div style={{ fontWeight: 900, fontSize: '6.5mm', lineHeight: 1, marginBottom: '1mm', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {pet.name?.toUpperCase()}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: '3mm', color: '#f97316', marginBottom: '3mm', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {pet.breed || pet.species}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5mm' }}>
+                <div>
+                  <div style={{ fontSize: '1.8mm', color: '#6b7280', fontWeight: 500 }}>Birthday</div>
+                  <div style={{ fontSize: '2.8mm', fontWeight: 700, lineHeight: 1 }}>{birthday}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.8mm', color: '#6b7280', fontWeight: 500 }}>Sex</div>
+                  <div style={{ fontSize: '2.8mm', fontWeight: 700, lineHeight: 1 }}>{sex}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.8mm', color: '#6b7280', fontWeight: 500 }}>Color</div>
+                  <div style={{ fontSize: '2.8mm', fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{color}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Back Page */}
-        <div 
-          className="w-[3.375in] h-[2.125in] mx-auto border-2 border-gray-300 relative bg-white overflow-hidden mt-8"
-          style={{ 
-            printColorAdjust: 'exact',
-            WebkitPrintColorAdjust: 'exact',
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
+        {/* ===== BACK PAGE ===== */}
+        <div
+          style={{ ...cardStyle, marginTop: '8mm', position: 'relative', overflow: 'hidden', border: '1.5px solid #ccc', borderRadius: '3mm' }}
         >
-          {/* Header */}
-          <div className="bg-[#f97316] h-[0.5in] w-full flex items-center justify-center relative">
-            <div className="absolute -left-2 -top-1 w-[0.8in] h-[0.8in]">
-               <img src={logo} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
-            </div>
-            <div className="text-white text-center ml-12">
-              <h1 className="font-bold text-sm leading-tight tracking-wide">VM VETERINARY CLINIC</h1>
-              <p className="text-[0.45rem] font-medium">Petshop & Spa - Pet Grooming Center</p>
-            </div>
-          </div>
+          <Header />
 
           {/* Body */}
-          <div className="p-2 h-[calc(100%-0.65in)] flex flex-col justify-center">
-            <h3 className="text-[0.6rem] font-bold text-[#8c5a35] mb-1 ml-4">IF FOUND, PLEASE CONTACT</h3>
-            
-            <div className="bg-[#fff1e5] border border-[#fbd3b1] rounded-2xl p-2 flex justify-between items-center mx-1">
-              <div className="space-y-1 flex-1 pr-1">
-                <div>
-                  <h4 className="text-[0.6rem] font-bold text-[#8c5a35] leading-tight">Owner Information</h4>
-                  <div className="flex justify-between text-[#111]">
-                    <div className="w-1/2 pr-1">
-                      <p className="text-[0.45rem] text-gray-500">Name</p>
-                      <p className="text-[0.55rem] font-bold truncate">{user.full_name || 'N/A'}</p>
-                    </div>
-                    <div className="w-1/2">
-                      <p className="text-[0.45rem] text-gray-500">Contact Number</p>
-                      <p className="text-[0.55rem] font-bold truncate">{user.phone || 'N/A'}</p>
-                    </div>
+          <div style={{ padding: '1.5mm 3mm 1mm', height: 'calc(100% - 16mm)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ fontSize: '2.3mm', fontWeight: 700, color: '#8c5a35', marginBottom: '1.5mm' }}>
+              IF FOUND, PLEASE CONTACT
+            </div>
+
+            <div style={{
+              background: '#fff1e5',
+              border: '1px solid #fbd3b1',
+              borderRadius: '3mm',
+              padding: '2mm 2.5mm',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2mm',
+            }}>
+              {/* Info columns */}
+              <div style={{ flex: 1 }}>
+                {/* Owner */}
+                <div style={{ fontSize: '2.3mm', fontWeight: 700, color: '#8c5a35', marginBottom: '0.8mm' }}>Owner Information</div>
+                <div style={{ display: 'flex', gap: '2mm', marginBottom: '2mm' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.8mm', color: '#6b7280' }}>Name</div>
+                    <div style={{ fontSize: '2.3mm', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name || 'N/A'}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.8mm', color: '#6b7280' }}>Contact Number</div>
+                    <div style={{ fontSize: '2.3mm', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.phone || 'N/A'}</div>
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-[0.6rem] font-bold text-[#8c5a35] leading-tight mt-1">Clinic Information</h4>
-                  <div className="flex justify-between text-[#111]">
-                    <div className="w-1/2 pr-1">
-                      <p className="text-[0.45rem] text-gray-500">Clinic Name</p>
-                      <p className="text-[0.55rem] font-bold truncate">VM Veterinary Clinic</p>
-                    </div>
-                    <div className="w-1/2">
-                      <p className="text-[0.45rem] text-gray-500">Contact Number</p>
-                      <p className="text-[0.55rem] font-bold truncate">09491270283</p>
-                    </div>
+                {/* Clinic */}
+                <div style={{ fontSize: '2.3mm', fontWeight: 700, color: '#8c5a35', marginBottom: '0.8mm' }}>Clinic Information</div>
+                <div style={{ display: 'flex', gap: '2mm' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.8mm', color: '#6b7280' }}>Clinic Name</div>
+                    <div style={{ fontSize: '2.3mm', fontWeight: 700 }}>VM Veterinary Clinic</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '1.8mm', color: '#6b7280' }}>Contact Number</div>
+                    <div style={{ fontSize: '2.3mm', fontWeight: 700 }}>09491270283</div>
                   </div>
                 </div>
               </div>
-              
+
               {/* QR Code */}
-              <div className="bg-white p-0.5 rounded flex-shrink-0">
-                 {qrCodeUrl ? (
-                   <img src={qrCodeUrl} alt="QR Code" className="w-[0.9in] h-[0.9in] object-contain" />
-                 ) : (
-                   <div className="w-[0.9in] h-[0.9in] bg-gray-200"></div>
-                 )}
+              <div style={{ background: '#fff', padding: '1mm', borderRadius: '1.5mm', flexShrink: 0 }}>
+                {qrCodeUrl ? (
+                  <img src={qrCodeUrl} alt="QR Code" style={{ width: '19mm', height: '19mm', objectFit: 'contain', display: 'block' }} />
+                ) : (
+                  <div style={{ width: '19mm', height: '19mm', background: '#e5e7eb' }} />
+                )}
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="absolute bottom-1 w-[calc(100%-2rem)] text-center border-t border-gray-400 mx-4 px-2">
-            <p className="text-[0.5rem] font-bold text-[#664125] pt-0.5">
-              powered by <span className="text-[#f97316]">PAWRTAL</span> - VM Veterinary Clinic
-            </p>
+          <div style={{
+            position: 'absolute',
+            bottom: '1.5mm',
+            left: '4mm',
+            right: '4mm',
+            borderTop: '0.5px solid #9ca3af',
+            paddingTop: '1mm',
+            textAlign: 'center',
+            fontSize: '2mm',
+            fontWeight: 700,
+            color: '#664125',
+          }}>
+            powered by <span style={{ color: '#f97316' }}>PAWRTAL</span> - VM Veterinary Clinic
           </div>
         </div>
+
       </div>
     </div>
   );

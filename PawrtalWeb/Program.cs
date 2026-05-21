@@ -56,7 +56,16 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseAuthorization();
-app.UseStaticFiles();
+app.UseStaticFiles(); // serves wwwroot (Vite build output)
+
+// Serve user-uploaded files from the "uploads" folder (outside wwwroot so Vite builds don't delete them)
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
 
 app.MapControllers();              // ← API routes matched first
 app.MapFallbackToFile("index.html"); // ← React SPA catches everything else

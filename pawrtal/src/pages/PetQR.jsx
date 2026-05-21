@@ -47,15 +47,15 @@ export default function PetQR() {
     return `${getPublicBaseUrl()}${createPageUrl(`PublicPetProfile?id=${pet.id}`)}`;
   };
 
-  const getQRCodeImageServiceUrl = () => {
+  const getQRCodeImageServiceUrl = (size = '280x280') => {
     const target = getPublicProfileUrl();
     if (!target) return '';
-    return `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(target)}&color=0d9488`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}&data=${encodeURIComponent(target)}&color=0d9488`;
   };
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(getQRCodeImageServiceUrl());
+      const response = await fetch(getQRCodeImageServiceUrl('100x100'));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
