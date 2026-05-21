@@ -24,8 +24,8 @@ function StaffForm({ isAdminOnly }) {
     e.preventDefault();
     setError('');
     setDone('');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.');
+    if (!/@pawrtal\.com$/i.test(email.trim())) {
+      setError('Only @pawrtal.com email addresses are allowed.');
       return;
     }
     if (password.length < 6) {
@@ -117,7 +117,7 @@ function StaffForm({ isAdminOnly }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl ${ring} focus:outline-none focus:ring-2`}
-              placeholder="staff@clinic.com"
+              placeholder="name@pawrtal.com"
             />
           </div>
         </div>

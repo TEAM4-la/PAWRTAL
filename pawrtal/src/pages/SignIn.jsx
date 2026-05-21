@@ -92,8 +92,8 @@ export default function SignIn() {
   }, [redirectAfterLogin, preselectedRole]);
 
   const handleSignIn = async () => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.');
+    if (!/@pawrtal\.com$/i.test(email.trim())) {
+      setError('Only @pawrtal.com email addresses are allowed.');
       return;
     }
     if (!password || password.length < 6) {
@@ -363,7 +363,7 @@ export default function SignIn() {
                       type="email"
                       value={email}
                       onChange={e => { setEmail(e.target.value); setError(''); }}
-                      placeholder="you@example.com"
+                      placeholder="name@pawrtal.com"
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
                     />
                   </div>
