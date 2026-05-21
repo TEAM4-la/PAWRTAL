@@ -1,12 +1,37 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
-import AdminSidebar from '@/components/layout/AdminSidebar';
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, PawPrint } from 'lucide-react';
-import { format, differenceInYears } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import EmptyState from "@/components/shared/EmptyState";
+import AdminSidebar from '@/components/layout/AdminSidebar';
+import { 
+  Search, 
+  PawPrint, 
+  User, 
+  Calendar,
+  FileText,
+  Dog,
+  Cat,
+  Bird,
+  Rabbit,
+  Fish,
+  ChevronLeft
+} from 'lucide-react';
+import { format, differenceInYears, differenceInMonths } from 'date-fns';
+
+const speciesIcons = {
+  dog: Dog,
+  cat: Cat,
+  bird: Bird,
+  rabbit: Rabbit,
+  fish: Fish,
+};
 
 const speciesColors = {
   dog: 'bg-amber-100 text-amber-700',
@@ -14,75 +39,192 @@ const speciesColors = {
   bird: 'bg-sky-100 text-sky-700',
   rabbit: 'bg-pink-100 text-pink-700',
   fish: 'bg-blue-100 text-blue-700',
+  hamster: 'bg-orange-100 text-orange-700',
+  reptile: 'bg-green-100 text-green-700',
   other: 'bg-gray-100 text-gray-700',
 };
 
 export default function AdminPatients() {
-  const [search, setSearch] = useState('');
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
-  const { data: pets = [] } = useQuery({ queryKey: ['allPets'], queryFn: () => api.entities.Pet.list() });
-  const { data: appointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list() });
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [speciesFilter, setSpeciesFilter] = useState('all');
 
-  const filtered = pets.filter(p =>
-    !search || p.name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.species?.toLowerCase().includes(search.toLowerCase()) ||
-    p.owner_email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => api.auth.me(),
+  });
 
-  return (
-    <AdminSidebar currentUser={user}>
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">All Patients</h1>
-          <p className="text-gray-500 mt-1">{pets.length} pets registered in the clinic</p>
+  const { data: pets = [], isLoading } = useQuery({
+    queryKey: ['allPets'],
+    queryFn: () => api.entities.Pet.list('-created_date'),
+    enabled: !!user,
+  });
+
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['allAppointments'],
+    queryFn: () => api.entities.Appointment.list('-date'),
+    enabled: !!user,
+  });
+
+  const calculateAge = (dob) => {
+    if (!dob) return 'Unknown';
+    const years = differenceInYears(new Date(), new Date(dob));
+    const months = differenceInMonths(new Date(), new Date(dob)) % 12;
+    if (years === 0) return `${months}mo`;
+    return `${years}y ${months}mo`;
+  };
+
+  const getLastVisit = (petId) => {
+    const petAppointments = appointments
+      .filter(apt => apt.pet_id === petId && apt.status === 'completed')
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    return petAppointments[0]?.date;
+  };
+
+  const filteredPets = pets.filter(pet => {
+    const matchesSearch = 
+      pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pet.breed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pet.owner_email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSpecies = speciesFilter === 'all' || pet.species === speciesFilter;
+    return matchesSearch && matchesSpecies;
+  });
+
+  const speciesList = [...new Set(pets.map(p => p.species))];
+
+  const content = (
+    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
+        <ChevronLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">All Patients</h1>
+          <p className="text-gray-500 mt-1">{pets.length} registered patients in the clinic</p>
         </div>
+      </div>
 
-        <div className="relative mb-6 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input placeholder="Search pets or owners..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            placeholder="Search by name, breed, or owner..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-11"
+          />
         </div>
+        <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
+          <SelectTrigger className="w-full sm:w-40 h-11">
+            <SelectValue placeholder="All species" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Species</SelectItem>
+            {speciesList.map(species => (
+              <SelectItem key={species} value={species} className="capitalize">
+                {species}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.length === 0 ? (
-            <div className="col-span-3 py-16 text-center text-gray-400">
-              <PawPrint className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-              <p>No pets found</p>
-            </div>
-          ) : filtered.map(pet => {
-            const petAppts = appointments.filter(a => a.pet_id === pet.id && a.status === 'completed');
-            const lastAppt = petAppts.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            const age = pet.date_of_birth ? differenceInYears(new Date(), new Date(pet.date_of_birth)) : null;
+      {/* Patients List */}
+      {filteredPets.length === 0 ? (
+        <Card className="border-dashed border-2">
+          <EmptyState
+            icon={PawPrint}
+            title="No patients found"
+            description={searchTerm ? "Try adjusting your search terms" : "No pets registered yet"}
+          />
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {filteredPets.map((pet) => {
+            const Icon = speciesIcons[pet.species] || Dog;
+            const lastVisit = getLastVisit(pet.id);
+            
             return (
-              <Card key={pet.id} className="border-0 shadow-sm p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                    {pet.photo_url ? (
-                      <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-gray-400">
-                        {pet.name?.[0]}
+              <Card key={pet.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center flex-shrink-0">
+                        {pet.photo_url ? (
+                          <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Icon className="w-8 h-8 text-teal-400" />
+                        )}
                       </div>
-                    )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900 text-lg">{pet.name}</h3>
+                          <Badge className={speciesColors[pet.species] || speciesColors.other}>{pet.species}</Badge>
+                        </div>
+                        <p className="text-gray-600 text-sm">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
+                          <span className="flex items-center gap-1 truncate">
+                            <User className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{pet.owner_email}</span>
+                          </span>
+                          {lastVisit && (
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              <Calendar className="w-4 h-4" />
+                              Last visit: {format(new Date(lastVisit + 'T00:00:00'), 'MMM d, yyyy')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
+                      <Link to={createPageUrl(`VetPatientDetail?id=${pet.id}`)} className="flex-1 md:flex-none">
+                        <Button variant="outline" className="w-full gap-2">
+                          <FileText className="w-4 h-4" />
+                          View Records
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-gray-900">{pet.name}</p>
-                    <Badge className={`text-xs mt-0.5 ${speciesColors[pet.species] || speciesColors.other}`}>
-                      {pet.species}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-sm text-gray-500">
-                  {pet.breed && <p><span className="text-gray-400">Breed:</span> {pet.breed}</p>}
-                  {age !== null && <p><span className="text-gray-400">Age:</span> {age} yr{age !== 1 ? 's' : ''}</p>}
-                  <p><span className="text-gray-400">Owner:</span> <span className="truncate">{pet.owner_email}</span></p>
-                  <p><span className="text-gray-400">Visits:</span> {petAppts.length}</p>
-                  {lastAppt && <p><span className="text-gray-400">Last visit:</span> {format(new Date(lastAppt.date + 'T00:00:00'), 'MMM d, yyyy')}</p>}
-                </div>
+
+                  {(pet.allergies?.length > 0 || pet.medical_conditions?.length > 0) && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-2">
+                      {pet.allergies?.map((allergy, i) => (
+                        <Badge key={i} variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                          Allergy: {allergy}
+                        </Badge>
+                      ))}
+                      {pet.medical_conditions?.map((condition, i) => (
+                        <Badge key={i} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                          {condition}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             );
           })}
         </div>
-      </div>
+      )}
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <AdminSidebar currentUser={user}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AdminSidebar>
+    );
+  }
+
+  return (
+    <AdminSidebar currentUser={user}>
+      {content}
     </AdminSidebar>
   );
 }

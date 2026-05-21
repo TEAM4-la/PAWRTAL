@@ -224,7 +224,7 @@ export default function VetRecords() {
             title="No records found"
             description={searchTerm ? "Try adjusting your search" : "Add your first health record"}
             actionLabel="Add Record"
-            onAction={() => setIsDialogOpen(true)}
+            onAction={() => navigate(createPageUrl('VetAddRecord'))}
           />
         </Card>
       ) : (

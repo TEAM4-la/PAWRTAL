@@ -292,6 +292,7 @@ export default function EditPet() {
                   id="weight"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                   className="mt-1.5 h-11"

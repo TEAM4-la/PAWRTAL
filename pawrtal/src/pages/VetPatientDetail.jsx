@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl, getAppointmentStatus } from "@/utils";
-import { api } from '@/api/apiClient';
+import { api, userTypeToRole } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fns';
 import VetSidebar from '@/components/layout/VetSidebar';
+import AdminSidebar from '@/components/layout/AdminSidebar';
 
 const speciesIcons = {
   dog: Dog,
@@ -101,37 +102,40 @@ export default function VetPatientDetail() {
     return `${years}y ${months}m`;
   };
 
+  const isClinicAdmin = userTypeToRole(user?.user_type) === 'admin';
+  const Sidebar = isClinicAdmin ? AdminSidebar : VetSidebar;
+
   if (petLoading) {
     return (
-      <VetSidebar user={user}>
+      <Sidebar user={user} currentUser={user}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      </VetSidebar>
+      </Sidebar>
     );
   }
 
   if (!pet) {
     return (
-      <VetSidebar user={user}>
+      <Sidebar user={user} currentUser={user}>
         <div className="p-6 text-center">
           <p className="text-gray-500">Patient not found</p>
-          <Link to={createPageUrl('Patients')}>
+          <Link to={isClinicAdmin ? createPageUrl('AdminPatients') : createPageUrl('Patients')}>
             <Button className="mt-4">Back to Patients</Button>
           </Link>
         </div>
-      </VetSidebar>
+      </Sidebar>
     );
   }
 
   const Icon = speciesIcons[pet.species] || Dog;
 
   return (
-    <VetSidebar user={user}>
+    <Sidebar user={user} currentUser={user}>
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <Button
         variant="ghost"
-        onClick={() => navigate(createPageUrl('VetDashboard'))}
+        onClick={() => navigate(isClinicAdmin ? createPageUrl('AdminPatients') : createPageUrl('VetDashboard'))}
         className="gap-2 text-gray-600"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -158,13 +162,21 @@ export default function VetPatientDetail() {
                     <Badge className="capitalize bg-teal-100 text-teal-700">{pet.species}</Badge>
                   </div>
                   <p className="text-gray-500">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
+                  {pet.microchip_id && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                      Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                    </div>
+                  )}
                 </div>
-                <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)}>
-                  <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
-                    <Plus className="w-4 h-4" />
-                    Add Record
-                  </Button>
-                </Link>
+                {!isClinicAdmin && (
+                  <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)}>
+                    <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+                      <Plus className="w-4 h-4" />
+                      Add Record
+                    </Button>
+                  </Link>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-4 mt-6">
@@ -181,7 +193,7 @@ export default function VetPatientDetail() {
                 <div className="p-3 bg-gray-50 rounded-xl text-center">
                   <Calendar className="w-5 h-5 mx-auto text-purple-500 mb-1" />
                   <p className="text-sm text-gray-500">Visits</p>
-                  <p className="font-semibold">{appointments.length}</p>
+                  <p className="font-semibold">{appointments.filter(a => a.status === 'completed').length}</p>
                 </div>
               </div>
 
@@ -209,7 +221,7 @@ export default function VetPatientDetail() {
               <TabsTrigger value="records" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Records ({healthRecords.length})</TabsTrigger>
               <TabsTrigger value="vaccinations" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Vaccinations ({vaccinations.length})</TabsTrigger>
               <TabsTrigger value="medications" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Medications ({medications.length})</TabsTrigger>
-              <TabsTrigger value="appointments" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Visits ({appointments.length})</TabsTrigger>
+              <TabsTrigger value="appointments" className="whitespace-nowrap px-4 py-2 flex-shrink-0">History ({appointments.length})</TabsTrigger>
               <TabsTrigger value="grooming" className="whitespace-nowrap px-4 py-2 flex-shrink-0">Grooming ({groomingRecords.length})</TabsTrigger>
             </TabsList>
 
@@ -256,30 +268,33 @@ export default function VetPatientDetail() {
                     return (
                     <Card key={vax.id} className="border-0 shadow-sm">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-semibold text-gray-900">{vax.vaccine_name}</h4>
-                            <p className="text-sm text-gray-500">
-                              {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
-                            </p>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-gray-900 truncate">{vax.vaccine_name}</h4>
+                            <div className="text-sm text-gray-500 mt-0.5">
+                              <p>{format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}</p>
+                              {vax.batch_number && <p className="break-all mt-0.5 text-gray-400 text-xs">Batch: {vax.batch_number}</p>}
+                            </div>
                           </div>
-                          {vax.next_due_date && isLatest && (
-                            <Badge 
-                              variant="outline"
-                              className={
-                                isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
-                                  ? 'bg-red-50 text-red-700 border-red-200'
-                                  : 'bg-blue-50 text-blue-700 border-blue-200'
-                              }
-                            >
-                              {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
-                            </Badge>
-                          )}
-                          {vax.next_due_date && !isLatest && (
-                            <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
-                              Renewed
-                            </Badge>
-                          )}
+                          <div className="flex-shrink-0 mt-0.5">
+                            {vax.next_due_date && isLatest && (
+                              <Badge 
+                                variant="outline"
+                                className={
+                                  isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
+                                    ? 'bg-red-50 text-red-700 border-red-200'
+                                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                                }
+                              >
+                                {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                              </Badge>
+                            )}
+                            {vax.next_due_date && !isLatest && (
+                              <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                                Renewed
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -443,6 +458,6 @@ export default function VetPatientDetail() {
         </div>
       </div>
     </div>
-    </VetSidebar>
+    </Sidebar>
   );
 }

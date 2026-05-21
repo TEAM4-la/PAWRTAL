@@ -55,6 +55,25 @@ export default function VetAddRecord() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const preselectedPetId = urlParams.get('petId');
+
+  // Date range limits — restrict all dates to current year to prevent trolling
+  const currentYear = new Date().getFullYear();
+  const minCurrentYear = `${currentYear}-01-01`;   // Jan 1 of this year
+  const maxCurrentYear = `${currentYear}-12-31`;   // Dec 31 of this year
+  const maxNextYear    = `${currentYear + 1}-12-31`; // Dec 31 of next year (for forward-looking fields)
+
+  /** Live character counter shown below capped inputs. */
+  const CharCount = ({ value, max }) => {
+    const len = (value || '').length;
+    const pct = len / max;
+    const color = pct >= 0.95 ? 'text-red-500' : pct >= 0.8 ? 'text-amber-500' : 'text-gray-400';
+    if (len === 0) return null; // hide until user starts typing
+    return (
+      <p className={`text-xs mt-1 text-right ${color}`}>
+        {len}/{max} characters{pct >= 0.95 ? ' — limit reached!' : pct >= 0.8 ? ' — almost full' : ''}
+      </p>
+    );
+  };
   
   const [activeTab, setActiveTab] = useState('record');
   const [isUploading, setIsUploading] = useState(false);
@@ -341,6 +360,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">Date</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxCurrentYear}
                       value={recordForm.date}
                       onChange={(e) => setRecordForm({...recordForm, date: e.target.value})}
                       className="mt-1.5"
@@ -352,6 +373,7 @@ export default function VetAddRecord() {
                   <Label className="text-sm font-medium">Title *</Label>
                   <div className="relative mt-1.5">
                     <Input
+                      maxLength={200}
                       value={recordForm.title}
                       onChange={(e) => {
                         setRecordForm({...recordForm, title: e.target.value});
@@ -367,6 +389,7 @@ export default function VetAddRecord() {
                   {recordErrors.title && (
                     <p className="text-sm text-red-600 mt-1.5">Please enter a title.</p>
                   )}
+                  <CharCount value={recordForm.title} max={200} />
                 </div>
 
                 <div>
@@ -452,6 +475,7 @@ export default function VetAddRecord() {
                   <Label className="text-sm font-medium">Vaccine Name *</Label>
                   <div className="relative mt-1.5">
                     <Input
+                      maxLength={200}
                       value={vaccinationForm.vaccine_name}
                       onChange={(e) => {
                         setVaccinationForm({...vaccinationForm, vaccine_name: e.target.value});
@@ -467,6 +491,7 @@ export default function VetAddRecord() {
                   {vaccinationErrors.vaccine_name && (
                     <p className="text-sm text-red-600 mt-1.5">Please enter a vaccine name.</p>
                   )}
+                  <CharCount value={vaccinationForm.vaccine_name} max={200} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -474,6 +499,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">Date Administered</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxCurrentYear}
                       value={vaccinationForm.date_administered}
                       onChange={(e) => setVaccinationForm({...vaccinationForm, date_administered: e.target.value})}
                       className="mt-1.5"
@@ -483,6 +510,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">Next Due Date</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxNextYear}
                       value={vaccinationForm.next_due_date}
                       onChange={(e) => setVaccinationForm({...vaccinationForm, next_due_date: e.target.value})}
                       className="mt-1.5"
@@ -493,11 +522,13 @@ export default function VetAddRecord() {
                 <div>
                   <Label className="text-sm font-medium">Batch Number</Label>
                   <Input
+                    maxLength={100}
                     value={vaccinationForm.batch_number}
                     onChange={(e) => setVaccinationForm({...vaccinationForm, batch_number: e.target.value})}
                     placeholder="Vaccine batch/lot number"
                     className="mt-1.5"
                   />
+                  <CharCount value={vaccinationForm.batch_number} max={100} />
                 </div>
 
                 <div>
@@ -553,6 +584,7 @@ export default function VetAddRecord() {
                   <Label className="text-sm font-medium">Medication Name *</Label>
                   <div className="relative mt-1.5">
                     <Input
+                      maxLength={200}
                       value={medicationForm.name}
                       onChange={(e) => {
                         setMedicationForm({...medicationForm, name: e.target.value});
@@ -568,26 +600,31 @@ export default function VetAddRecord() {
                   {medicationErrors.name && (
                     <p className="text-sm text-red-600 mt-1.5">Please enter a medication name.</p>
                   )}
+                  <CharCount value={medicationForm.name} max={200} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Dosage</Label>
                     <Input
+                      maxLength={100}
                       value={medicationForm.dosage}
                       onChange={(e) => setMedicationForm({...medicationForm, dosage: e.target.value})}
                       placeholder="e.g., 250mg"
                       className="mt-1.5"
                     />
+                    <CharCount value={medicationForm.dosage} max={100} />
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Frequency</Label>
                     <Input
+                      maxLength={100}
                       value={medicationForm.frequency}
                       onChange={(e) => setMedicationForm({...medicationForm, frequency: e.target.value})}
                       placeholder="e.g., Twice daily"
                       className="mt-1.5"
                     />
+                    <CharCount value={medicationForm.frequency} max={100} />
                   </div>
                 </div>
 
@@ -596,6 +633,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">Start Date</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxCurrentYear}
                       value={medicationForm.start_date}
                       onChange={(e) => setMedicationForm({...medicationForm, start_date: e.target.value})}
                       className="mt-1.5"
@@ -605,6 +644,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">End Date</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxNextYear}
                       value={medicationForm.end_date}
                       onChange={(e) => setMedicationForm({...medicationForm, end_date: e.target.value})}
                       className="mt-1.5"
@@ -666,6 +707,8 @@ export default function VetAddRecord() {
                     <Label className="text-sm font-medium">Date</Label>
                     <Input
                       type="date"
+                      min={minCurrentYear}
+                      max={maxCurrentYear}
                       value={groomingForm.date}
                       onChange={(e) => setGroomingForm({...groomingForm, date: e.target.value})}
                       className="mt-1.5"
@@ -674,11 +717,13 @@ export default function VetAddRecord() {
                   <div>
                     <Label className="text-sm font-medium">Groomer Name</Label>
                     <Input
+                      maxLength={200}
                       value={groomingForm.groomer_name}
                       onChange={(e) => setGroomingForm({...groomingForm, groomer_name: e.target.value})}
                       placeholder="Who performed the grooming"
                       className="mt-1.5"
                     />
+                    <CharCount value={groomingForm.groomer_name} max={200} />
                   </div>
                 </div>
 
@@ -735,11 +780,13 @@ export default function VetAddRecord() {
                 <div>
                   <Label className="text-sm font-medium">Coat Style / Cut Notes</Label>
                   <Input
+                    maxLength={500}
                     value={groomingForm.coat_style_notes}
                     onChange={(e) => setGroomingForm({...groomingForm, coat_style_notes: e.target.value})}
                     placeholder="e.g., Teddy bear cut, trimmed around ears"
                     className="mt-1.5"
                   />
+                  <CharCount value={groomingForm.coat_style_notes} max={500} />
                 </div>
 
                 <div>

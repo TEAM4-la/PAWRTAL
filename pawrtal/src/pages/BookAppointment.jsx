@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
@@ -23,7 +23,7 @@ import {
   Rabbit,
   Fish
 } from 'lucide-react';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, parse, isToday } from 'date-fns';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
@@ -74,6 +74,48 @@ export default function BookAppointment() {
     queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
+
+  // Fetch ALL appointments for the selected date to prevent double-booking
+  // staleTime: 0 so data is always considered stale and refetched on mount/focus
+  const selectedDateStr = formData.date ? format(formData.date, 'yyyy-MM-dd') : null;
+  const { data: bookedAppointments = [] } = useQuery({
+    queryKey: ['bookedSlots', selectedDateStr],
+    queryFn: () => api.entities.Appointment.filter({ date: selectedDateStr }),
+    enabled: !!selectedDateStr,
+    staleTime: 0,           // Always refetch — never use stale cache for availability
+    refetchOnMount: true,   // Refetch every time the component mounts
+    refetchOnWindowFocus: true, // Refetch when user switches tabs and comes back
+  });
+
+  // Set of time strings that are already taken on this date
+  // Block pending, confirmed, AND accepted — only completed/cancelled/expired free up a slot
+  const bookedTimes = useMemo(
+    () => new Set(
+      bookedAppointments
+        .filter((apt) => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'accepted')
+        .map((apt) => apt.time)
+    ),
+    [bookedAppointments]
+  );
+
+  /**
+   * Returns true if a time slot should be disabled.
+   * Rules:
+   *   1. Already booked (pending or accepted appointment exists at that time on that date)
+   *   2. Today only: slot is within 30 minutes from now (transport buffer)
+   */
+  const isSlotDisabled = (timeStr) => {
+    if (bookedTimes.has(timeStr)) return true;
+
+    if (!formData.date || !isToday(formData.date)) return false;
+
+    // Parse the slot into today's datetime — date-fns format: hh=12h, mm=minutes, a=AM/PM
+    const slotDate = parse(timeStr, 'hh:mm a', new Date());
+    const now = new Date();
+    // Disable if slot time is <= now + 30 minutes
+    if (isNaN(slotDate.getTime())) return false; // safety guard
+    return slotDate.getTime() <= now.getTime() + 30 * 60 * 1000;
+  };
 
   const createMutation = useMutation({
     queryKey: ['createAppointment'],
@@ -269,28 +311,55 @@ export default function BookAppointment() {
               <Label className="text-sm font-medium mb-3 block">
                 Preferred Time <span className="text-red-500">*</span>
               </Label>
+              {!formData.date && (
+                <p className="text-sm text-amber-600 mb-2 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  Please select a date first to see available time slots.
+                </p>
+              )}
               <div className={cn("grid grid-cols-3 sm:grid-cols-4 gap-2 p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {timeSlots.map((time) => {
                   const isSelected = formData.time === time;
+                  const disabled = isSlotDisabled(time);
+                  const isBooked = bookedTimes.has(time);
                   return (
-                    <Button
-                      key={time}
-                      type="button"
-                      variant={isSelected ? "default" : "outline"}
-                      onClick={() => {
-                        setFormData({ ...formData, time });
-                        setErrors(prev => ({ ...prev, time: false }));
-                      }}
-                      className={cn(
-                        "h-10",
-                        isSelected && "bg-teal-500 hover:bg-teal-600"
+                    <div key={time} className="relative group">
+                      <Button
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        disabled={disabled}
+                        onClick={() => {
+                          if (disabled) return;
+                          setFormData({ ...formData, time });
+                          setErrors(prev => ({ ...prev, time: false }));
+                        }}
+                        className={cn(
+                          "h-10 w-full text-xs sm:text-sm transition-all",
+                          isSelected && "bg-teal-500 hover:bg-teal-600 text-white",
+                          disabled && isBooked && "opacity-40 line-through cursor-not-allowed bg-red-50 border-red-200 text-red-400",
+                          disabled && !isBooked && "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400"
+                        )}
+                      >
+                        {time}
+                      </Button>
+                      {/* Tooltip label on hover when disabled */}
+                      {disabled && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                          {isBooked ? 'Already booked' : 'Too soon — 30 min gap required'}
+                        </div>
                       )}
-                    >
-                      {time}
-                    </Button>
+                    </div>
                   );
                 })}
               </div>
+              {/* Legend */}
+              {formData.date && (
+                <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" /> Available</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 inline-block" /> Already booked</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200 inline-block" /> Too soon (30-min gap)</span>
+                </div>
+              )}
               {errors.time && (
                 <p className="text-sm text-red-600 mt-1.5">Please select a preferred time.</p>
               )}

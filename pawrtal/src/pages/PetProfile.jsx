@@ -208,6 +208,12 @@ export default function PetProfile() {
                 <Badge className="capitalize bg-teal-100 text-teal-700">{pet.species}</Badge>
               </div>
               <p className="text-gray-600">{pet.breed || 'Mixed breed'} • {pet.gender}</p>
+              {pet.microchip_id && (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                  Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 sm:pb-2">

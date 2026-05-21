@@ -23,7 +23,9 @@ public class AppointmentsController : ControllerBase
     public async Task<ActionResult<List<AppointmentDto>>> Filter(
         [FromQuery(Name = "owner_email")] string? ownerEmail,
         [FromQuery(Name = "vet_email")] string? vetEmail,
-        [FromQuery(Name = "pet_id")] Guid? petId)
+        [FromQuery(Name = "pet_id")] Guid? petId,
+        [FromQuery(Name = "date")] string? date,
+        [FromQuery(Name = "status")] string? status)
     {
         IQueryable<Appointment> q = _db.Appointments.AsNoTracking().Where(a => !a.IsDeleted);
 
@@ -35,6 +37,12 @@ public class AppointmentsController : ControllerBase
 
         if (petId is not null)
             q = q.Where(a => a.PetId == petId.Value);
+
+        if (!string.IsNullOrWhiteSpace(date) && DateOnly.TryParse(date, out var parsedDate))
+            q = q.Where(a => a.Date == parsedDate);
+
+        if (!string.IsNullOrWhiteSpace(status))
+            q = q.Where(a => a.Status == status);
 
         var appts = await q.ToListAsync();
         return Ok(appts.Select(ToDto).ToList());

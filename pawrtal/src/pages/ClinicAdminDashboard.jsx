@@ -162,7 +162,7 @@ export default function ClinicAdminDashboard() {
             <div className="p-4 border-t border-gray-50">
               <Link to={createPageUrl('AdminStaff')}>
                 <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 w-full">
-                  Manage Staff <ChevronRight className="w-4 h-4 ml-1" />
+                  View Staff <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
             </div>

@@ -278,6 +278,7 @@ export default function AddPet() {
                   id="weight"
                   type="number"
                   step="0.1"
+                  min="0"
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                   placeholder="e.g., 12.5"
