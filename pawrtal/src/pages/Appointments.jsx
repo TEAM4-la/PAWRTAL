@@ -36,7 +36,7 @@ export default function Appointments() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'cancelled', reason: apt.reason }),
     onSuccess: () => {
       queryClient.invalidateQueries(['appointments']);
       toast.success('Appointment cancelled');

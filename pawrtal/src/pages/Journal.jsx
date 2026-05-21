@@ -392,7 +392,7 @@ export default function Journal() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Confirmation Dialog */}  
         <Dialog open={isDeleteOpen} onOpenChange={(open) => {
           setIsDeleteOpen(open);
           if (!open) setEntryToDelete(null);

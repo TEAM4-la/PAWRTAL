@@ -25,7 +25,7 @@ public class AppointmentsController : ControllerBase
         [FromQuery(Name = "vet_email")] string? vetEmail,
         [FromQuery(Name = "pet_id")] Guid? petId)
     {
-        IQueryable<Appointment> q = _db.Appointments.AsNoTracking();
+        IQueryable<Appointment> q = _db.Appointments.AsNoTracking().Where(a => !a.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(ownerEmail))
             q = q.Where(a => a.OwnerEmail == ownerEmail);
@@ -43,7 +43,7 @@ public class AppointmentsController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<List<AppointmentDto>>> List([FromQuery] string? order, [FromQuery] int limit = 100)
     {
-        IQueryable<Appointment> q = _db.Appointments.AsNoTracking();
+        IQueryable<Appointment> q = _db.Appointments.AsNoTracking().Where(a => !a.IsDeleted);
 
         q = order switch
         {
@@ -186,10 +186,11 @@ public class AppointmentsController : ControllerBase
             {
                 if (notifyTime || (notifyStatus && (appt.Status == "confirmed" || appt.Status == "cancelled" || appt.Status == "completed")))
                 {
+                    string notificationTitle = (notifyStatus && appt.Status == "cancelled") ? "Appointment Cancelled" : "Appointment Updated";
                     await _notifications.CreateNotificationAsync(
                         appt.OwnerEmail,
                         "appointment",
-                        "Appointment Updated",
+                        notificationTitle,
                         msg,
                         "appointments"
                     );
@@ -200,6 +201,15 @@ public class AppointmentsController : ControllerBase
             if (notifyStatus && appt.Status == "cancelled")
             {
                 string vetMsg = $"The appointment for {petNameForVet} on {appt.Date:MMM d, yyyy} has been cancelled.";
+                if (!string.IsNullOrWhiteSpace(request.Reason))
+                {
+                    var cancelIndex = request.Reason.LastIndexOf("Cancellation Reason: ");
+                    if (cancelIndex >= 0)
+                    {
+                        vetMsg += $" {request.Reason.Substring(cancelIndex)}";
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(appt.VetEmail))
                 {
                     if (!string.Equals(appt.VetEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))

@@ -23,6 +23,7 @@ public class PetsController : ControllerBase
     {
         IQueryable<Pet> q = _db.Pets
             .AsNoTracking()
+            .Where(p => !p.IsDeleted)
             .Include(p => p.PetAllergies)
             .Include(p => p.PetMedicalConditions);
 
@@ -46,6 +47,7 @@ public class PetsController : ControllerBase
     {
         IQueryable<Pet> q = _db.Pets
             .AsNoTracking()
+            .Where(p => !p.IsDeleted)
             .Include(p => p.PetAllergies)
             .Include(p => p.PetMedicalConditions);
 

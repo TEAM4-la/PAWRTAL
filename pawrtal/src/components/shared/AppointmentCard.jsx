@@ -142,7 +142,7 @@ export default function AppointmentCard({
           </div>
 
           {appointment.reason && (
-            <p className="text-sm text-gray-500 mb-4 line-clamp-2">
+            <p className="text-sm text-gray-500 mb-4 whitespace-pre-line break-words">
               {appointment.reason}
             </p>
           )}
@@ -168,17 +168,7 @@ export default function AppointmentCard({
                   Complete
                 </Button>
               )}
-              {onCancel && !isVetView && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => onCancel(appointment)}
-                >
-                  Cancel
-                </Button>
-              )}
-              {onCancel && isVetView && (
+              {onCancel && (
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -193,14 +183,16 @@ export default function AppointmentCard({
         </div>
       </div>
 
-      {/* Cancel Dialog (always rendered but controlled via state) */}
-      {isVetView && (
+      {/* Cancel Dialog (rendered for both vet and owner views) */}
+      {onCancel && (
         <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Are you sure you want to cancel?</DialogTitle>
               <DialogDescription>
-                Please provide a reason for cancelling this appointment. The pet owner will see this reason.
+                {isVetView
+                  ? 'Please provide a reason for cancelling this appointment. The pet owner will see this reason.'
+                  : 'Please provide a reason for cancelling this appointment.'}
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
