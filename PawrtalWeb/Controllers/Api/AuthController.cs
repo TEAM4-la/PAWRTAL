@@ -236,6 +236,39 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("admin-reset-password")]
+    public async Task<IActionResult> AdminResetPassword([FromBody] AdminResetPasswordRequest request, CancellationToken ct)
+    {
+        // Verify caller is an admin
+        var callerEmail = NormalizeEmail(ApiUserContext.GetUserEmail(Request));
+        var caller = await FindUserByEmailAsync(callerEmail, ct);
+        if (caller is null)
+            return Unauthorized(new { error = "Sign in as admin to reset passwords." });
+        if (caller.UserType?.Trim().ToLowerInvariant() != "admin")
+            return StatusCode(StatusCodes.Status403Forbidden, new { error = "Only admins can reset passwords." });
+
+        // Validate request
+        if (string.IsNullOrWhiteSpace(request.TargetEmail))
+            return BadRequest(new { error = "targetEmail is required." });
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < MinPasswordLength)
+            return BadRequest(new { error = $"New password must be at least {MinPasswordLength} characters." });
+
+        // Find target user
+        var target = await FindUserByEmailAsync(request.TargetEmail, ct);
+        if (target is null)
+            return NotFound(new { error = "User not found." });
+
+        // Only allow resetting pet_owner and veterinarian passwords (not other admins)
+        var targetType = target.UserType?.Trim().ToLowerInvariant();
+        if (targetType != "pet_owner" && targetType != "veterinarian")
+            return BadRequest(new { error = "You can only reset passwords for pet owners and veterinarians." });
+
+        target.PasswordHash = Utilities.Encrypt(request.NewPassword);
+        target.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
     private static UserDto ToDto(User u)
     {
         object? prefs = null;

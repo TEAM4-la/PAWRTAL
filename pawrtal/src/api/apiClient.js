@@ -161,6 +161,12 @@ export const api = {
         body: { currentPassword: current_password, newPassword: new_password },
       });
     },
+    async adminResetPassword({ targetEmail, newPassword }) {
+      return await http('/api/auth/admin-reset-password', {
+        method: 'POST',
+        body: { targetEmail, newPassword },
+      });
+    },
     async logout(redirectUrl) {
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem('pawrtal_role');
