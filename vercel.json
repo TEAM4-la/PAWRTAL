@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm install --prefix pawrtal && npm run build --prefix pawrtal",
+  "outputDirectory": "PawrtalWeb/wwwroot",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
