@@ -38,6 +38,15 @@ using PawtralWeb.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PawrtalFrontend", policy =>
+    {
+        policy.WithOrigins("https://www.pawrtal.site", "https://pawrtal.site")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddDbContext<PawrtalDbContext>(options =>
 {
@@ -55,6 +64,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.UseCors("PawrtalFrontend");
 app.UseAuthorization();
 app.UseStaticFiles(); // serves wwwroot (Vite build output)
 
