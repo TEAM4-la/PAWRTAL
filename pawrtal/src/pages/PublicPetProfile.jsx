@@ -24,6 +24,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import logo from '../assets/LOGO.png';
 
 const speciesIcons = {
   dog: Dog,
@@ -95,13 +96,10 @@ export default function PublicPetProfile() {
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center gap-2">
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+            src={logo}
             alt="PAWRTAL"
-            className="w-8 h-8 object-contain"
+            className="w-32 h-8 object-contain object-left"
           />
-          <span className="text-xl font-extrabold bg-gradient-to-r from-teal-600 to-orange-500 bg-clip-text text-transparent tracking-wider">
-            PAWRTAL
-          </span>
         </div>
       </header>
 

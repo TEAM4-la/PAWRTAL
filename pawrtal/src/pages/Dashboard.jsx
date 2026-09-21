@@ -230,7 +230,7 @@ export default function Dashboard() {
           </div>
 
           {pets.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={PawPrint}
                 title="No pets yet"
@@ -260,7 +260,7 @@ export default function Dashboard() {
           </div>
 
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Calendar}
                 title="No appointments"

@@ -132,7 +132,7 @@ export default function VetAppointments() {
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={CalendarIcon}
             title="No appointments found"

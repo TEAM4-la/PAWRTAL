@@ -8,13 +8,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: { '@': path.resolve(__dirname, 'src') },
-  },
-  build: {
-    outDir: path.resolve(__dirname, '../PawrtalWeb/wwwroot'),
-    emptyOutDir: true, // Clears the folder before each build
-  },
+    plugins: [react(), tailwindcss()],
+    resolve: {
+        alias: { '@': path.resolve(__dirname, 'src') },
+    },
+    build: {
+        outDir: path.resolve(__dirname, '../PawrtalWeb/wwwroot'),
+        emptyOutDir: true, // Clears the folder before each build
+    },
+    server: {
+        proxy: {
+            '/api': {
+                target: 'http://localhost:5047',
+                changeOrigin: true,
+            },
+        },
+    },
 })
-

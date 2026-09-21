@@ -218,7 +218,7 @@ export default function VetRecords() {
 
       {/* Records List */}
       {filteredRecords.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={FileText}
             title="No records found"

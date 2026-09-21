@@ -132,7 +132,7 @@ export default function AdminPatients() {
 
       {/* Patients List */}
       {filteredPets.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={PawPrint}
             title="No patients found"

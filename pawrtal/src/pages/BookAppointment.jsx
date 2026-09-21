@@ -166,7 +166,7 @@ export default function BookAppointment() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
           <CardTitle className="text-2xl flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center text-white">
               <CalendarIcon className="w-6 h-6 text-white" />
@@ -380,7 +380,7 @@ export default function BookAppointment() {
             </div>
 
             {/* Submit */}
-            <div className="flex gap-4 pt-4 border-t">
+            <div className="flex gap-4 pt-4 border-t border-gray-200">
               <Button
                 type="button"
                 variant="outline"

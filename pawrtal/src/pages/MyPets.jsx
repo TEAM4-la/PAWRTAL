@@ -107,7 +107,7 @@ export default function MyPets() {
           description="Add your first furry friend to start tracking their health and appointments"
           actionLabel="Add Your First Pet"
           onAction={() => navigate(createPageUrl('AddPet'))}
-          className="bg-white rounded-2xl border border-dashed border-gray-300"
+          className="bg-white rounded-xl border-2 border-dashed border-gray-300 shadow"
         />
       ) : filteredPets.length === 0 ? (
         <EmptyState

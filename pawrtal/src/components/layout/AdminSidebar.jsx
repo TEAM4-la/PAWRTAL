@@ -7,6 +7,7 @@ import {
   Settings, LogOut, Menu, ShieldCheck, ChevronRight, UserPlus,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import logo from '@/assets/LOGO.png';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'ClinicAdminDashboard' },
@@ -35,13 +36,12 @@ export default function AdminSidebar({ children, currentUser }) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-violet-100/60">
+      <div className="flex items-center justify-center px-3 py-2 border-b border-violet-100/60">
         <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+          src={logo}
           alt="PAWRTAL"
-          className="w-9 h-9 object-contain"
+          className="w-full h-18 object-contain"
         />
-        <span className="text-lg font-extrabold text-violet-900 tracking-widest">PAWRTAL</span>
       </div>
 
       {/* Admin badge */}
@@ -131,7 +131,7 @@ export default function AdminSidebar({ children, currentUser }) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700">Sign Out</AlertDialogAction>
+              <AlertDialogAction onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-700">Sign Out</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -164,9 +164,7 @@ export default function AdminSidebar({ children, currentUser }) {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
-              alt="PAWRTAL" className="w-7 h-7 object-contain" />
-            <span className="font-bold text-violet-900 tracking-wider text-sm">PAWRTAL</span>
+            <img src={logo} alt="PAWRTAL" className="w-24 h-8 object-contain object-left" />
           </div>
           <Link to={createPageUrl('Settings')}>
             <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm overflow-hidden border border-violet-200">

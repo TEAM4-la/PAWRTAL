@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import backgroundImg from '../assets/background.png';
+import logo2 from '../assets/logo2.png';
 import { api, userTypeToRole } from '@/api/apiClient';
 import {
   PawPrint,
@@ -187,13 +188,12 @@ export default function SignIn() {
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
+          <div className="flex items-center gap-3 mb-6">
             <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+              src={logo2}
               alt="PAWRTAL"
-              className="w-10 h-10 object-contain"
+              className="w-40 h-40 object-contain"
             />
-            <span className="text-xl font-bold tracking-widest">PAWRTAL</span>
           </div>
 
           <h1 className="text-4xl font-extrabold leading-tight mb-6">
@@ -223,11 +223,10 @@ export default function SignIn() {
         {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-2 mb-8">
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+            src={logo2}
             alt="PAWRTAL"
-            className="w-9 h-9 object-contain"
+            className="w-12 h-12 object-contain"
           />
-          <span className="text-lg font-bold text-amber-900 tracking-wide">PAWRTAL</span>
         </div>
 
         {/* Form card */}
@@ -286,7 +285,7 @@ export default function SignIn() {
                           border-2 transition-all duration-300 text-left bg-white
                           ${isSelected 
                             ? `${role.border} ring-2 ${role.ring} shadow-lg` 
-                            : `border-gray-900/35 hover:shadow-md hover:-translate-y-0.5`}
+                            : `${role.border} hover:shadow-md hover:-translate-y-0.5`}
                         `}
                       >
                         <div className={`w-12 h-12 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>

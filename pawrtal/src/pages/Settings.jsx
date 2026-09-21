@@ -499,7 +499,7 @@ export default function Settings() {
           type="button"
           onClick={handleSave}
           disabled={updateMutation.isPending}
-          className="bg-teal-600 hover:bg-teal-700 gap-2"
+          className="bg-teal-600 text-white hover:bg-teal-700 gap-2"
         >
           {updateMutation.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />

@@ -227,7 +227,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="records">
               {healthRecords.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No health records yet</p>
                 </Card>
@@ -254,7 +254,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="vaccinations">
               {vaccinations.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Syringe className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No vaccinations recorded</p>
                 </Card>
@@ -305,7 +305,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="medications">
               {medications.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Pill className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No medications prescribed</p>
                 </Card>
@@ -337,7 +337,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="appointments">
               {appointments.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No appointment history</p>
                 </Card>
@@ -374,7 +374,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="grooming">
               {groomingRecords.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Scissors className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No grooming records</p>
                 </Card>

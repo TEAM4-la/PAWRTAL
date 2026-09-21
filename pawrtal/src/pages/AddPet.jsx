@@ -142,7 +142,7 @@ export default function AddPet() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
           <CardTitle className="text-2xl">Add New Pet</CardTitle>
           <p className="text-gray-500">Enter your pet's information below</p>
         </CardHeader>
@@ -332,7 +332,7 @@ export default function AddPet() {
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergy())}
                   className="h-11"
                 />
-                <Button type="button" onClick={addAllergy} variant="outline" className="h-11">
+                <Button type="button" onClick={addAllergy} variant="outline" className="h-11 border-gray-300">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -364,7 +364,7 @@ export default function AddPet() {
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCondition())}
                   className="h-11"
                 />
-                <Button type="button" onClick={addCondition} variant="outline" className="h-11">
+                <Button type="button" onClick={addCondition} variant="outline" className="h-11 border-gray-300">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -386,12 +386,12 @@ export default function AddPet() {
             </div>
 
             {/* Submit */}
-            <div className="flex gap-4 pt-4 border-t">
+            <div className="flex gap-4 pt-4 border-t border-gray-200">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate(createPageUrl('Dashboard'))}
-                className="flex-1 h-12"
+                className="flex-1 h-12 border-gray-300"
               >
                 Cancel
               </Button>

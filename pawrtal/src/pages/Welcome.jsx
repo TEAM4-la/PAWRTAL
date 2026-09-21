@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';  // ← added for navigation
 import { motion } from 'framer-motion';
 import backgroundImg from '../assets/background.png';  
+import logo from '../assets/LOGO.png';
 import {
   PawPrint,
   Heart,
@@ -118,11 +119,10 @@ export default function Welcome() {
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+                src={logo}
                 alt="PAWRTAL"
-                className="w-10 h-10 object-contain"
+                className="w-56 h-16 object-contain object-left"
               />
-              <span className="text-xl font-bold text-amber-900 tracking-wide">PAWRTAL</span>
             </div>
 
             {/* Sign In button with routing */}
@@ -287,9 +287,9 @@ export default function Welcome() {
               <div className="relative">
                 <div className="flex justify-center mb-4">
                   <img
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+                    src={logo}
                     alt="PAWRTAL"
-                    className="w-24 h-24 object-contain drop-shadow-lg"
+                    className="w-48 h-24 object-contain object-left drop-shadow-lg"
                   />
                 </div>
                 <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
@@ -314,11 +314,10 @@ export default function Welcome() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+                src={logo}
                 alt="PAWRTAL"
-                className="w-9 h-9 object-contain"
+                className="w-32 h-10 object-contain object-left"
               />
-              <span className="text-lg font-bold text-amber-900 tracking-wide">PAWRTAL</span>
             </div>
             <p className="text-amber-600 text-sm">
               © {new Date().getFullYear()} PAWRTAL by VM Veterinary Clinic. All rights reserved.

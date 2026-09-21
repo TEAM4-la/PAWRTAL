@@ -227,7 +227,7 @@ export default function HealthRecords() {
 
         <TabsContent value="records" className="mt-6">
           {healthRecords.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={FileText}
                 title="No health records yet"
@@ -280,7 +280,7 @@ export default function HealthRecords() {
 
         <TabsContent value="vaccinations" className="mt-6">
           {vaccinations.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Syringe}
                 title="No vaccination records"
@@ -340,7 +340,7 @@ export default function HealthRecords() {
 
         <TabsContent value="medications" className="mt-6">
           {medications.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Pill}
                 title="No medications"
@@ -388,7 +388,7 @@ export default function HealthRecords() {
 
         <TabsContent value="grooming" className="mt-6">
           {groomingRecords.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Scissors}
                 title="No grooming records"
