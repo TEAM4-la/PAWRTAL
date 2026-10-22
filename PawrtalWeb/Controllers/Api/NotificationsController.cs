@@ -51,6 +51,16 @@ public class NotificationsController : ControllerBase
         return Ok(ToDto(n));
     }
 
+    [HttpPost("test-sms")]
+    public async Task<ActionResult> TestSms([FromServices] PawtralWeb.Services.ISmsService smsService, [FromBody] TestSmsRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return BadRequest(new { error = "Phone number is required." });
+
+        var (success, providerMessage) = await smsService.SendSmsDetailedAsync(request.Phone, request.Message ?? "Pawrtal: Test SMS notification via UniSMS.");
+        return Ok(new { success, message = providerMessage });
+    }
+
     private static NotificationDto ToDto(Notification n) => new()
     {
         Id = n.Id.ToString(),
@@ -64,4 +74,3 @@ public class NotificationsController : ControllerBase
         CreatedDate = DateTime.SpecifyKind(n.CreatedAt, DateTimeKind.Utc).ToString("O")
     };
 }
-

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl, getAppointmentStatus } from "@/utils";
+import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -352,6 +352,11 @@ export default function PetProfile() {
                           <p className="font-medium text-gray-900">{vax.vaccine_name}</p>
                           <p className="text-sm text-gray-500">
                             {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
+                            {formatDoctorName(vax.administered_by) && (
+                              <span className="text-teal-700 font-medium ml-2">
+                                • Added by: {formatDoctorName(vax.administered_by)}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -398,7 +403,14 @@ export default function PetProfile() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{med.name}</p>
-                          <p className="text-sm text-gray-500">{med.dosage} • {med.frequency}</p>
+                          <p className="text-sm text-gray-500">
+                            {med.dosage} • {med.frequency}
+                            {formatDoctorName(med.prescribed_by) && (
+                              <span className="text-teal-700 font-medium ml-2">
+                                • Prescribed by: {formatDoctorName(med.prescribed_by)}
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </div>
                       <Badge variant="outline" className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}>
@@ -433,6 +445,11 @@ export default function PetProfile() {
                           <p className="font-medium text-gray-900">{record.title}</p>
                           <p className="text-sm text-gray-500">
                             {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
+                            {formatDoctorName(record.vet_name, record.vet_email) && (
+                              <span className="text-teal-700 font-medium ml-2">
+                                • Added by: {formatDoctorName(record.vet_name, record.vet_email)}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -469,7 +486,11 @@ export default function PetProfile() {
                           <p className="font-medium text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</p>
                           <p className="text-sm text-gray-500">
                             {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
-                            {record.groomer_name && ` \u2022 By: ${record.groomer_name}`}
+                            {record.groomer_name && (
+                              <span className="text-teal-700 font-medium ml-2">
+                                • Handled by: {formatDoctorName(record.groomer_name) || record.groomer_name}
+                              </span>
+                            )}
                           </p>
                           {record.coat_style_notes && (
                             <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
@@ -511,6 +532,11 @@ export default function PetProfile() {
                           <p className="font-medium text-gray-900 capitalize">{apt.type.replace('_', ' ')}</p>
                           <p className="text-sm text-gray-500">
                             {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
+                            {formatDoctorName(apt.vet_name, apt.vet_email) && (
+                              <span className="text-teal-700 font-medium ml-2">
+                                • Doctor: {formatDoctorName(apt.vet_name, apt.vet_email)}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>

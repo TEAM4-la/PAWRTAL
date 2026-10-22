@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import BreedAutocomplete from '@/components/shared/BreedAutocomplete';
+import PetPhotoUpload from '@/components/shared/PetPhotoUpload';
 
 const speciesOptions = [
   { value: 'dog', label: 'Dog', icon: Dog },
@@ -66,8 +68,8 @@ export default function AddPet() {
     }
   });
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
+  const handlePhotoUpload = async (fileOrEvent) => {
+    const file = fileOrEvent?.target ? fileOrEvent.target.files?.[0] : fileOrEvent;
     if (!file) return;
 
     setIsUploading(true);
@@ -142,7 +144,7 @@ export default function AddPet() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
           <CardTitle className="text-2xl">Add New Pet</CardTitle>
           <p className="text-gray-500">Enter your pet's information below</p>
         </CardHeader>
@@ -150,31 +152,12 @@ export default function AddPet() {
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Photo Upload */}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-teal-100 to-orange-100 flex items-center justify-center border-4 border-white shadow-lg">
-                  {formData.photo_url ? (
-                    <img src={formData.photo_url} alt="Pet" className="w-full h-full object-cover" />
-                  ) : (
-                    <Dog className="w-12 h-12 text-teal-300" />
-                  )}
-                </div>
-                <label className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center cursor-pointer hover:bg-teal-600 transition-colors shadow-md text-white">
-                  {isUploading ? (
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  ) : (
-                    <Upload className="w-5 h-5 text-white" />
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-sm text-gray-500 mt-3">Click to upload photo</p>
-            </div>
+            <PetPhotoUpload
+              photoUrl={formData.photo_url}
+              isUploading={isUploading}
+              onPhotoSelected={handlePhotoUpload}
+              label="Click to upload photo"
+            />
 
             {/* Basic Info */}
             <div className="grid sm:grid-cols-2 gap-6">
@@ -239,13 +222,15 @@ export default function AddPet() {
 
               <div>
                 <Label htmlFor="breed" className="text-sm font-medium">Breed</Label>
-                <Input
-                  id="breed"
-                  value={formData.breed}
-                  onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
-                  placeholder="e.g., Golden Retriever"
-                  className="mt-1.5 h-11"
-                />
+                <div className="mt-1.5">
+                  <BreedAutocomplete
+                    id="breed"
+                    value={formData.breed}
+                    species={formData.species}
+                    onChange={(val) => setFormData({ ...formData, breed: val })}
+                    placeholder="e.g., Golden Retriever"
+                  />
+                </div>
               </div>
 
               <div>
@@ -332,7 +317,7 @@ export default function AddPet() {
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergy())}
                   className="h-11"
                 />
-                <Button type="button" onClick={addAllergy} variant="outline" className="h-11">
+                <Button type="button" onClick={addAllergy} variant="outline" className="h-11 border-gray-300">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -364,7 +349,7 @@ export default function AddPet() {
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCondition())}
                   className="h-11"
                 />
-                <Button type="button" onClick={addCondition} variant="outline" className="h-11">
+                <Button type="button" onClick={addCondition} variant="outline" className="h-11 border-gray-300">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -386,12 +371,12 @@ export default function AddPet() {
             </div>
 
             {/* Submit */}
-            <div className="flex gap-4 pt-4 border-t">
+            <div className="flex gap-4 pt-4 border-t border-gray-200">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate(createPageUrl('Dashboard'))}
-                className="flex-1 h-12"
+                className="flex-1 h-12 border-gray-300"
               >
                 Cancel
               </Button>

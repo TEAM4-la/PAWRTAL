@@ -45,11 +45,73 @@ public class PetsController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<List<PetDto>>> List([FromQuery] string? order, [FromQuery] int limit = 100)
     {
+        var rawEmail = ApiUserContext.GetUserEmail(Request);
+        var email = rawEmail.Trim().ToLowerInvariant();
+        var rawRole = ApiUserContext.GetUserRole(Request);
+
+        var caller = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+        var callerRole = caller?.UserType?.Trim().ToLowerInvariant() ?? ApiUserContext.MapRoleToUserType(rawRole) ?? "pet_owner";
+
         IQueryable<Pet> q = _db.Pets
             .AsNoTracking()
             .Where(p => !p.IsDeleted)
             .Include(p => p.PetAllergies)
             .Include(p => p.PetMedicalConditions);
+
+        if (callerRole == "admin")
+        {
+            // Only admin should see all registered pets
+        }
+        else if (callerRole == "veterinarian")
+        {
+            // Veterinarian can only see pets that are appointed to them or connected through care/records
+            var vetFullName = caller?.FullName?.Trim();
+            var vetId = caller?.Id;
+
+            var apptPetIds = await _db.Appointments.AsNoTracking()
+                .Where(a => !a.IsDeleted && a.VetEmail.ToLower() == email)
+                .Select(a => a.PetId)
+                .Distinct()
+                .ToListAsync();
+
+            var healthPetIds = await _db.HealthRecords.AsNoTracking()
+                .Where(h => !h.IsDeleted && (h.VetEmail.ToLower() == email || (vetFullName != null && h.VetName == vetFullName)))
+                .Select(h => h.PetId)
+                .Distinct()
+                .ToListAsync();
+
+            var vaxPetIds = await _db.Vaccinations.AsNoTracking()
+                .Where(v => !v.IsDeleted && vetFullName != null && v.AdministeredBy == vetFullName)
+                .Select(v => v.PetId)
+                .Distinct()
+                .ToListAsync();
+
+            var medPetIds = await _db.Medications.AsNoTracking()
+                .Where(m => !m.IsDeleted && vetFullName != null && m.PrescribedBy == vetFullName)
+                .Select(m => m.PetId)
+                .Distinct()
+                .ToListAsync();
+
+            var groomPetIds = await _db.GroomingRecords.AsNoTracking()
+                .Where(g => !g.IsDeleted && vetFullName != null && g.GroomerName == vetFullName)
+                .Select(g => g.PetId)
+                .Distinct()
+                .ToListAsync();
+
+            var connectedPetIds = apptPetIds
+                .Union(healthPetIds)
+                .Union(vaxPetIds)
+                .Union(medPetIds)
+                .Union(groomPetIds)
+                .ToHashSet();
+
+            q = q.Where(p => connectedPetIds.Contains(p.Id));
+        }
+        else
+        {
+            // Pet owner only sees their own pets
+            q = q.Where(p => p.OwnerEmail.ToLower() == email);
+        }
 
         q = order switch
         {
@@ -148,6 +210,10 @@ public class PetsController : ControllerBase
         // Soft delete the pet
         pet.IsDeleted = true;
         pet.DeletedAt = now;
+
+        // Clean up child tag records that don't have IsDeleted columns so they don't remain orphaned
+        await _db.PetAllergies.Where(a => a.PetId == id).ExecuteDeleteAsync();
+        await _db.PetMedicalConditions.Where(c => c.PetId == id).ExecuteDeleteAsync();
 
         // Soft delete all related child records
         await _db.Medications.IgnoreQueryFilters()

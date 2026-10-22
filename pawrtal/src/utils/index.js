@@ -29,3 +29,25 @@ export function getAppointmentStatus(appointment) {
   }
   return derivedStatus;
 }
+
+/**
+ * Format a veterinarian or specialist's name with proper "Dr." prefix.
+ * e.g. "Solangon" -> "Dr. Solangon"
+ *      "Dr. Solangon" -> "Dr. Solangon"
+ *      null, "Solangon@pawrtal.com" -> "Dr. Solangon"
+ */
+export function formatDoctorName(name, email) {
+  if (name && typeof name === 'string' && name.trim()) {
+    const trimmed = name.trim();
+    if (/^dr\.?\s*/i.test(trimmed)) {
+      return trimmed.replace(/^dr\.?\s*/i, 'Dr. ');
+    }
+    return `Dr. ${trimmed}`;
+  }
+  if (email && typeof email === 'string' && email.trim()) {
+    const prefix = email.split('@')[0];
+    const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    return `Dr. ${capitalized}`;
+  }
+  return null;
+}

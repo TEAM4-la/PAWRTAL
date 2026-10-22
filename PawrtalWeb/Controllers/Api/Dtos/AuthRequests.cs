@@ -16,7 +16,6 @@ public class RegisterStaffRequest
     public string UserType { get; set; } = null!;
     public string? LicenseNumber { get; set; }
     public string? Specialization { get; set; }
-    public string? ClinicName { get; set; }
 }
 
 public class LoginRequest

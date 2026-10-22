@@ -27,7 +27,6 @@ public partial class User
 
     public DateTime UpdatedAt { get; set; }
 
-    public string ClinicName { get; set; }
 
     public string LicenseNumber { get; set; }
 

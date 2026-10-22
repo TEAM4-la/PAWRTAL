@@ -31,8 +31,6 @@ public class UserDto
     [JsonPropertyName("specialization")]
     public string? Specialization { get; set; }
 
-    [JsonPropertyName("clinic_name")]
-    public string? ClinicName { get; set; }
 
     [JsonPropertyName("notification_preferences")]
     public object? NotificationPreferences { get; set; }

@@ -74,7 +74,13 @@ public class HealthRecordsController : ControllerBase
         if (!Guid.TryParse(request.PetId, out var petId)) return BadRequest(new { error = "pet_id must be a GUID" });
         if (string.IsNullOrWhiteSpace(request.Title)) return ApiUserContext.BadRequestMissing("title");
 
-        var recordType = string.IsNullOrWhiteSpace(request.RecordType) ? "diagnosis" : request.RecordType!;
+        var recordType = string.IsNullOrWhiteSpace(request.RecordType) ? "diagnosis" : request.RecordType!.Trim().ToLowerInvariant();
+        var allowedTypes = new HashSet<string> { "diagnosis", "treatment", "surgery", "lab_result", "prescription", "vaccination", "medication", "grooming", "other" };
+        if (!allowedTypes.Contains(recordType))
+        {
+            return BadRequest(new { error = $"Invalid record_type '{recordType}'. Allowed types: {string.Join(", ", allowedTypes)}" });
+        }
+
         var date = DateOnly.FromDateTime(DateTime.UtcNow);
         if (!string.IsNullOrWhiteSpace(request.Date))
         {

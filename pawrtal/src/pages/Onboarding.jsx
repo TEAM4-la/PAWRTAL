@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { PawPrint, User, Stethoscope, ArrowRight, ArrowLeft, Phone, MapPin, Building } from 'lucide-react';
+import { PawPrint, User, Stethoscope, ArrowRight, ArrowLeft, Phone, MapPin, Building, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -19,8 +20,7 @@ export default function Onboarding() {
     phone: '',
     address: '',
     license_number: '',
-    specialization: '',
-    clinic_name: 'VM Veterinary Clinic'
+    specialization: ''
   });
 
   const { data: user, isLoading } = useQuery({
@@ -44,7 +44,15 @@ export default function Onboarding() {
   }, [user, isLoading, navigate]);
 
   const handleSubmit = () => {
-    updateMutation.mutate(formData);
+    const rawPhone = (formData.phone || '').trim();
+    if (rawPhone && !/^09\d{9}$/.test(rawPhone)) {
+      toast.error('Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)');
+      return;
+    }
+    updateMutation.mutate({
+      ...formData,
+      phone: rawPhone || null,
+    });
   };
 
   if (isLoading) {
@@ -156,11 +164,20 @@ export default function Onboarding() {
                 </Label>
                 <Input
                   id="phone"
-                  placeholder="+1 (555) 000-0000"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={11}
+                  placeholder="09123456789"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setFormData({ ...formData, phone: val });
+                  }}
                   className="h-12"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Format: 09XXXXXXXXX (11 digits)
+                </p>
               </div>
 
               <div>
@@ -181,15 +198,17 @@ export default function Onboarding() {
                 <>
                   <div>
                     <Label htmlFor="license" className="flex items-center gap-2 mb-2">
-                      License Number
+                      <Award className="w-4 h-4 text-teal-600" />
+                      PRC License / Registration No.
                     </Label>
                     <Input
                       id="license"
-                      placeholder="VET-12345"
+                      placeholder="e.g., 0012345 or PRC-0012345"
                       value={formData.license_number}
                       onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
                       className="h-12"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Official 5–7 digit PRC veterinary board registration number</p>
                   </div>
 
                   <div>
@@ -205,18 +224,7 @@ export default function Onboarding() {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="clinic" className="flex items-center gap-2 mb-2">
-                      <Building className="w-4 h-4 text-gray-400" />
-                      Clinic Name
-                    </Label>
-                    <Input
-                      id="clinic"
-                      value={formData.clinic_name}
-                      onChange={(e) => setFormData({ ...formData, clinic_name: e.target.value })}
-                      className="h-12"
-                    />
-                  </div>
+
                 </>
               )}
 

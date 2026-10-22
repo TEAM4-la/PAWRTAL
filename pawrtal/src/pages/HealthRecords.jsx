@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, formatDoctorName } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,13 +37,14 @@ const speciesIcons = {
 };
 
 const recordTypeColors = {
-  lab_result: 'bg-blue-100 text-blue-700',
-  prescription: 'bg-green-100 text-green-700',
   diagnosis: 'bg-purple-100 text-purple-700',
   treatment: 'bg-teal-100 text-teal-700',
+  prescription: 'bg-green-100 text-green-700',
+  vaccination: 'bg-indigo-100 text-indigo-700',
+  medication: 'bg-emerald-100 text-emerald-700',
+  grooming: 'bg-amber-100 text-amber-700',
+  lab_result: 'bg-blue-100 text-blue-700',
   surgery: 'bg-red-100 text-red-700',
-  imaging: 'bg-indigo-100 text-indigo-700',
-  dental: 'bg-pink-100 text-pink-700',
   other: 'bg-gray-100 text-gray-700',
 };
 
@@ -227,7 +228,7 @@ export default function HealthRecords() {
 
         <TabsContent value="records" className="mt-6">
           {healthRecords.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={FileText}
                 title="No health records yet"
@@ -258,7 +259,7 @@ export default function HealthRecords() {
                             <p className="text-sm text-gray-600 mt-2">{record.description}</p>
                           )}
                           {record.vet_name && (
-                            <p className="text-sm text-gray-400 mt-1">Dr. {record.vet_name}</p>
+                            <p className="text-sm text-gray-400 mt-1">{formatDoctorName(record.vet_name)}</p>
                           )}
                         </div>
                       </div>
@@ -280,7 +281,7 @@ export default function HealthRecords() {
 
         <TabsContent value="vaccinations" className="mt-6">
           {vaccinations.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Syringe}
                 title="No vaccination records"
@@ -340,7 +341,7 @@ export default function HealthRecords() {
 
         <TabsContent value="medications" className="mt-6">
           {medications.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Pill}
                 title="No medications"
@@ -388,7 +389,7 @@ export default function HealthRecords() {
 
         <TabsContent value="grooming" className="mt-6">
           {groomingRecords.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Scissors}
                 title="No grooming records"

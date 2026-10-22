@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl, getAppointmentStatus } from "@/utils";
+import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
 import { api, userTypeToRole } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -227,7 +227,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="records">
               {healthRecords.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No health records yet</p>
                 </Card>
@@ -241,6 +241,11 @@ export default function VetPatientDetail() {
                             <h4 className="font-semibold text-gray-900">{record.title}</h4>
                             <p className="text-sm text-gray-500">
                               {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
+                              {formatDoctorName(record.vet_name, record.vet_email) && (
+                                <span className="text-teal-700 font-medium ml-2">
+                                  • Added by: {formatDoctorName(record.vet_name, record.vet_email)}
+                                </span>
+                              )}
                             </p>
                           </div>
                           <Badge variant="outline">{record.is_visible_to_owner ? 'Visible' : 'Hidden'}</Badge>
@@ -254,7 +259,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="vaccinations">
               {vaccinations.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Syringe className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No vaccinations recorded</p>
                 </Card>
@@ -272,7 +277,14 @@ export default function VetPatientDetail() {
                           <div className="min-w-0 flex-1">
                             <h4 className="font-semibold text-gray-900 truncate">{vax.vaccine_name}</h4>
                             <div className="text-sm text-gray-500 mt-0.5">
-                              <p>{format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}</p>
+                              <p>
+                                {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
+                                {formatDoctorName(vax.administered_by) && (
+                                  <span className="text-teal-700 font-medium ml-2">
+                                    • Administered by: {formatDoctorName(vax.administered_by)}
+                                  </span>
+                                )}
+                              </p>
                               {vax.batch_number && <p className="break-all mt-0.5 text-gray-400 text-xs">Batch: {vax.batch_number}</p>}
                             </div>
                           </div>
@@ -305,7 +317,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="medications">
               {medications.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Pill className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No medications prescribed</p>
                 </Card>
@@ -321,6 +333,11 @@ export default function VetPatientDetail() {
                             <h4 className="font-semibold text-gray-900">{med.name}</h4>
                             <p className="text-sm text-gray-500">
                               {med.dosage} • {med.frequency}
+                              {formatDoctorName(med.prescribed_by) && (
+                                <span className="text-teal-700 font-medium ml-2">
+                                  • Prescribed by: {formatDoctorName(med.prescribed_by)}
+                                </span>
+                              )}
                             </p>
                           </div>
                           <Badge className={isStillActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
@@ -337,7 +354,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="appointments">
               {appointments.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No appointment history</p>
                 </Card>
@@ -353,6 +370,11 @@ export default function VetPatientDetail() {
                             <h4 className="font-semibold text-gray-900 capitalize">{apt.type.replace('_', ' ')}</h4>
                             <p className="text-sm text-gray-500">
                               {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
+                              {formatDoctorName(apt.vet_name, apt.vet_email) && (
+                                <span className="text-teal-700 font-medium ml-2">
+                                  • Doctor: {formatDoctorName(apt.vet_name, apt.vet_email)}
+                                </span>
+                              )}
                             </p>
                           </div>
                           <Badge variant="outline" className={
@@ -374,7 +396,7 @@ export default function VetPatientDetail() {
 
             <TabsContent value="grooming">
               {groomingRecords.length === 0 ? (
-                <Card className="p-8 text-center border-dashed border-2">
+                <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                   <Scissors className="w-12 h-12 text-gray-300 mx-auto mb-2" />
                   <p className="text-gray-500">No grooming records</p>
                 </Card>
@@ -388,7 +410,11 @@ export default function VetPatientDetail() {
                             <h4 className="font-semibold text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</h4>
                             <p className="text-sm text-gray-500">
                               {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
-                              {record.groomer_name && ` • By: ${record.groomer_name}`}
+                              {record.groomer_name && (
+                                <span className="text-teal-700 font-medium ml-2">
+                                  • Handled by: {formatDoctorName(record.groomer_name) || record.groomer_name}
+                                </span>
+                              )}
                             </p>
                             {record.coat_style_notes && (
                               <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>

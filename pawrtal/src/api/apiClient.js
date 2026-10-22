@@ -148,7 +148,6 @@ export const api = {
           userType: body.user_type,
           licenseNumber: body.license_number,
           specialization: body.specialization,
-          clinicName: body.clinic_name,
         },
       });
     },
@@ -273,6 +272,9 @@ export const api = {
       },
     },
     Message: {
+      async contacts() {
+        return await http('/api/messages/contacts');
+      },
       async filter(opts = {}, order, limit) {
         return await http('/api/messages', { query: { ...opts, order, limit } });
       },
@@ -295,6 +297,9 @@ export const api = {
     User: {
       async filter(opts = {}) {
         return await http('/api/users', { query: opts });
+      },
+      async veterinarians() {
+        return await http('/api/users/veterinarians');
       },
       async list(order, limit = 200) {
         return await http('/api/users/list', { query: { order, limit } });

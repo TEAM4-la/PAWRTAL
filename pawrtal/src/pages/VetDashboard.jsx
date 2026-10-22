@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
@@ -29,14 +29,31 @@ export default function VetDashboard() {
     queryFn: () => api.auth.me(),
   });
 
-  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
-    queryKey: ['vetAppointments'],
-    queryFn: () => api.entities.Appointment.list('-date', 100),
-    enabled: !!user,
+  const { data: rawAppointments = [], isLoading: appointmentsLoading } = useQuery({
+    queryKey: ['vetAppointments', user?.email],
+    queryFn: () => api.entities.Appointment.filter({ 
+      vet_email: user?.email, 
+      include_unassigned: true 
+    }, '-date', 100),
+    enabled: !!user?.email,
   });
 
+  const appointments = useMemo(() => {
+    if (!user?.email) return [];
+    const myEmail = user.email.toLowerCase();
+    return rawAppointments.filter(apt => {
+      if (apt.vet_email && apt.vet_email.toLowerCase() === myEmail) {
+        return true;
+      }
+      if (!apt.vet_email || apt.vet_email.trim() === '') {
+        return apt.status === 'pending';
+      }
+      return false;
+    });
+  }, [rawAppointments, user?.email]);
+
   const { data: pets = [] } = useQuery({
-    queryKey: ['allPets'],
+    queryKey: ['vetConnectedPets', user?.email],
     queryFn: () => api.entities.Pet.list('-created_date', 100),
     enabled: !!user,
   });

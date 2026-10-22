@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award } from 'lucide-react';
 
 // ─── Reset Password Modal ──────────────────────────────────────────────────────
 function ResetPasswordModal({ targetUser, onClose }) {
@@ -209,6 +209,12 @@ export default function AdminStaff() {
                       <div className="flex items-center gap-2 text-gray-500">
                         <Briefcase className="w-4 h-4 text-gray-300" />
                         <span>{vet.specialization}</span>
+                      </div>
+                    )}
+                    {vet.license_number && (
+                      <div className="flex items-center gap-2 text-teal-700 bg-teal-50/70 px-2.5 py-1 rounded-lg text-xs font-medium">
+                        <Award className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
+                        <span className="truncate">PRC Lic: {vet.license_number}</span>
                       </div>
                     )}
                   </div>

@@ -104,7 +104,6 @@ public class AuthController : ControllerBase
             PasswordHash = Utilities.Encrypt(request.Password),
             LicenseNumber = string.IsNullOrWhiteSpace(request.LicenseNumber) ? null : request.LicenseNumber.Trim(),
             Specialization = string.IsNullOrWhiteSpace(request.Specialization) ? null : request.Specialization.Trim(),
-            ClinicName = string.IsNullOrWhiteSpace(request.ClinicName) ? null : request.ClinicName.Trim(),
             NotificationPrefsJson = JsonSerializer.Serialize(new
             {
                 email = true,
@@ -199,12 +198,27 @@ public class AuthController : ControllerBase
 
         if (request.FullName is not null) user.FullName = request.FullName;
         if (request.UserType is not null) user.UserType = request.UserType;
-        if (request.Phone is not null) user.Phone = request.Phone;
+        if (request.Phone is not null)
+        {
+            var phoneTrimmed = request.Phone.Trim();
+            if (phoneTrimmed.Length > 0)
+            {
+                var digits = new string(phoneTrimmed.Where(char.IsDigit).ToArray());
+                if (digits.Length != 11 || !digits.StartsWith("09"))
+                {
+                    return BadRequest(new { error = "Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)." });
+                }
+                user.Phone = digits;
+            }
+            else
+            {
+                user.Phone = null;
+            }
+        }
         if (request.Address is not null) user.Address = request.Address;
         if (request.AvatarUrl is not null) user.AvatarUrl = request.AvatarUrl;
         if (request.LicenseNumber is not null) user.LicenseNumber = request.LicenseNumber;
         if (request.Specialization is not null) user.Specialization = request.Specialization;
-        if (request.ClinicName is not null) user.ClinicName = request.ClinicName;
         if (request.NotificationPreferences is not null)
             user.NotificationPrefsJson = JsonSerializer.Serialize(request.NotificationPreferences);
         user.UpdatedAt = DateTime.UtcNow;
@@ -295,7 +309,6 @@ public class AuthController : ControllerBase
             AvatarUrl = u.AvatarUrl,
             LicenseNumber = u.LicenseNumber,
             Specialization = u.Specialization,
-            ClinicName = u.ClinicName,
             NotificationPreferences = prefs
         };
     }

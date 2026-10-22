@@ -54,6 +54,8 @@ public partial class PawrtalDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50);
             entity.Property(e => e.VetEmail).HasMaxLength(320);
+
+            entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_Appointments_Pets_PetId");
         });
 
         modelBuilder.Entity<GroomingRecord>(entity =>
@@ -88,6 +90,8 @@ public partial class PawrtalDbContext : DbContext
                 .HasMaxLength(200);
             entity.Property(e => e.VetEmail).HasMaxLength(320);
             entity.Property(e => e.VetName).HasMaxLength(200);
+
+            entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_HealthRecords_Pets_PetId");
         });
 
         modelBuilder.Entity<JournalEntry>(entity =>
@@ -97,6 +101,8 @@ public partial class PawrtalDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50);
             entity.Property(e => e.Mood).HasMaxLength(50);
+
+            entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_JournalEntries_Pets_PetId");
             entity.Property(e => e.Title)
                 .IsRequired()
                 .HasMaxLength(200);
@@ -111,6 +117,8 @@ public partial class PawrtalDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(200);
             entity.Property(e => e.PrescribedBy).HasMaxLength(200);
+
+            entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_Medications_Pets_PetId");
         });
 
         modelBuilder.Entity<Message>(entity =>
@@ -182,7 +190,6 @@ public partial class PawrtalDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Address).HasMaxLength(500);
             entity.Property(e => e.AvatarUrl).HasMaxLength(2000);
-            entity.Property(e => e.ClinicName).HasMaxLength(200);
             entity.Property(e => e.Email)
                 .IsRequired()
                 .HasMaxLength(320);
@@ -199,6 +206,8 @@ public partial class PawrtalDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.AdministeredBy).HasMaxLength(200);
             entity.Property(e => e.BatchNumber).HasMaxLength(100);
+
+            entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_Vaccinations_Pets_PetId");
             entity.Property(e => e.VaccineName)
                 .IsRequired()
                 .HasMaxLength(200);

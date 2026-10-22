@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from "@/utils";
+import { createPageUrl, formatDoctorName } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   ArrowLeft, 
   Calendar as CalendarIcon, 
@@ -57,6 +58,7 @@ export default function BookAppointment() {
 
   const [formData, setFormData] = useState({
     pet_id: preselectedPetId || '',
+    vet_email: '',
     type: '',
     date: null,
     time: '',
@@ -67,6 +69,11 @@ export default function BookAppointment() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
+  });
+
+  const { data: veterinarians = [] } = useQuery({
+    queryKey: ['clinicVeterinarians'],
+    queryFn: () => api.entities.User.veterinarians(),
   });
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
@@ -88,15 +95,37 @@ export default function BookAppointment() {
   });
 
   // Set of time strings that are already taken on this date
-  // Block pending, confirmed, AND accepted — only completed/cancelled/expired free up a slot
-  const bookedTimes = useMemo(
-    () => new Set(
-      bookedAppointments
-        .filter((apt) => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'accepted')
-        .map((apt) => apt.time)
-    ),
-    [bookedAppointments]
-  );
+  // Block pending, confirmed, AND accepted — only completed/cancelled/expired free up a slot.
+  // When a specific veterinarian is chosen, only their slots (or clinic capacity) block the time.
+  // When "Any Available" is chosen, slots are blocked only if all veterinarians are occupied.
+  const bookedTimes = useMemo(() => {
+    const activeAppts = bookedAppointments.filter(
+      (apt) => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'accepted'
+    );
+
+    const taken = new Set();
+    const vetCount = veterinarians.length || 1;
+
+    timeSlots.forEach((time) => {
+      const apptsAtTime = activeAppts.filter((apt) => apt.time === time);
+
+      if (formData.vet_email) {
+        // Specific vet selected: blocked if that vet is booked OR all clinic capacity is booked
+        const vetIsBooked = apptsAtTime.some((apt) => apt.vet_email === formData.vet_email);
+        const clinicAtCapacity = apptsAtTime.length >= vetCount;
+        if (vetIsBooked || clinicAtCapacity) {
+          taken.add(time);
+        }
+      } else {
+        // "Any Available" selected: blocked only if all vets are booked at this time
+        if (apptsAtTime.length >= vetCount) {
+          taken.add(time);
+        }
+      }
+    });
+
+    return taken;
+  }, [bookedAppointments, formData.vet_email, veterinarians]);
 
   /**
    * Returns true if a time slot should be disabled.
@@ -122,6 +151,7 @@ export default function BookAppointment() {
     mutationFn: (data) => api.entities.Appointment.create({
       ...data,
       owner_email: user?.email,
+      vet_email: data.vet_email || null,
       status: 'pending',
       date: format(data.date, 'yyyy-MM-dd'),
     }),
@@ -166,7 +196,7 @@ export default function BookAppointment() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
           <CardTitle className="text-2xl flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center text-white">
               <CalendarIcon className="w-6 h-6 text-white" />
@@ -271,6 +301,41 @@ export default function BookAppointment() {
               {errors.type && (
                 <p className="text-sm text-red-600 mt-1.5">Please select an appointment type.</p>
               )}
+            </div>
+
+            {/* Preferred Veterinarian Selection (Dropdown) */}
+            <div>
+              <Label htmlFor="vet-selection" className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-teal-600" />
+                Select Preferred Veterinarian <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+              </Label>
+              <Select
+                value={formData.vet_email || 'any'}
+                onValueChange={(val) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    vet_email: val === 'any' ? '' : val,
+                    time: '', // reset selected time slot when vet changes to prevent booking a taken slot
+                  }));
+                }}
+              >
+                <SelectTrigger id="vet-selection" className="h-12 rounded-xl bg-white border-gray-200">
+                  <SelectValue placeholder="Choose a veterinarian" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">
+                    Any Available Veterinarian (Fastest)
+                  </SelectItem>
+                  {veterinarians.map((vet) => (
+                    <SelectItem key={vet.email} value={vet.email}>
+                      {formatDoctorName(vet.full_name, vet.email)}{vet.specialization ? ` (${vet.specialization})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-400 mt-1.5">
+                Choosing a specific veterinarian will check their direct schedule availability.
+              </p>
             </div>
 
             {/* Date Selection — native picker like Add Pet (Date of birth); min = today, no past dates */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
@@ -25,17 +26,38 @@ export default function VetAppointments() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
+  const [scopeFilter, setScopeFilter] = useState('all'); // 'all' | 'mine' | 'unassigned'
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
   });
 
-  const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['vetAppointments'],
-    queryFn: () => api.entities.Appointment.list('-date', 200),
-    enabled: !!user,
+  const { data: rawAppointments = [], isLoading } = useQuery({
+    queryKey: ['vetAppointments', user?.email],
+    queryFn: () => api.entities.Appointment.filter({ 
+      vet_email: user?.email, 
+      include_unassigned: true 
+    }, '-date', 200),
+    enabled: !!user?.email,
   });
+
+  // Only include:
+  // 1. Dedicated appointments assigned to this doctor (case-insensitive)
+  // 2. Unassigned clinic appointments ("Any Available Veterinarian") that are still pending
+  const appointments = useMemo(() => {
+    if (!user?.email) return [];
+    const myEmail = user.email.toLowerCase();
+    return rawAppointments.filter(apt => {
+      if (apt.vet_email && apt.vet_email.toLowerCase() === myEmail) {
+        return true;
+      }
+      if (!apt.vet_email || apt.vet_email.trim() === '') {
+        return apt.status === 'pending';
+      }
+      return false;
+    });
+  }, [rawAppointments, user?.email]);
 
   const { data: pets = [] } = useQuery({
     queryKey: ['allPets'],
@@ -44,18 +66,32 @@ export default function VetAppointments() {
   });
 
   const confirmMutation = useMutation({
-    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'confirmed' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { 
+      status: 'confirmed',
+      vet_email: user?.email 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
-      toast.success('Appointment confirmed');
+      toast.success('Appointment confirmed and assigned to your schedule');
+    },
+    onError: (err) => {
+      queryClient.invalidateQueries(['vetAppointments']);
+      toast.error(err?.message || 'Failed to confirm appointment');
     }
   });
 
   const completeMutation = useMutation({
-    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { status: 'completed' }),
+    mutationFn: (apt) => api.entities.Appointment.update(apt.id, { 
+      status: 'completed',
+      vet_email: apt.vet_email || user?.email 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment marked as completed');
+    },
+    onError: (err) => {
+      queryClient.invalidateQueries(['vetAppointments']);
+      toast.error(err?.message || 'Failed to complete appointment');
     }
   });
 
@@ -64,19 +100,29 @@ export default function VetAppointments() {
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
       toast.success('Appointment cancelled');
+    },
+    onError: (err) => {
+      queryClient.invalidateQueries(['vetAppointments']);
+      toast.error(err?.message || 'Failed to cancel appointment');
     }
   });
 
   const today = startOfDay(new Date());
 
-  const filterAppointments = (appointments) => {
-    let filtered = appointments;
+  const filterAppointments = (list) => {
+    let filtered = list;
+
+    if (scopeFilter === 'mine') {
+      filtered = filtered.filter(apt => apt.vet_email && apt.vet_email.toLowerCase() === user?.email?.toLowerCase());
+    } else if (scopeFilter === 'unassigned') {
+      filtered = filtered.filter(apt => !apt.vet_email || apt.vet_email.trim() === '');
+    }
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(apt => {
         const pet = pets.find(p => p.id === apt.pet_id);
-        return pet?.name.toLowerCase().includes(term) || 
+        return pet?.name?.toLowerCase().includes(term) || 
                apt.owner_email?.toLowerCase().includes(term) ||
                apt.type?.toLowerCase().includes(term);
       });
@@ -132,7 +178,7 @@ export default function VetAppointments() {
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={CalendarIcon}
             title="No appointments found"
@@ -185,6 +231,18 @@ export default function VetAppointments() {
             className="pl-10"
           />
         </div>
+
+        <Select value={scopeFilter} onValueChange={setScopeFilter}>
+          <SelectTrigger className="w-[190px] h-10 bg-white">
+            <SelectValue placeholder="All visible" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Visible ({appointments.length})</SelectItem>
+            <SelectItem value="mine">Assigned to Me</SelectItem>
+            <SelectItem value="unassigned">Unassigned Pool</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2">

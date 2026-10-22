@@ -68,11 +68,11 @@ export default function Messages() {
   const SidebarComponent = isVet ? VetSidebar : OwnerSidebar;
   const sidebarProps = isVet ? { user } : { user };
 
-  // ── All users (for contacts list) ──
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: () => api.entities.User.list(undefined, 500),
-    enabled: !!user,
+  // ── Authorized contacts (only relationship-derived contacts) ──
+  const { data: authorizedContacts = [] } = useQuery({
+    queryKey: ['messageContacts', user?.email],
+    queryFn: () => api.entities.Message.contacts(),
+    enabled: !!user?.email,
   });
 
   // ── All messages for the current user ──
@@ -119,14 +119,35 @@ export default function Messages() {
 
   // ── Redirect if not logged in ──
   useEffect(() => {
-    if (!userLoading && user && !user.user_type) {
-      navigate(createPageUrl('Onboarding'));
+    if (!userLoading && user) {
+      if (!user.user_type) {
+        navigate(createPageUrl('Onboarding'));
+      } else if (user.user_type === 'admin') {
+        navigate(createPageUrl('ClinicAdminDashboard'));
+      }
     }
   }, [user, userLoading, navigate]);
 
-  // ── Build contacts: people this user has chatted with, plus potential contacts ──
+  // ── Handle direct contact navigation via URL query params (?contact=...) ──
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetEmail = urlParams.get('contact');
+    if (targetEmail && authorizedContacts.length && !selectedContact) {
+      const match = authorizedContacts.find(c => c.email.toLowerCase() === targetEmail.toLowerCase())
+        || { email: targetEmail, full_name: targetEmail.split('@')[0], user_type: 'unknown' };
+      setSelectedContact(match);
+      setMobileShowChat(true);
+    }
+  }, [authorizedContacts, selectedContact]);
+
+  // ── Build contacts: people this user has chatted with, plus potential relationship contacts ──
   const { recentContacts, otherContacts } = useMemo(() => {
-    if (!user?.email || !allUsers.length) return { recentContacts: [], otherContacts: [] };
+    if (!user?.email || !authorizedContacts.length) return { recentContacts: [], otherContacts: [] };
+
+    // Filter out any admin contacts completely
+    const cleanAuthorizedContacts = authorizedContacts.filter(
+      u => u.user_type !== 'admin' && !u.email?.toLowerCase().startsWith('admin@')
+    );
 
     // Identify users who have chatted with the current user
     const chattedEmails = new Set();
@@ -135,6 +156,7 @@ export default function Messages() {
 
     allMessages.forEach(msg => {
       const otherEmail = msg.sender_email === user.email ? msg.receiver_email : msg.sender_email;
+      if (otherEmail.toLowerCase().startsWith('admin@')) return;
       chattedEmails.add(otherEmail);
 
       // Track latest message per contact
@@ -149,16 +171,18 @@ export default function Messages() {
     });
 
     const userMap = {};
-    allUsers.forEach(u => { userMap[u.email] = u; });
+    cleanAuthorizedContacts.forEach(u => { userMap[u.email] = u; });
 
     const recent = [];
     chattedEmails.forEach(email => {
       if (email === user.email) return;
       const u = userMap[email];
+      if (u?.user_type === 'admin' || email.toLowerCase().startsWith('admin@')) return;
       recent.push({
         email,
         full_name: u?.full_name || email.split('@')[0],
         user_type: u?.user_type || 'unknown',
+        specialization: u?.specialization || '',
         lastMessage: lastMessageMap[email],
         unreadCount: unreadCountMap[email] || 0,
       });
@@ -169,26 +193,25 @@ export default function Messages() {
       return bDate - aDate;
     });
 
-    // Other contacts: filter based on role
-    const others = allUsers
+    // Other contacts: only legitimate non-admin relationship contacts who haven't been chatted with yet
+    const others = cleanAuthorizedContacts
       .filter(u => {
         if (u.email === user.email) return false;
+        if (u.user_type === 'admin' || u.email.toLowerCase().startsWith('admin@')) return false;
         if (chattedEmails.has(u.email)) return false;
-        // Vets see pet_owners; Owners see vets
-        if (isVet) return u.user_type === 'pet_owner';
-        if (isOwner) return u.user_type === 'veterinarian';
         return true;
       })
       .map(u => ({
         email: u.email,
         full_name: u.full_name || u.email.split('@')[0],
         user_type: u.user_type || 'unknown',
+        specialization: u.specialization || '',
         lastMessage: null,
         unreadCount: 0,
       }));
 
     return { recentContacts: recent, otherContacts: others };
-  }, [user, allUsers, allMessages, isVet, isOwner]);
+  }, [user, authorizedContacts, allMessages]);
 
   // ── Filter contacts by search ──
   const filteredRecent = recentContacts.filter(c =>
@@ -214,10 +237,10 @@ export default function Messages() {
     setMobileShowChat(true);
   }
 
-  function getUserTypeLabel(type) {
+  function getUserTypeLabel(type, specialization) {
+    if (specialization) return specialization;
     if (type === 'pet_owner') return 'Pet Owner';
     if (type === 'veterinarian') return 'Veterinarian';
-    if (type === 'admin') return 'Admin';
     return '';
   }
 
@@ -293,7 +316,7 @@ export default function Messages() {
                               ? (contact.lastMessage.sender_email === user.email ? 'You: ' : '') +
                                 contact.lastMessage.content.substring(0, 35) +
                                 (contact.lastMessage.content.length > 35 ? '...' : '')
-                              : getUserTypeLabel(contact.user_type)}
+                              : getUserTypeLabel(contact.user_type, contact.specialization)}
                           </p>
                           {contact.unreadCount > 0 && (
                             <span className={`ml-2 flex-shrink-0 w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center ${isVet ? 'bg-teal-500' : 'bg-amber-500'}`}>
@@ -307,11 +330,11 @@ export default function Messages() {
                 </>
               )}
 
-              {/* Other Contacts */}
+              {/* Other Relationship Contacts */}
               {filteredOthers.length > 0 && (
                 <>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2 mt-4 mb-2">
-                    {isVet ? 'Pet Owners' : 'Veterinarians'}
+                    {searchQuery ? 'Matching Contacts' : isVet ? 'Your Patient Owners' : 'Your Veterinarians & Clinic'}
                   </p>
                   {filteredOthers.map(contact => (
                     <button
@@ -329,7 +352,7 @@ export default function Messages() {
                       </div>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="font-semibold text-sm text-gray-900 truncate">{contact.full_name}</p>
-                        <p className="text-xs text-gray-500 truncate">{getUserTypeLabel(contact.user_type)}</p>
+                        <p className="text-xs text-gray-500 truncate">{getUserTypeLabel(contact.user_type, contact.specialization)}</p>
                       </div>
                     </button>
                   ))}
@@ -337,9 +360,16 @@ export default function Messages() {
               )}
 
               {filteredRecent.length === 0 && filteredOthers.length === 0 && (
-                <div className="text-center py-12 text-gray-400">
+                <div className="text-center py-12 px-4 text-gray-400">
                   <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm font-medium">No contacts found</p>
+                  <p className="text-sm font-semibold text-gray-700">No contacts yet</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {searchQuery
+                      ? 'No contacts match your search.'
+                      : isVet
+                        ? 'Owners with appointments or medical records under you will appear here.'
+                        : 'Veterinarians from your appointments and records will appear here.'}
+                  </p>
                 </div>
               )}
             </div>

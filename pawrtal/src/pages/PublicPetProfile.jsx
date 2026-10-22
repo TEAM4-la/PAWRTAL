@@ -24,6 +24,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths } from 'date-fns';
+import logo from '../assets/LOGO.png';
 
 const speciesIcons = {
   dog: Dog,
@@ -42,6 +43,12 @@ export default function PublicPetProfile() {
     queryFn: () => api.entities.Pet.filter({ id: petId }),
     enabled: !!petId,
     select: (data) => data[0],
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => api.auth.me(),
+    retry: false,
   });
 
   const { data: owner } = useQuery({
@@ -95,13 +102,10 @@ export default function PublicPetProfile() {
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center gap-2">
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+            src={logo}
             alt="PAWRTAL"
-            className="w-8 h-8 object-contain"
+            className="w-32 h-8 object-contain object-left"
           />
-          <span className="text-xl font-extrabold bg-gradient-to-r from-teal-600 to-orange-500 bg-clip-text text-transparent tracking-wider">
-            PAWRTAL
-          </span>
         </div>
       </header>
 
@@ -233,27 +237,56 @@ export default function PublicPetProfile() {
               </p>
             </div>
 
-            {/* Owner sign-in */}
-            <Link to={`/sign-in?role=owner&redirect=${encodeURIComponent(`/pet-profile?id=${petId}`)}`}>
-              <Button className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 rounded-xl shadow-md shadow-amber-200/50 transition-all">
-                <Shield className="w-5 h-5" />
-                Sign In as Pet Owner
-              </Button>
-            </Link>
+            {currentUser?.user_type === 'veterinarian' ? (
+              <div className="space-y-3">
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-center gap-3">
+                  <Stethoscope className="w-5 h-5 text-teal-600 shrink-0" />
+                  <div className="text-left">
+                    <p className="text-xs text-teal-600 font-semibold uppercase tracking-wider">Emergency Mode</p>
+                    <p className="text-sm text-teal-900">
+                      Logged in as <strong>{currentUser.full_name || currentUser.email}</strong>
+                    </p>
+                  </div>
+                </div>
+                <Link to={`/vet-patient-detail?id=${petId}`}>
+                  <Button className="w-full h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold gap-2 rounded-xl shadow-md transition-all">
+                    <Stethoscope className="w-5 h-5" />
+                    Open Full Patient Medical Record
+                  </Button>
+                </Link>
+              </div>
+            ) : currentUser?.user_type === 'pet_owner' && pet.owner_email?.toLowerCase() === currentUser.email?.toLowerCase() ? (
+              <Link to={`/pet-profile?id=${petId}`}>
+                <Button className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 rounded-xl shadow-md shadow-amber-200/50 transition-all">
+                  <Shield className="w-5 h-5" />
+                  View Full Pet Profile
+                </Button>
+              </Link>
+            ) : (
+              <>
+                {/* Owner sign-in */}
+                <Link to={`/sign-in?role=owner&redirect=${encodeURIComponent(`/pet-profile?id=${petId}`)}`}>
+                  <Button className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 rounded-xl shadow-md shadow-amber-200/50 transition-all">
+                    <Shield className="w-5 h-5" />
+                    Sign In as Pet Owner
+                  </Button>
+                </Link>
 
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400 font-medium">OR</span>
-              <div className="flex-1 h-px bg-gray-200" />
-            </div>
+                <div className="flex items-center gap-3 my-2">
+                  <div className="flex-1 h-px bg-gray-200" />
+                  <span className="text-xs text-gray-400 font-medium">OR</span>
+                  <div className="flex-1 h-px bg-gray-200" />
+                </div>
 
-            {/* Vet sign-in */}
-            <Link to={`/sign-in?role=vet&redirect=${encodeURIComponent(`/vet-patient-detail?id=${petId}`)}`}>
-              <Button variant="outline" className="w-full h-12 border-2 border-teal-500 text-teal-700 hover:bg-teal-50 font-semibold gap-2 rounded-xl transition-all">
-                <Stethoscope className="w-5 h-5" />
-                Sign In as Veterinarian
-              </Button>
-            </Link>
+                {/* Vet sign-in */}
+                <Link to={`/sign-in?role=vet&redirect=${encodeURIComponent(`/vet-patient-detail?id=${petId}`)}`}>
+                  <Button variant="outline" className="w-full h-12 border-2 border-teal-500 text-teal-700 hover:bg-teal-50 font-semibold gap-2 rounded-xl transition-all">
+                    <Stethoscope className="w-5 h-5" />
+                    Sign In as Veterinarian
+                  </Button>
+                </Link>
+              </>
+            )}
 
             <p className="text-xs text-gray-400 text-center">
               Securely access the Pet Care Management Dashboard

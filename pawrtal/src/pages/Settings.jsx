@@ -56,6 +56,7 @@ export default function Settings() {
 
   const defaultPrefs = {
     email: true,
+    sms: true,
     appointments: true,
     vaccinations: true,
     medications: true,
@@ -67,7 +68,6 @@ export default function Settings() {
     address: '',
     license_number: '',
     specialization: '',
-    clinic_name: '',
     notification_preferences: defaultPrefs,
   });
 
@@ -79,7 +79,6 @@ export default function Settings() {
       address: user.address || '',
       license_number: user.license_number || '',
       specialization: user.specialization || '',
-      clinic_name: user.clinic_name || '',
       notification_preferences: user.notification_preferences || defaultPrefs,
     });
   }, [user]);
@@ -129,16 +128,20 @@ export default function Settings() {
   };
 
   const handleSave = () => {
+    const rawPhone = (formData.phone || '').trim();
+    if (rawPhone && !/^09\d{9}$/.test(rawPhone)) {
+      toast.error('Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)');
+      return;
+    }
     const payload = {
       full_name: formData.full_name.trim() || null,
-      phone: formData.phone,
+      phone: rawPhone || null,
       address: formData.address,
       notification_preferences: formData.notification_preferences,
     };
     if (isStaff) {
       payload.license_number = formData.license_number.trim() || null;
       payload.specialization = formData.specialization.trim() || null;
-      payload.clinic_name = formData.clinic_name.trim() || null;
     }
     updateMutation.mutate(payload);
   };
@@ -265,11 +268,20 @@ export default function Settings() {
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
+                type="tel"
+                inputMode="numeric"
+                maxLength={11}
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+1 (555) 000-0000"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                  setFormData({ ...formData, phone: val });
+                }}
+                placeholder="09123456789"
                 className="mt-1.5"
               />
+              <p className="text-xs text-gray-500 mt-1.5">
+                Format: 09XXXXXXXXX (11 digits)
+              </p>
             </div>
             <div>
               <Label htmlFor="address">Address</Label>
@@ -285,27 +297,17 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Clinic & professional (vets / admins) */}
+      {/* Professional credentials (vets / admins) */}
       {isStaff && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-teal-600" />
-              <CardTitle>Clinic &amp; professional</CardTitle>
+              <CardTitle>Professional credentials</CardTitle>
             </div>
             <CardDescription>Information shown on records and referrals</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="clinic_name">Clinic name</Label>
-              <Input
-                id="clinic_name"
-                value={formData.clinic_name}
-                onChange={(e) => setFormData({ ...formData, clinic_name: e.target.value })}
-                placeholder="e.g., VM Veterinary Clinic"
-                className="mt-1.5"
-              />
-            </div>
             <div>
               <Label htmlFor="specialization">Specialization</Label>
               <Input
@@ -318,14 +320,15 @@ export default function Settings() {
             </div>
             {isVet && (
               <div>
-                <Label htmlFor="license_number">License number</Label>
+                <Label htmlFor="license_number">PRC License / Registration No.</Label>
                 <Input
                   id="license_number"
                   value={formData.license_number}
                   onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
-                  placeholder="Professional license ID"
+                  placeholder="e.g., 0012345 or PRC-0012345"
                   className="mt-1.5"
                 />
+                <p className="text-xs text-gray-500 mt-1">Official 5–7 digit PRC veterinary board registration number</p>
               </div>
             )}
           </CardContent>
@@ -444,6 +447,18 @@ export default function Settings() {
           <CardDescription>Choose what notifications you want to receive</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">SMS Notifications</p>
+              <p className="text-sm text-gray-500">Receive alerts on your mobile phone via SMS</p>
+            </div>
+            <Switch
+              className={notificationSwitchClassName}
+              checked={formData.notification_preferences?.sms !== false}
+              onCheckedChange={(checked) => handleNotificationToggle('sms', checked)}
+            />
+          </div>
+
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div>
               <p className="font-medium text-gray-900">Email Notifications</p>

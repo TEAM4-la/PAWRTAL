@@ -32,13 +32,14 @@ import { cn } from "@/lib/utils";
 import VetSidebar from '@/components/layout/VetSidebar';
 
 const recordTypes = [
-  { value: 'lab_result', label: 'Lab Result' },
-  { value: 'prescription', label: 'Prescription' },
   { value: 'diagnosis', label: 'Diagnosis' },
   { value: 'treatment', label: 'Treatment' },
+  { value: 'prescription', label: 'Prescription' },
+  { value: 'vaccination', label: 'Vaccination' },
+  { value: 'medication', label: 'Medication' },
+  { value: 'grooming', label: 'Grooming' },
+  { value: 'lab_result', label: 'Lab Result' },
   { value: 'surgery', label: 'Surgery' },
-  { value: 'imaging', label: 'Imaging' },
-  { value: 'dental', label: 'Dental' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -130,10 +131,43 @@ export default function VetAddRecord() {
   });
 
   const { data: pets = [] } = useQuery({
-    queryKey: ['allPets'],
+    queryKey: ['vetConnectedPets', user?.email],
     queryFn: () => api.entities.Pet.list(),
     enabled: !!user,
   });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => api.entities.User.list(),
+    enabled: !!user,
+  });
+
+  const { data: emergencyPetList } = useQuery({
+    queryKey: ['emergencyPet', preselectedPetId],
+    queryFn: () => api.entities.Pet.filter({ id: preselectedPetId }),
+    enabled: !!preselectedPetId,
+  });
+
+  const availablePets = React.useMemo(() => {
+    const list = [...pets];
+    if (emergencyPetList?.[0] && !list.some(p => p.id === emergencyPetList[0].id)) {
+      list.push(emergencyPetList[0]);
+    }
+    return list;
+  }, [pets, emergencyPetList]);
+
+  const getOwnerName = (ownerEmail) => {
+    if (!ownerEmail) return 'Unknown Owner';
+    const owner = users.find(u => u.email?.toLowerCase() === ownerEmail.toLowerCase());
+    return owner?.full_name || ownerEmail;
+  };
+
+  const getPetDisplayLabel = (pet) => {
+    const speciesCap = pet.species ? pet.species.charAt(0).toUpperCase() + pet.species.slice(1) : 'Pet';
+    const breedPart = pet.breed ? ` • ${pet.breed}` : '';
+    const ownerName = getOwnerName(pet.owner_email);
+    return `${pet.name} (${speciesCap}${breedPart}) — Owner: ${ownerName}`;
+  };
 
   const createRecordMutation = useMutation({
     mutationFn: (data) => api.entities.HealthRecord.create({
@@ -183,7 +217,7 @@ export default function VetAddRecord() {
   });
 
   const createGroomingMutation = useMutation({
-    mutationFn: (data) => api.entities.GroomingRecord.create(data),
+    mutationFn: (data) => api.entities.GroomingRecord.create({ ...data, groomer_name: data.groomer_name?.trim() || user?.full_name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groomingRecords'] });
       toast.success('Grooming record added!');
@@ -266,7 +300,7 @@ export default function VetAddRecord() {
     createGroomingMutation.mutate(groomingForm);
   };
 
-  const selectedPet = pets.find(p => p.id === (recordForm.pet_id || vaccinationForm.pet_id || medicationForm.pet_id));
+  const selectedPet = availablePets.find(p => p.id === (recordForm.pet_id || vaccinationForm.pet_id || medicationForm.pet_id || groomingForm.pet_id));
 
   return (
     <VetSidebar user={user}>
@@ -329,9 +363,9 @@ export default function VetAddRecord() {
                         <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
                       )}
                       <SelectContent>
-                        {pets.map(pet => (
+                        {availablePets.map(pet => (
                           <SelectItem key={pet.id} value={pet.id}>
-                            {pet.name} ({pet.species})
+                            {getPetDisplayLabel(pet)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -458,9 +492,9 @@ export default function VetAddRecord() {
                         <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
                       )}
                       <SelectContent>
-                        {pets.map(pet => (
+                        {availablePets.map(pet => (
                           <SelectItem key={pet.id} value={pet.id}>
-                            {pet.name} ({pet.species})
+                            {getPetDisplayLabel(pet)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -567,9 +601,9 @@ export default function VetAddRecord() {
                         <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
                       )}
                       <SelectContent>
-                        {pets.map(pet => (
+                        {availablePets.map(pet => (
                           <SelectItem key={pet.id} value={pet.id}>
-                            {pet.name} ({pet.species})
+                            {getPetDisplayLabel(pet)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -689,9 +723,9 @@ export default function VetAddRecord() {
                         <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
                       )}
                       <SelectContent>
-                        {pets.map(pet => (
+                        {availablePets.map(pet => (
                           <SelectItem key={pet.id} value={pet.id}>
-                            {pet.name} ({pet.species})
+                            {getPetDisplayLabel(pet)}
                           </SelectItem>
                         ))}
                       </SelectContent>

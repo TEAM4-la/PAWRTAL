@@ -5,3 +5,4 @@ node_modules
 /node_modules/.package-lock.json
 /PawrtalWeb/bin/Debug/net9.0
 /PawrtalWeb/obj
+scratch/

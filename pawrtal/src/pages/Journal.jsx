@@ -449,7 +449,7 @@ export default function Journal() {
 
       {/* Entries */}
       {entries.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={BookOpen}
             title="No journal entries yet"

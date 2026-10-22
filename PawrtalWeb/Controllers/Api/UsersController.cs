@@ -31,6 +31,20 @@ public class UsersController : ControllerBase
         return Ok(users.Select(ToDto).ToList());
     }
 
+    /// <summary>
+    /// GET /api/users/veterinarians
+    /// Returns only practicing veterinarians for appointment booking and directory selection.
+    /// </summary>
+    [HttpGet("veterinarians")]
+    public async Task<ActionResult<List<UserDto>>> GetVeterinarians()
+    {
+        var vets = await _db.Users.AsNoTracking()
+            .Where(u => !u.IsDeleted && u.UserType == "veterinarian")
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+        return Ok(vets.Select(ToDto).ToList());
+    }
+
     // Matches frontend usage: api.entities.User.list()
     [HttpGet("list")]
     public async Task<ActionResult<List<UserDto>>> List([FromQuery] string? order, [FromQuery] int limit = 200)
@@ -68,7 +82,6 @@ public class UsersController : ControllerBase
             AvatarUrl = u.AvatarUrl,
             LicenseNumber = u.LicenseNumber,
             Specialization = u.Specialization,
-            ClinicName = u.ClinicName,
             NotificationPreferences = prefs
         };
     }

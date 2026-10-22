@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Pawtral.Web.Controllers.Api.Dtos;
 using PawrtalWeb.Shared;
 using PawrtalWeb.Models;
+using System.Text.Json;
 
 namespace Pawtral.Web.Controllers.Api;
 
@@ -85,6 +86,14 @@ public class MessagesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Content))
             return BadRequest(new { error = "content is required" });
 
+        var caller = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == senderEmail);
+        if (caller != null && string.Equals(caller.UserType, "admin", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Admin accounts cannot send messages." });
+
+        var receiver = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == request.ReceiverEmail.Trim());
+        if (receiver != null && string.Equals(receiver.UserType, "admin", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Admin cannot receive messages." });
+
         var message = new Message
         {
             Id = Guid.NewGuid(),
@@ -159,6 +168,159 @@ public class MessagesController : ControllerBase
         var count = await _db.Messages.AsNoTracking()
             .CountAsync(m => m.ReceiverEmail == currentEmail && !m.IsRead);
         return Ok(new { count });
+    }
+
+    /// <summary>
+    /// GET /api/messages/contacts
+    /// Returns only users with whom the caller has a legitimate relationship:
+    /// - Active conversation threads
+    /// - For Pet Owners: Vets from their appointments, vets who created their pets' records, plus clinic admins
+    /// - For Vets: Owners with appointments under this vet, or owners of pets this vet treated, plus clinic admins
+    /// - For Admins: All staff (vets) and active conversationalists
+    /// </summary>
+    [HttpGet("contacts")]
+    public async Task<ActionResult<List<UserDto>>> GetContacts()
+    {
+        var callerEmail = ApiUserContext.GetUserEmail(Request);
+        if (string.IsNullOrWhiteSpace(callerEmail))
+            return Ok(new List<UserDto>());
+
+        var currentUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == callerEmail);
+        var userType = currentUser?.UserType?.ToLowerInvariant() ?? "pet_owner";
+
+        var contactEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // 1. All existing message threads (people they have already exchanged messages with)
+        var msgSenders = await _db.Messages.AsNoTracking()
+            .Where(m => m.ReceiverEmail == callerEmail && !m.IsDeleted)
+            .Select(m => m.SenderEmail)
+            .Distinct()
+            .ToListAsync();
+
+        var msgReceivers = await _db.Messages.AsNoTracking()
+            .Where(m => m.SenderEmail == callerEmail && !m.IsDeleted)
+            .Select(m => m.ReceiverEmail)
+            .Distinct()
+            .ToListAsync();
+
+        foreach (var email in msgSenders.Concat(msgReceivers))
+        {
+            if (!string.IsNullOrWhiteSpace(email) && !email.Equals(callerEmail, StringComparison.OrdinalIgnoreCase))
+                contactEmails.Add(email.Trim());
+        }
+
+        // 2. Role-specific relationships
+        if (userType == "pet_owner")
+        {
+            // Vets from appointments booked by this owner
+            var apptVets = await _db.Appointments.AsNoTracking()
+                .Where(a => !a.IsDeleted && a.OwnerEmail == callerEmail && !string.IsNullOrWhiteSpace(a.VetEmail))
+                .Select(a => a.VetEmail!)
+                .Distinct()
+                .ToListAsync();
+            foreach (var v in apptVets) contactEmails.Add(v.Trim());
+
+            // Vets who authored health records for this owner's pets
+            var petIds = await _db.Pets.AsNoTracking()
+                .Where(p => !p.IsDeleted && p.OwnerEmail == callerEmail)
+                .Select(p => p.Id)
+                .ToListAsync();
+            if (petIds.Count > 0)
+            {
+                var recordVets = await _db.HealthRecords.AsNoTracking()
+                    .Where(r => !r.IsDeleted && petIds.Contains(r.PetId) && !string.IsNullOrWhiteSpace(r.VetEmail))
+                    .Select(r => r.VetEmail!)
+                    .Distinct()
+                    .ToListAsync();
+                foreach (var v in recordVets) contactEmails.Add(v.Trim());
+            }
+
+        }
+        else if (userType == "veterinarian")
+        {
+            // Pet owners who have appointments with this vet
+            var patientOwners = await _db.Appointments.AsNoTracking()
+                .Where(a => !a.IsDeleted && a.VetEmail == callerEmail && !string.IsNullOrWhiteSpace(a.OwnerEmail))
+                .Select(a => a.OwnerEmail!)
+                .Distinct()
+                .ToListAsync();
+            foreach (var o in patientOwners) contactEmails.Add(o.Trim());
+
+            // Pet owners whose pets have a health record authored by this vet
+            var treatedPetIds = await _db.HealthRecords.AsNoTracking()
+                .Where(r => !r.IsDeleted && r.VetEmail == callerEmail)
+                .Select(r => r.PetId)
+                .Distinct()
+                .ToListAsync();
+            if (treatedPetIds.Count > 0)
+            {
+                var recordOwners = await _db.Pets.AsNoTracking()
+                    .Where(p => !p.IsDeleted && treatedPetIds.Contains(p.Id) && !string.IsNullOrWhiteSpace(p.OwnerEmail))
+                    .Select(p => p.OwnerEmail!)
+                    .Distinct()
+                    .ToListAsync();
+                foreach (var o in recordOwners) contactEmails.Add(o.Trim());
+            }
+        }
+        else // Admin has no messaging feature
+        {
+            return Ok(new List<UserDto>());
+        }
+
+        contactEmails.Remove(callerEmail);
+
+        if (contactEmails.Count == 0)
+            return Ok(new List<UserDto>());
+
+        // Never return admin users in messaging contacts
+        var matchedUsers = await _db.Users.AsNoTracking()
+            .Where(u => !u.IsDeleted && u.UserType != "admin" && contactEmails.Contains(u.Email))
+            .ToListAsync();
+
+        var existingUserEmails = new HashSet<string>(matchedUsers.Select(u => u.Email), StringComparer.OrdinalIgnoreCase);
+
+        var result = matchedUsers.Select(ToUserDto).ToList();
+
+        // If an email exists in contacts but has no full user record (fallback)
+        foreach (var email in contactEmails)
+        {
+            if (!existingUserEmails.Contains(email))
+            {
+                result.Add(new UserDto
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Email = email,
+                    FullName = email.Split('@')[0],
+                    UserType = "user"
+                });
+            }
+        }
+
+        return Ok(result);
+    }
+
+    private static UserDto ToUserDto(User u)
+    {
+        object? prefs = null;
+        if (!string.IsNullOrWhiteSpace(u.NotificationPrefsJson))
+        {
+            try { prefs = JsonSerializer.Deserialize<object>(u.NotificationPrefsJson); }
+            catch { prefs = null; }
+        }
+
+        return new UserDto
+        {
+            Id = u.Id.ToString(),
+            Email = u.Email,
+            FullName = u.FullName,
+            UserType = u.UserType,
+            Phone = u.Phone,
+            Address = u.Address,
+            AvatarUrl = u.AvatarUrl,
+            LicenseNumber = u.LicenseNumber,
+            Specialization = u.Specialization,
+            NotificationPreferences = prefs
+        };
     }
 
     private static MessageDto ToDto(Message m) => new()

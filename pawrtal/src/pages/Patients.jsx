@@ -56,7 +56,7 @@ export default function Patients() {
   });
 
   const { data: pets = [], isLoading } = useQuery({
-    queryKey: ['allPets'],
+    queryKey: ['vetConnectedPets', user?.email],
     queryFn: () => api.entities.Pet.list('-created_date'),
     enabled: !!user,
   });
@@ -101,7 +101,7 @@ export default function Patients() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Patients</h1>
-          <p className="text-gray-500 mt-1">{pets.length} registered patients</p>
+          <p className="text-gray-500 mt-1">{filteredPets.length} connected patient{filteredPets.length !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
@@ -133,11 +133,11 @@ export default function Patients() {
 
       {/* Patients List */}
       {filteredPets.length === 0 ? (
-        <Card className="border-dashed border-2">
+        <Card className="border-dashed border-2 border-gray-300 bg-white">
           <EmptyState
             icon={PawPrint}
             title="No patients found"
-            description={searchTerm ? "Try adjusting your search terms" : "No pets registered yet"}
+            description={searchTerm ? "Try adjusting your search terms" : "No patients connected yet. Patients will appear here when appointments are scheduled with you, records are added, or emergency QR scans are performed."}
           />
         </Card>
       ) : (

@@ -1,1 +1,2 @@
 C:\PawrtalFinal\pawrtal\obj\Debug\PawrtalReact.esproj.CoreCompileInputs.cache
+C:\Users\ADMIN\source\repos\TEAM4-la\pawrtal\obj\Debug\PawrtalReact.esproj.CoreCompileInputs.cache

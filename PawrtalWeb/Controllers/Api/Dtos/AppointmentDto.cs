@@ -10,11 +10,17 @@ public class AppointmentDto
     [JsonPropertyName("pet_id")]
     public string PetId { get; set; } = null!;
 
+    [JsonPropertyName("pet_name")]
+    public string? PetName { get; set; }
+
     [JsonPropertyName("owner_email")]
     public string? OwnerEmail { get; set; }
 
     [JsonPropertyName("vet_email")]
     public string? VetEmail { get; set; }
+
+    [JsonPropertyName("vet_name")]
+    public string? VetName { get; set; }
 
     [JsonPropertyName("type")]
     public string Type { get; set; } = null!;
@@ -31,4 +37,3 @@ public class AppointmentDto
     [JsonPropertyName("status")]
     public string Status { get; set; } = null!;
 }
-

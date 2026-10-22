@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, Clock, User, Stethoscope, Check, X, AlertCircle } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { getAppointmentStatus } from "@/utils";
+import { getAppointmentStatus, formatDoctorName } from "@/utils";
 
 const statusConfig = {
   pending: { 
@@ -97,18 +97,18 @@ export default function AppointmentCard({
         <div className="flex-1 p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              {showPetInfo && pet && (
+              {showPetInfo && (pet || appointment.pet_name) && (
                 <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
-                  {pet.photo_url ? (
+                  {pet?.photo_url ? (
                     <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-lg font-bold text-teal-600">{pet.name?.[0]}</span>
+                    <span className="text-lg font-bold text-teal-600">{(pet?.name || appointment.pet_name)?.[0]}</span>
                   )}
                 </div>
               )}
               <div>
-                {showPetInfo && pet && (
-                  <h4 className="font-semibold text-gray-900">{pet.name}</h4>
+                {showPetInfo && (pet || appointment.pet_name) && (
+                  <h4 className="font-semibold text-gray-900">{pet?.name || appointment.pet_name}</h4>
                 )}
                 <Badge className={cn("mt-1", typeColors[appointment.type])}>
                   {appointment.type.replace('_', ' ')}
@@ -139,6 +139,26 @@ export default function AppointmentCard({
                 <span className="text-sm">{appointment.owner_email}</span>
               </div>
             )}
+            {isVetView && !appointment.vet_email && (
+              <div className="flex items-center gap-2 text-amber-700">
+                <Stethoscope className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                  Unassigned (Clinic Pool)
+                </span>
+              </div>
+            )}
+            {isVetView && appointment.vet_email && (
+              <div className="flex items-center gap-2 text-teal-700">
+                <Stethoscope className="w-4 h-4 text-teal-600" />
+                <span className="text-sm font-medium">Assigned to: {appointment.vet_email}</span>
+              </div>
+            )}
+            {!isVetView && appointment.vet_email && (
+              <div className="flex items-center gap-2 text-teal-700">
+                <Stethoscope className="w-4 h-4 text-teal-600" />
+                <span className="text-sm font-medium">Assigned: {appointment.vet_email}</span>
+              </div>
+            )}
           </div>
 
           {appointment.reason && (
@@ -152,10 +172,13 @@ export default function AppointmentCard({
               {onConfirm && derivedStatus === 'pending' && (
                 <Button 
                   size="sm" 
-                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                  className={cn(
+                    "text-white transition-colors",
+                    !appointment.vet_email ? "bg-amber-600 hover:bg-amber-700" : "bg-teal-600 hover:bg-teal-700"
+                  )}
                   onClick={() => onConfirm(appointment)}
                 >
-                  Confirm
+                  {!appointment.vet_email ? "Accept & Confirm" : "Confirm"}
                 </Button>
               )}
               {onComplete && derivedStatus === 'confirmed' && (

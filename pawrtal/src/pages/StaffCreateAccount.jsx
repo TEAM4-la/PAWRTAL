@@ -15,7 +15,6 @@ function StaffForm({ isAdminOnly }) {
   const [userType, setUserType] = useState('veterinarian');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [specialization, setSpecialization] = useState('');
-  const [clinicName, setClinicName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
@@ -46,7 +45,6 @@ function StaffForm({ isAdminOnly }) {
         user_type: userType,
         license_number: licenseNumber.trim() || undefined,
         specialization: specialization.trim() || undefined,
-        clinic_name: clinicName.trim() || undefined,
       });
       setDone(`Account created for ${email.trim()}. They can sign in from the staff sign-in flow.`);
       setEmail('');
@@ -55,7 +53,6 @@ function StaffForm({ isAdminOnly }) {
       setFullName('');
       setLicenseNumber('');
       setSpecialization('');
-      setClinicName('');
       qc.invalidateQueries({ queryKey: ['currentUser'] });
       qc.invalidateQueries({ queryKey: ['me'] });
     } catch (err) {
@@ -151,15 +148,19 @@ function StaffForm({ isAdminOnly }) {
         {userType === 'veterinarian' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License number (optional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                PRC License / Registration No. (optional)
+              </label>
               <div className="relative">
                 <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   value={licenseNumber}
                   onChange={(e) => setLicenseNumber(e.target.value)}
+                  placeholder="e.g., 0012345 or PRC-0012345"
                   className={`w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl ${ring} focus:outline-none focus:ring-2`}
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">Official 5–7 digit PRC veterinary board registration number</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Specialization (optional)</label>
@@ -172,17 +173,7 @@ function StaffForm({ isAdminOnly }) {
           </>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Clinic name (optional)</label>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              value={clinicName}
-              onChange={(e) => setClinicName(e.target.value)}
-              className={`w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl ${ring} focus:outline-none focus:ring-2`}
-            />
-          </div>
-        </div>
+
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
         {done && <p className="text-green-700 text-sm">{done}</p>}

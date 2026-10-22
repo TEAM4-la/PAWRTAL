@@ -97,7 +97,7 @@ export default function Appointments() {
 
         <TabsContent value="upcoming" className="mt-6">
           {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Calendar}
                 title="No upcoming appointments"
@@ -125,7 +125,7 @@ export default function Appointments() {
 
         <TabsContent value="past" className="mt-6">
           {pastAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={CheckCircle}
                 title="No past appointments"
@@ -150,7 +150,7 @@ export default function Appointments() {
 
         <TabsContent value="cancelled" className="mt-6">
           {cancelledAppointments.length === 0 ? (
-            <Card className="border-dashed border-2">
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
               <EmptyState
                 icon={Calendar}
                 title="No cancelled appointments"

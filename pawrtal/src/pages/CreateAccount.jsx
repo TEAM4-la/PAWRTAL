@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImg from '../assets/background.png';
+import logo2 from '../assets/logo2.png';
 import { PawPrint, ChevronLeft, Mail, Lock, Eye, EyeOff, User, RefreshCw } from 'lucide-react';
 import { api } from '@/api/apiClient';
 
@@ -62,13 +63,12 @@ export default function CreateAccount() {
 
       <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 flex-col justify-between p-12 relative z-20 overflow-hidden bg-gradient-to-br from-amber-800 via-amber-600 to-amber-500 text-white">
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
+          <div className="flex items-center gap-3 mb-6">
             <img
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+              src={logo2}
               alt="PAWRTAL"
-              className="w-10 h-10 object-contain"
+              className="w-40 h-40 object-contain"
             />
-            <span className="text-xl font-bold tracking-widest">PAWRTAL</span>
           </div>
           <h1 className="text-4xl font-extrabold leading-tight mb-6">
             Create your pet owner account
@@ -88,11 +88,10 @@ export default function CreateAccount() {
       <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative z-20 bg-transparent backdrop-blur-[2px]">
         <div className="flex lg:hidden items-center gap-2 mb-8">
           <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6978dd3b25d4410887cb4e17/be8bb8d23_pawrtal-logopng.png"
+            src={logo2}
             alt="PAWRTAL"
-            className="w-9 h-9 object-contain"
+            className="w-12 h-12 object-contain"
           />
-          <span className="text-lg font-bold text-amber-900 tracking-wide">PAWRTAL</span>
         </div>
 
         <motion.div
