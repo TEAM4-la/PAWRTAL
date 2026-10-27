@@ -44,7 +44,7 @@ builder.Services.AddDbContext<PawrtalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PawrtalDB"));
 });
 
-builder.Services.AddHttpClient<ISmsService, UniSmsService>();
+builder.Services.AddHttpClient<ISmsService, SemaphoreSmsService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHostedService<AppointmentExpirationService>();
 

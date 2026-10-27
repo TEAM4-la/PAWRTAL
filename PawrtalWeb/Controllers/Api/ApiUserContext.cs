@@ -7,7 +7,7 @@ public static class ApiUserContext
     public const string UserEmailHeader = "X-User-Email";
     public const string UserRoleHeader = "X-User-Role";
 
-    public static string GetUserEmail(HttpRequest request, string fallback = "demo@example.com")
+    public static string GetUserEmail(HttpRequest request, string fallback = "")
     {
         if (request.Headers.TryGetValue(UserEmailHeader, out var values))
         {

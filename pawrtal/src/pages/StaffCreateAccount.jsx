@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/apiClient';
 import VetSidebar from '@/components/layout/VetSidebar';
 import AdminSidebar from '@/components/layout/AdminSidebar';
-import { ShieldAlert, RefreshCw, Mail, Lock, User, Stethoscope, Building2 } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Mail, Lock, User, Stethoscope, Building2, ChevronLeft } from 'lucide-react';
 
 function StaffForm({ isAdminOnly }) {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -71,6 +73,13 @@ function StaffForm({ isAdminOnly }) {
 
   return (
     <div className="p-6 lg:p-10 max-w-xl mx-auto">
+      <button 
+        type="button"
+        onClick={() => navigate(isAdminOnly ? createPageUrl('ClinicAdminDashboard') : createPageUrl('VetDashboard'))} 
+        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4"
+      >
+        <ChevronLeft className="w-4 h-4" /> Back
+      </button>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Create staff account</h1>
       <p className="text-gray-500 text-sm mb-8">
         Add a veterinarian or clinic admin. They will use this email and password to sign in.

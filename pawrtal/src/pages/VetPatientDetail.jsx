@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import backgroundImg from '@/assets/background.png';
 import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
 import { api, userTypeToRole } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
@@ -145,29 +146,37 @@ export default function VetPatientDetail() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Patient Info */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-0 shadow-lg overflow-hidden">
-            <div className="h-32 bg-gradient-to-r from-teal-400 via-teal-500 to-orange-400" />
-            <CardContent className="p-6 -mt-16">
-              <div className="flex items-end gap-4">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center">
-                  {pet.photo_url ? (
-                    <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Icon className="w-12 h-12 text-teal-300" />
-                  )}
-                </div>
-                <div className="flex-1 pb-2">
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-gray-900">{pet.name}</h1>
-                    <Badge className="capitalize bg-teal-100 text-teal-700">{pet.species}</Badge>
+          <Card className="border border-gray-100 shadow-md overflow-hidden bg-white">
+            <div className="relative h-36 bg-teal-600 overflow-hidden">
+              <img 
+                src={backgroundImg} 
+                alt="Pawrtal Pattern" 
+                className="w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none select-none" 
+              />
+            </div>
+            <CardContent className="relative z-10 p-6 pt-3">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+                  <div className="relative z-20 -mt-14 sm:-mt-16 w-24 h-24 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
+                    {pet.photo_url ? (
+                      <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Icon className="w-12 h-12 text-teal-400" />
+                    )}
                   </div>
-                  <p className="text-gray-500">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
-                  {pet.microchip_id && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-                      Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                  <div className="pb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h1 className="text-2xl font-bold text-gray-900">{pet.name}</h1>
+                      <Badge className="capitalize bg-teal-50 text-teal-700 border border-teal-200">{pet.species}</Badge>
                     </div>
-                  )}
+                    <p className="text-gray-500 text-sm">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
+                    {pet.microchip_id && (
+                      <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                        Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 {!isClinicAdmin && (
                   <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)}>

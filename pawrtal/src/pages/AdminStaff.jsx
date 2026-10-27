@@ -1,10 +1,12 @@
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import React, { useState } from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award } from 'lucide-react';
+import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award, ChevronLeft } from 'lucide-react';
 
 // ─── Reset Password Modal ──────────────────────────────────────────────────────
 function ResetPasswordModal({ targetUser, onClose }) {
@@ -153,6 +155,7 @@ function ResetPasswordModal({ targetUser, onClose }) {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function AdminStaff() {
+  const navigate = useNavigate();
   const [resetTarget, setResetTarget] = useState(null); // user to reset
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
@@ -165,6 +168,9 @@ export default function AdminStaff() {
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-6 max-w-6xl mx-auto">
+        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Staff &amp; Users</h1>
           <p className="text-gray-500 mt-1">Manage veterinarians and pet owners</p>

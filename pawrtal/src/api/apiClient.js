@@ -1,12 +1,12 @@
 const getStoredEmail = () =>
   (typeof window !== 'undefined'
     ? window.sessionStorage.getItem('pawrtal_email')
-    : null) || 'demo@example.com';
+    : null) || '';
 
 const getStoredRole = () =>
   (typeof window !== 'undefined'
     ? window.sessionStorage.getItem('pawrtal_role')
-    : null) || 'owner'; // owner | vet | admin
+    : null) || '';
 
 /** Trimmed VITE_API_BASE_URL, or '' to use same origin (Vite proxy → backend in dev). */
 function getApiBaseUrl() {
@@ -64,8 +64,8 @@ async function http(path, { method = 'GET', query, body, headers, isFormData, sk
         ...(skipAuthHeaders
           ? {}
           : {
-              'X-User-Email': email,
-              'X-User-Role': role,
+              ...(email ? { 'X-User-Email': email } : {}),
+              ...(role ? { 'X-User-Role': role } : {}),
             }),
         ...(headers || {}),
       },
@@ -122,7 +122,13 @@ export function userTypeToRole(userType) {
 export const api = {
   auth: {
     async me() {
-      return await http('/api/auth/me');
+      const email = getStoredEmail();
+      if (!email) return null;
+      try {
+        return await http('/api/auth/me');
+      } catch {
+        return null;
+      }
     },
     async login({ email, password }) {
       return await http('/api/auth/login', {

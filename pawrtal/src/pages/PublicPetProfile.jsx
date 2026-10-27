@@ -112,7 +112,7 @@ export default function PublicPetProfile() {
       <main className="max-w-lg mx-auto p-6 space-y-6">
         {/* Pet Card */}
         <Card className="overflow-hidden border-0 shadow-xl">
-          <div className="relative h-56 bg-gradient-to-br from-teal-400 via-teal-500 to-orange-400">
+          <div className="relative h-56 bg-teal-600 overflow-hidden">
             {pet.photo_url ? (
               <img src={pet.photo_url.replace('http://localhost:5035', '')} alt={pet.name} className="w-full h-full object-cover" />
             ) : (
@@ -127,9 +127,6 @@ export default function PublicPetProfile() {
               </Badge>
               <h1 className="text-3xl font-bold text-white">{pet.name}</h1>
               <p className="text-white/80">{pet.breed || 'Mixed breed'}</p>
-              <p className="text-xs text-teal-100/80 font-mono">
-                ID: {petId}
-              </p>
             </div>
           </div>
 

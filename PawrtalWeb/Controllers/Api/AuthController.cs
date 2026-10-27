@@ -151,28 +151,16 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<UserDto>> Me()
     {
         var rawEmail = ApiUserContext.GetUserEmail(Request);
+        if (string.IsNullOrWhiteSpace(rawEmail))
+            return Unauthorized(new { error = "Not authenticated." });
+
         var email = NormalizeEmail(rawEmail);
         var requestedUserType = ApiUserContext.MapRoleToUserType(ApiUserContext.GetUserRole(Request));
 
         var user = await FindUserByEmailAsync(email);
         if (user is null)
         {
-            user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = rawEmail.Trim(),
-                FullName = "Demo User",
-                UserType = requestedUserType ?? "pet_owner",
-                NotificationPrefsJson = JsonSerializer.Serialize(new
-                {
-                    email = true,
-                    appointments = true,
-                    vaccinations = true,
-                    medications = true
-                })
-            };
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
+            return Unauthorized(new { error = "User not found." });
         }
         else if (!string.IsNullOrWhiteSpace(requestedUserType) && user.UserType != requestedUserType)
         {
@@ -188,12 +176,14 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateMeRequest request)
     {
         var rawEmail = ApiUserContext.GetUserEmail(Request);
+        if (string.IsNullOrWhiteSpace(rawEmail))
+            return Unauthorized(new { error = "Not authenticated." });
+
         var email = NormalizeEmail(rawEmail);
         var user = await FindUserByEmailAsync(email);
         if (user is null)
         {
-            user = new User { Id = Guid.NewGuid(), Email = rawEmail.Trim(), CreatedAt = DateTime.UtcNow };
-            _db.Users.Add(user);
+            return Unauthorized(new { error = "User not found." });
         }
 
         if (request.FullName is not null) user.FullName = request.FullName;

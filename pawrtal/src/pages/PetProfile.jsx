@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import backgroundImg from '@/assets/background.png';
 import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -184,53 +185,65 @@ export default function PetProfile() {
       </Button>
 
       {/* Header Card */}
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <div className="relative h-48 bg-gradient-to-br from-teal-400 via-teal-500 to-orange-400">
-          {pet.photo_url && (
-            <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover opacity-30 absolute inset-0" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      <Card className="overflow-hidden border border-gray-100 shadow-md bg-white">
+        {/* Cover Banner: Solid Pawrtal light teal with subtle authentic pet doodle texture (No AI gradient) */}
+        <div className="relative h-44 sm:h-48 bg-teal-600 overflow-hidden">
+          <img 
+            src={backgroundImg} 
+            alt="Pawrtal Pattern" 
+            className="w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none select-none" 
+          />
         </div>
         
-        <div className="relative px-6 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16">
-            <div className="w-32 h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center">
-              {pet.photo_url ? (
-                <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
-              ) : (
-                <Icon className="w-16 h-16 text-teal-300" />
-              )}
-            </div>
-            
-            <div className="flex-1 sm:pb-2">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-3xl font-bold text-gray-900">{pet.name}</h1>
-                <Badge className="capitalize bg-teal-100 text-teal-700">{pet.species}</Badge>
+        <div className="relative z-10 px-6 pb-6 pt-3">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            {/* Avatar & Pet Info Group */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+              {/* Pet Avatar - overlaps banner */}
+              <div className="relative z-20 -mt-16 sm:-mt-20 w-32 h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
+                {pet.photo_url ? (
+                  <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Icon className="w-16 h-16 text-teal-400" />
+                )}
               </div>
-              <p className="text-gray-600">{pet.breed || 'Mixed breed'} • {pet.gender}</p>
-              {pet.microchip_id && (
-                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-                  Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+              
+              {/* Pet Name, Species, Breed & Microchip: well below the banner edge with clear white breathing room */}
+              <div className="pb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{pet.name}</h1>
+                  <Badge className="capitalize bg-teal-50 text-teal-700 border border-teal-200 font-medium px-2.5 py-0.5">
+                    {pet.species}
+                  </Badge>
                 </div>
-              )}
+                <p className="text-gray-500 font-medium text-sm">
+                  {pet.breed || 'Mixed breed'} • {pet.gender}
+                </p>
+                {pet.microchip_id && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                    Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-2 sm:pb-2">
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2 pb-1">
               <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 border-gray-300">
                   <QrCode className="w-4 h-4" />
                   QR Code
                 </Button>
               </Link>
               <Link to={createPageUrl(`EditPet?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 border-gray-300">
                   <Edit className="w-4 h-4" />
                   Edit
                 </Button>
               </Link>
               <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-              <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
                   <Calendar className="w-4 h-4" />
                   Book
                 </Button>

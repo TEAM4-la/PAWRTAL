@@ -17,8 +17,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoadingAuth(true);
       const currentUser = await api.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
+      if (currentUser) { setUser(currentUser); setIsAuthenticated(true); } else { setUser(null); setIsAuthenticated(false); }
       setIsLoadingAuth(false);
     } catch (error) {
       console.error('User auth check failed:', error);

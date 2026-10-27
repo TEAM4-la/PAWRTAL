@@ -22,7 +22,7 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<UserDto>>> Filter([FromQuery] string? email)
     {
-        IQueryable<User> q = _db.Users.AsNoTracking();
+        IQueryable<User> q = _db.Users.AsNoTracking().Where(u => !u.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(email))
             q = q.Where(u => u.Email == email);
@@ -49,7 +49,7 @@ public class UsersController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<List<UserDto>>> List([FromQuery] string? order, [FromQuery] int limit = 200)
     {
-        IQueryable<User> q = _db.Users.AsNoTracking();
+        IQueryable<User> q = _db.Users.AsNoTracking().Where(u => !u.IsDeleted);
 
         q = order switch
         {

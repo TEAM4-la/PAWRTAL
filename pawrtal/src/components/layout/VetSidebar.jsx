@@ -17,10 +17,12 @@ import {
   Plus,
   UserPlus,
   MessageSquare,
+  QrCode,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import logo from '@/assets/LOGO.png';
 import NotificationPanel from '@/components/dashboard/NotificationPanel';
+import VetQrScannerModal from '@/components/shared/VetQrScannerModal';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'VetDashboard' },
@@ -37,6 +39,7 @@ const bottomItems = [
 
 export default function VetSidebar({ user, children }) {
   const [open, setOpen] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const location = useLocation();
 
   const path = location.pathname.split('?')[0];
@@ -81,10 +84,22 @@ export default function VetSidebar({ user, children }) {
       </div>
 
       {/* Quick action */}
-      <div className="px-3 mt-4">
+      <div className="px-3 mt-4 space-y-2">
+        <button
+          type="button"
+          onClick={() => {
+            setShowScanner(true);
+            setOpen(false);
+          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-sm font-semibold shadow-md shadow-teal-200/50 hover:from-teal-700 hover:to-emerald-700 transition-all border border-teal-500/20 active:scale-[0.98]"
+        >
+          <QrCode className="w-4 h-4" />
+          Scan Pet QR
+        </button>
+
         <Link to={createPageUrl('VetAppointments')} onClick={() => setOpen(false)}>
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md shadow-teal-200 hover:from-teal-600 hover:to-emerald-600 transition-all">
-            <Calendar className="w-4 h-4" />
+          <button className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-teal-50/80 text-teal-800 text-xs font-semibold hover:bg-teal-100 transition-all border border-teal-200/50">
+            <Calendar className="w-3.5 h-3.5" />
             View Schedule
           </button>
         </Link>
@@ -182,6 +197,14 @@ export default function VetSidebar({ user, children }) {
             <img src={logo} alt="PAWRTAL" className="w-24 h-8 object-contain object-left" />
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-50"
+              title="Scan Pet QR"
+            >
+              <QrCode className="w-5 h-5" />
+            </button>
             <NotificationPanel userEmail={user?.email} accentColor="teal" />
             <Link to={createPageUrl('Settings')}>
               <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm overflow-hidden border border-teal-200">
@@ -199,6 +222,9 @@ export default function VetSidebar({ user, children }) {
           {children}
         </main>
       </div>
+
+      {/* Emergency Pet QR Scanner Modal */}
+      <VetQrScannerModal isOpen={showScanner} onClose={() => setShowScanner(false)} />
     </div>
   );
 }

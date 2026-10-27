@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Stethoscope,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter } from 'date-fns';
 

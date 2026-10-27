@@ -30,24 +30,30 @@ export default function PrintablePetId({ pet, user, qrCodeUrl }) {
         width: '100%',
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: '1mm',
-        paddingRight: '3mm',
+        paddingLeft: '2mm',
+        paddingRight: '2.5mm',
         gap: '2mm',
         boxSizing: 'border-box',
       }}
     >
-      {/* Logo — fully inside the header */}
+      {/* Logo — scaled proportionally and clearly legible without overlapping clinic title */}
       <img
         src={logo}
-        alt="Logo"
-        style={{ width: '11mm', height: '11mm', objectFit: 'contain', flexShrink: 0 }}
+        alt="Pawrtal Logo"
+        style={{
+          height: '8.5mm',
+          width: 'auto',
+          maxWidth: '24mm',
+          objectFit: 'contain',
+          flexShrink: 0,
+        }}
       />
       {/* Clinic name */}
-      <div style={{ color: '#fff', textAlign: 'center', flex: 1 }}>
-        <div style={{ fontWeight: 900, fontSize: '3.8mm', lineHeight: 1.2, letterSpacing: '0.3mm' }}>
+      <div style={{ color: '#fff', textAlign: 'center', flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 900, fontSize: '3.4mm', lineHeight: 1.15, letterSpacing: '0.2mm', whiteSpace: 'nowrap' }}>
           VM VETERINARY CLINIC
         </div>
-        <div style={{ fontWeight: 500, fontSize: '1.9mm', lineHeight: 1.2 }}>
+        <div style={{ fontWeight: 500, fontSize: '1.8mm', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
           Petshop &amp; Spa - Pet Grooming Center
         </div>
       </div>
