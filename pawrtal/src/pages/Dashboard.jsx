@@ -20,7 +20,8 @@ import {
   ArrowRight,
   Clock,
   AlertTriangle,
-  Heart
+  Heart,
+  ChevronRight
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 
@@ -123,8 +124,7 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.full_name?.split(' ')[0] || 'Pet Parent'}! 
-            <span className="ml-2">👋</span>
+            Welcome back, {user?.display_name?.trim() || user?.first_name?.trim() || 'Pet Parent'}!
           </h1>
           <p className="text-gray-500 mt-1">Here's what's happening with your pets today</p>
         </div>
@@ -132,38 +132,30 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link to={createPageUrl('MyPets')} className="block hover:-translate-y-0.5 transition-transform duration-300">
-          <StatsCard
-            title="Total Pets"
-            value={pets.length}
-            icon={PawPrint}
-            color="teal"
-          />
-        </Link>
-        <Link to={createPageUrl('Appointments')} className="block hover:-translate-y-0.5 transition-transform duration-300">
-          <StatsCard
-            title="Upcoming Appointments"
-            value={upcomingAppointments.length}
-            icon={Calendar}
-            color="orange"
-          />
-        </Link>
-        <Link to={`${createPageUrl('HealthRecords')}?tab=vaccinations`} className="block hover:-translate-y-0.5 transition-transform duration-300">
-          <StatsCard
-            title="Due Vaccinations"
-            value={upcomingVaccinations.length}
-            icon={Syringe}
-            color="blue"
-          />
-        </Link>
-        <Link to={`${createPageUrl('HealthRecords')}?tab=medications`} className="block hover:-translate-y-0.5 transition-transform duration-300">
-          <StatsCard
-            title="Active Medications"
-            value={medications.length}
-            icon={Pill}
-            color="purple"
-          />
-        </Link>
+        <StatsCard
+          title="Total Pets"
+          value={pets.length}
+          icon={PawPrint}
+          color="orange"
+        />
+        <StatsCard
+          title="Upcoming Appointments"
+          value={upcomingAppointments.length}
+          icon={Calendar}
+          color="teal"
+        />
+        <StatsCard
+          title="Due Vaccinations"
+          value={upcomingVaccinations.length}
+          icon={Syringe}
+          color="blue"
+        />
+        <StatsCard
+          title="Active Medications"
+          value={medications.length}
+          icon={Pill}
+          color="purple"
+        />
       </div>
 
       {/* Alerts Section */}
@@ -219,59 +211,65 @@ export default function Dashboard() {
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Pets Section */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">My Pets</h2>
-            <Link to={createPageUrl('MyPets')}>
-              <Button variant="ghost" className="text-amber-700 gap-1">
-                View All <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+        <Card className="lg:col-span-2 border-0 shadow-sm flex flex-col h-[550px] bg-white">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <h2 className="font-semibold text-gray-900 text-lg">My Pets</h2>
+            <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium">
+              {pets.length} {pets.length === 1 ? 'pet' : 'pets'}
+            </span>
           </div>
 
-          {pets.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-300 bg-white">
+          <div className="flex-1 overflow-y-auto p-5 min-h-0">
+            {pets.length === 0 ? (
               <EmptyState
                 icon={PawPrint}
                 title="No pets yet"
                 description="Add your first pet to start tracking their health journey"
                 actionLabel="Add Your First Pet"
                 onAction={() => navigate(createPageUrl('AddPet'))}
+                colorScheme="orange"
+                className="py-10"
               />
-            </Card>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {pets.slice(0, 4).map((pet) => (
-                <PetCard key={pet.id} pet={pet} />
-              ))}
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {pets.map((pet) => (
+                  <PetCard key={pet.id} pet={pet} />
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Appointments Section */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Upcoming</h2>
-            <Link to={createPageUrl('Appointments')}>
-              <Button variant="ghost" className="text-amber-700 gap-1">
-                View All <ArrowRight className="w-4 h-4" />
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex-shrink-0">
+            <Link to={createPageUrl('MyPets')}>
+              <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-800 hover:bg-amber-50/50 w-full flex items-center justify-center gap-1 font-medium">
+                View All Pets <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
+        </Card>
 
-          {upcomingAppointments.length === 0 ? (
-            <Card className="border-dashed border-2 border-gray-300 bg-white">
+        {/* Appointments Section */}
+        <Card className="border-0 shadow-sm flex flex-col h-[550px] bg-white">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+            <h2 className="font-semibold text-gray-900 text-lg">Upcoming</h2>
+            <span className="text-xs bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full font-medium">
+              {upcomingAppointments.length} scheduled
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-3 min-h-0">
+            {upcomingAppointments.length === 0 ? (
               <EmptyState
                 icon={Calendar}
                 title="No appointments"
                 description="Book your next vet visit"
                 actionLabel="Book Appointment"
                 onAction={() => navigate(createPageUrl('BookAppointment'))}
+                colorScheme="teal"
+                className="py-10"
               />
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {upcomingAppointments.map((appointment) => {
+            ) : (
+              upcomingAppointments.map((appointment) => {
                 const pet = pets.find(p => p.id === appointment.pet_id);
                 return (
                   <AppointmentCard
@@ -280,10 +278,18 @@ export default function Dashboard() {
                     pet={pet}
                   />
                 );
-              })}
-            </div>
-          )}
-        </div>
+              })
+            )}
+          </div>
+
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex-shrink-0">
+            <Link to={createPageUrl('Appointments')}>
+              <Button variant="ghost" size="sm" className="text-teal-650 hover:text-teal-700 hover:bg-teal-50/50 w-full flex items-center justify-center gap-1 font-medium">
+                View All Appointments <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </Card>
       </div>
 
       {/* Quick Actions */}

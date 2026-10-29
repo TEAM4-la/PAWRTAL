@@ -4,6 +4,18 @@ namespace Pawtral.Web.Controllers.Api.Dtos;
 
 public class UpdateMeRequest
 {
+    [JsonPropertyName("display_name")]
+    public string? DisplayName { get; set; }
+
+    [JsonPropertyName("first_name")]
+    public string? FirstName { get; set; }
+
+    [JsonPropertyName("middle_name")]
+    public string? MiddleName { get; set; }
+
+    [JsonPropertyName("last_name")]
+    public string? LastName { get; set; }
+
     [JsonPropertyName("full_name")]
     public string? FullName { get; set; }
 

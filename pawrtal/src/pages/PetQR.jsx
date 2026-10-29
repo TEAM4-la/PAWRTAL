@@ -126,7 +126,7 @@ export default function PetQR() {
       </Button>
 
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center mx-auto shadow-lg shadow-teal-200 text-white">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-orange-200 text-white">
           <QrCode className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Digital Pet ID</h1>
@@ -134,7 +134,7 @@ export default function PetQR() {
       </div>
 
       <Card className="overflow-hidden border-0 shadow-xl">
-        <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-6 text-center text-white">
+        <div className="bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-center text-white">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-white/20 flex items-center justify-center">
               {pet.photo_url ? (
@@ -145,7 +145,7 @@ export default function PetQR() {
             </div>
             <div className="text-left">
               <h2 className="text-xl font-bold">{pet.name}</h2>
-              <p className="text-teal-100 text-sm">{pet.breed || pet.species}</p>
+              <p className="text-orange-100 text-sm">{pet.breed || pet.species}</p>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function PetQR() {
               href={getPublicProfileUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+              className="inline-block rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
               title="Open Pet QR link"
             >
               <img
@@ -177,14 +177,14 @@ export default function PetQR() {
             <Button
               variant="outline"
               onClick={handleShare}
-              className="flex-1 h-12 gap-2"
+              className="flex-1 h-12 gap-2 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
             >
               <Share2 className="w-4 h-4" />
               Share
             </Button>
             <Button
               onClick={handleDownload}
-              className="flex-1 h-12 gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+              className="flex-1 h-12 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100"
             >
               <Download className="w-4 h-4" />
               Download QR

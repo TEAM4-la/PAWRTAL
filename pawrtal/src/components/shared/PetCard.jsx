@@ -40,12 +40,12 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:border-teal-200 transition-all">
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
+      <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:border-orange-200 transition-all">
+        <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
           {pet.photo_url ? (
             <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
           ) : (
-            <Icon className="w-6 h-6 text-teal-600" />
+            <Icon className="w-6 h-6 text-orange-500" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -59,12 +59,12 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-0 bg-white">
-      <div className="relative h-48 bg-gradient-to-br from-teal-50 via-white to-orange-50">
+      <div className="relative h-48 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/60">
         {pet.photo_url ? (
           <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Icon className="w-20 h-20 text-teal-300" />
+            <Icon className="w-20 h-20 text-amber-300" />
           </div>
         )}
         <Badge className={`absolute top-3 right-3 ${speciesColors[pet.species]}`}>
@@ -79,7 +79,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
             <p className="text-gray-500 text-sm">{pet.breed || 'Mixed breed'}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-teal-600">{calculateAge(pet.date_of_birth)}</p>
+            <p className="text-sm font-medium text-orange-600">{calculateAge(pet.date_of_birth)}</p>
             <p className="text-xs text-gray-400">{pet.gender}</p>
           </div>
         </div>
@@ -96,18 +96,18 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
         {showActions && (
           <div className="flex gap-2 pt-3 border-t border-gray-100">
             <Link to={createPageUrl(`PetProfile?id=${pet.id}`)} className="flex-1">
-          <Button variant="outline" className="w-full gap-2 text-teal-600 border-teal-200 hover:bg-teal-50">
+              <Button variant="outline" className="w-full gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700">
                 <Eye className="w-4 h-4" />
                 View
               </Button>
             </Link>
             <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
-              <Button variant="outline" className="gap-2 border-gray-200">
+              <Button variant="outline" className="gap-2 border-gray-200 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                 <QrCode className="w-4 h-4" />
               </Button>
             </Link>
             <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-              <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
+              <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
                 <Calendar className="w-4 h-4" />
               </Button>
             </Link>

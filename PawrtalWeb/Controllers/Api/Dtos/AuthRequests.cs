@@ -5,6 +5,11 @@ public class RegisterRequest
     public string Email { get; set; } = null!;
     public string Password { get; set; } = null!;
     public string? FullName { get; set; }
+    public string? Phone { get; set; }
+    public string? DisplayName { get; set; }
+    public string? FirstName { get; set; }
+    public string? MiddleName { get; set; }
+    public string? LastName { get; set; }
 }
 
 public class RegisterStaffRequest
@@ -16,6 +21,11 @@ public class RegisterStaffRequest
     public string UserType { get; set; } = null!;
     public string? LicenseNumber { get; set; }
     public string? Specialization { get; set; }
+    public string? Phone { get; set; }
+    public string? DisplayName { get; set; }
+    public string? FirstName { get; set; }
+    public string? MiddleName { get; set; }
+    public string? LastName { get; set; }
 }
 
 public class LoginRequest

@@ -4,9 +4,10 @@ import { createPageUrl } from '@/utils';
 import { api } from '@/api/apiClient';
 import {
   LayoutDashboard, Calendar, Users, Stethoscope, BarChart2,
-  Settings, LogOut, Menu, ShieldCheck, ChevronRight, UserPlus,
+  Settings, LogOut, Menu, ShieldCheck, ChevronRight, Package,
 } from 'lucide-react';
 import logo from '@/assets/LOGO.png';
+import AdminNotificationPanel from '@/components/dashboard/AdminNotificationPanel';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { label: 'Appointments', icon: Calendar, page: 'AdminAppointments' },
   { label: 'Staff', icon: Stethoscope, page: 'AdminStaff' },
   { label: 'Patients', icon: Users, page: 'AdminPatients' },
+  { label: 'Inventory', icon: Package, page: 'AdminInventory' },
   { label: 'Reports', icon: BarChart2, page: 'AdminReports' },
 ];
 
@@ -28,6 +30,9 @@ export default function AdminSidebar({ children, currentUser }) {
   const path = location.pathname.split('?')[0];
   const isActive = (page) => {
     const pagePath = createPageUrl(page).split('?')[0];
+    if (page === 'AdminStaff' && path.startsWith('/staff/create-account')) {
+      return true;
+    }
     return path === pagePath || (pagePath !== '/' && path.startsWith(pagePath + '?'));
   };
 
@@ -45,20 +50,23 @@ export default function AdminSidebar({ children, currentUser }) {
       </div>
 
       {/* Admin badge */}
-      <div className="px-4 py-4 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
-          {currentUser?.avatar_url ? (
-            <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-          ) : (
-            currentUser?.full_name?.[0] || 'A'
-          )}
+      <div className="px-3 py-3 mx-3 mt-4 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden">
+            {currentUser?.avatar_url ? (
+              <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              currentUser?.display_name?.[0] || currentUser?.first_name?.[0] || 'A'
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-violet-900 text-sm truncate">{currentUser?.display_name?.trim() || currentUser?.first_name?.trim() || 'Admin'}</p>
+            <p className="text-violet-500 text-xs flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" /> Clinic Admin
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="font-semibold text-violet-900 text-sm truncate">{currentUser?.full_name || 'Admin'}</p>
-          <p className="text-violet-500 text-xs flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> Clinic Admin
-          </p>
-        </div>
+        <AdminNotificationPanel alignPopover="left" />
       </div>
 
       {/* Nav */}
@@ -86,22 +94,6 @@ export default function AdminSidebar({ children, currentUser }) {
             </Link>
           );
         })}
-        <Link to="/staff/create-account" onClick={() => setOpen(false)}>
-          <div
-            className={`relative ml-2 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group cursor-pointer
-              before:absolute before:-left-2 before:top-1/2 before:-translate-y-1/2 before:h-8 before:rounded-r-full before:transition-all before:duration-300
-              ${path.startsWith('/staff/create-account')
-                ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-md shadow-violet-200 before:w-1 before:bg-violet-500'
-                : 'text-violet-900 hover:bg-violet-50 before:w-0 before:bg-transparent'
-              }`}
-          >
-            <UserPlus
-              className={`flex-shrink-0 ${path.startsWith('/staff/create-account') ? 'text-white' : 'text-violet-400 group-hover:text-violet-600'}`}
-              style={{ width: '18px', height: '18px' }}
-            />
-            <span className="text-sm font-medium flex-1">Create staff account</span>
-          </div>
-        </Link>
       </nav>
 
       {/* Bottom */}
@@ -130,8 +122,8 @@ export default function AdminSidebar({ children, currentUser }) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-700">Sign Out</AlertDialogAction>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -166,15 +158,18 @@ export default function AdminSidebar({ children, currentUser }) {
           <div className="flex items-center gap-2">
             <img src={logo} alt="PAWRTAL" className="w-24 h-8 object-contain object-left" />
           </div>
-          <Link to={createPageUrl('Settings')}>
-            <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm overflow-hidden border border-violet-200">
-              {currentUser?.avatar_url ? (
-                <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                currentUser?.full_name?.[0] || 'A'
-              )}
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            <AdminNotificationPanel alignPopover="right" />
+            <Link to={createPageUrl('Settings')}>
+              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-sm overflow-hidden border border-violet-200">
+                {currentUser?.avatar_url ? (
+                  <img src={currentUser.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  currentUser?.display_name?.[0] || currentUser?.first_name?.[0] || 'A'
+                )}
+              </div>
+            </Link>
+          </div>
         </header>
 
         <main className="flex-1">

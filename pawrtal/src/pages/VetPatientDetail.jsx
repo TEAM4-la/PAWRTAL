@@ -214,10 +214,18 @@ export default function VetPatientDetail() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {pet.allergies?.map((allergy, i) => (
-                      <Badge key={i} className="bg-red-100 text-red-700">Allergy: {allergy}</Badge>
+                      <Badge key={i} className="bg-red-100 text-red-700 max-w-full">
+                        <span className="truncate max-w-[260px] sm:max-w-md break-all" title={allergy}>
+                          Allergy: {allergy}
+                        </span>
+                      </Badge>
                     ))}
                     {pet.medical_conditions?.map((condition, i) => (
-                      <Badge key={i} className="bg-amber-100 text-amber-700">{condition}</Badge>
+                      <Badge key={i} className="bg-amber-100 text-amber-700 max-w-full">
+                        <span className="truncate max-w-[260px] sm:max-w-md break-all" title={condition}>
+                          {condition}
+                        </span>
+                      </Badge>
                     ))}
                   </div>
                 </div>

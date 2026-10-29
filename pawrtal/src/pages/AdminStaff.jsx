@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award, ChevronLeft } from 'lucide-react';
+import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award, ChevronLeft, UserPlus, Plus } from 'lucide-react';
 
 // ─── Reset Password Modal ──────────────────────────────────────────────────────
 function ResetPasswordModal({ targetUser, onClose }) {
@@ -131,18 +131,18 @@ function ResetPasswordModal({ targetUser, onClose }) {
 
               <div className="flex gap-3 pt-1">
                 <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-sm"
-                >
-                  Cancel
-                </button>
-                <button
                   type="submit"
                   disabled={loading}
                   className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors text-sm disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Reset Password'}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Cancel
                 </button>
               </div>
             </form>
@@ -171,9 +171,18 @@ export default function AdminStaff() {
         <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Staff &amp; Users</h1>
-          <p className="text-gray-500 mt-1">Manage veterinarians and pet owners</p>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Staff &amp; Users</h1>
+            <p className="text-gray-500 mt-1">Manage veterinarians and pet owners</p>
+          </div>
+          <button
+            onClick={() => navigate('/staff/create-account')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold text-sm shadow-sm hover:shadow transition-all w-fit"
+          >
+            <UserPlus className="w-4 h-4" />
+            Create staff account
+          </button>
         </div>
 
         {/* Vets Section */}

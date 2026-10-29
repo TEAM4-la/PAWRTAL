@@ -3,41 +3,73 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImg from '../assets/background.png';
 import logo2 from '../assets/logo2.png';
-import { PawPrint, ChevronLeft, Mail, Lock, Eye, EyeOff, User, RefreshCw } from 'lucide-react';
+import { PawPrint, ChevronLeft, Mail, Lock, Eye, EyeOff, User, Phone, RefreshCw, AlertTriangle } from 'lucide-react';
 import { api } from '@/api/apiClient';
 
 export default function CreateAccount() {
-  const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!/@pawrtal\.com$/i.test(email.trim())) {
-      setError('Only @pawrtal.com email addresses are allowed.');
-      return;
+
+    const newErrors = {};
+    if (!firstName.trim()) {
+      newErrors.firstName = 'First name is required.';
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
+    if (!lastName.trim()) {
+      newErrors.lastName = 'Last name is required.';
     }
-    if (password !== confirm) {
-      setError('Passwords do not match.');
+    if (!phone.trim()) {
+      newErrors.phone = 'Phone number is required.';
+    }
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required.';
+    } else if (!/@pawrtal\.com$/i.test(email.trim())) {
+      newErrors.email = 'Only @pawrtal.com email addresses are allowed.';
+    }
+    if (!password) {
+      newErrors.password = 'Password is required.';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters.';
+    }
+    if (!confirm) {
+      newErrors.confirm = 'Please confirm your password.';
+    } else if (password !== confirm) {
+      newErrors.confirm = 'Passwords do not match.';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
     setLoading(true);
     try {
+      const fullLegal = [firstName.trim(), middleName.trim(), lastName.trim()].filter(Boolean).join(' ');
+      const cleanPhone = phone.replace(/\D/g, '').slice(0, 11);
       await api.auth.register({
         email: email.trim(),
         password,
-        full_name: fullName.trim() || undefined,
+        full_name: displayName.trim() || fullLegal,
+        phone: cleanPhone,
+        display_name: displayName.trim() || undefined,
+        first_name: firstName.trim(),
+        middle_name: middleName.trim() || undefined,
+        last_name: lastName.trim(),
       });
       navigate('/sign-in', { state: { registeredEmail: email.trim() } });
     } catch (err) {
@@ -85,8 +117,8 @@ export default function CreateAccount() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative z-20 bg-transparent backdrop-blur-[2px]">
-        <div className="flex lg:hidden items-center gap-2 mb-8">
+      <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 py-8 relative z-20 bg-transparent backdrop-blur-[2px]">
+        <div className="flex lg:hidden items-center gap-2 mb-6">
           <img
             src={logo2}
             alt="PAWRTAL"
@@ -97,89 +129,244 @@ export default function CreateAccount() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-white/85 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/30"
+          className="w-full max-w-lg bg-white/90 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-white/40"
         >
           <Link
             to="/sign-in"
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-6 group"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-5 group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back to sign in
           </Link>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Create account</h2>
-          <p className="text-gray-500 mb-8">Pet owners can register here. Veterinarians and admins use the staff invite flow.</p>
+          <p className="text-gray-500 text-sm mb-6">Pet owners can register here. Veterinarians and admins use the staff invite flow.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full name</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Display Name <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jane Doe"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="e.g. JaneD"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    setErrors((prev) => ({ ...prev, firstName: undefined }));
+                  }}
+                  placeholder="Jane"
+                  className={`w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                    errors.firstName
+                      ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-amber-400'
+                  }`}
+                />
+                {errors.firstName && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {errors.firstName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Middle Name <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                  placeholder="Marie"
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    setErrors((prev) => ({ ...prev, lastName: undefined }));
+                  }}
+                  placeholder="Doe"
+                  className={`w-full px-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                    errors.lastName
+                      ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-amber-400'
+                  }`}
+                />
+                {errors.lastName && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {errors.lastName}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }}
+                    placeholder="0912 345 6789"
+                    className={`w-full pl-10 pr-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                      errors.phone
+                        ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-amber-400'
+                    }`}
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {errors.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Email <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
                   placeholder="name@pawrtal.com"
                   autoComplete="email"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                    errors.email
+                      ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-amber-400'
+                  }`}
                 />
               </div>
+              {errors.email && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {errors.email}
+                </p>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  autoComplete="new-password"
-                  className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    placeholder="At least 6 characters"
+                    autoComplete="new-password"
+                    className={`w-full pl-10 pr-9 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                      errors.password
+                        ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-amber-400'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {errors.password}
+                  </p>
+                )}
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirm}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      setErrors((prev) => ({ ...prev, confirm: undefined }));
+                    }}
+                    placeholder="Repeat password"
+                    autoComplete="new-password"
+                    className={`w-full pl-10 pr-9 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
+                      errors.confirm
+                        ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-amber-400'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.confirm && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    {errors.confirm}
+                  </p>
+                )}
               </div>
             </div>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p className="text-red-500 text-xs font-medium">{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-lg disabled:opacity-60"
+              className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-lg disabled:opacity-60 transition-all mt-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Create account'}
             </button>

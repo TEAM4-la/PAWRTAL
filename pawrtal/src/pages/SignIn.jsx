@@ -168,7 +168,7 @@ export default function SignIn() {
       <div className="absolute inset-0 z-10 pointer-events-none bg-white/35" />
 
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 flex-col justify-between p-12 relative z-20 overflow-hidden bg-gradient-to-br from-amber-800 via-amber-600 to-amber-500 text-white">
+      <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 flex-col justify-between p-8 xl:p-12 relative z-20 overflow-hidden bg-gradient-to-br from-amber-800 via-amber-600 to-amber-500 text-white">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           {[...Array(12)].map((_, i) => (
             <div
@@ -188,25 +188,25 @@ export default function SignIn() {
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-4 xl:mb-6">
             <img
               src={logo2}
               alt="PAWRTAL"
-              className="w-40 h-40 object-contain"
+              className="w-32 h-32 xl:w-40 xl:h-40 object-contain drop-shadow"
             />
           </div>
 
-          <h1 className="text-4xl font-extrabold leading-tight mb-6">
+          <h1 className="text-3xl xl:text-4xl font-extrabold leading-tight mb-4 xl:mb-6">
             Your pet's health,<br />always within reach.
           </h1>
 
-          <p className="text-amber-100 text-lg leading-relaxed">
+          <p className="text-amber-100 text-base xl:text-lg leading-relaxed">
             A unified platform connecting pet owners and veterinary professionals for seamless, compassionate care.
           </p>
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
+          <div className="flex items-center gap-3 p-3.5 xl:p-4 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
             <div className="w-10 h-10 rounded-full bg-amber-300 flex items-center justify-center text-amber-900 font-bold text-sm">
               VM
             </div>
@@ -219,9 +219,9 @@ export default function SignIn() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative z-20 bg-transparent backdrop-blur-[2px]">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-4 lg:py-6 relative z-20 bg-transparent backdrop-blur-[2px]">
         {/* Mobile logo */}
-        <div className="flex lg:hidden items-center gap-2 mb-8">
+        <div className="flex lg:hidden items-center gap-2 mb-6">
           <img
             src={logo2}
             alt="PAWRTAL"
@@ -230,12 +230,12 @@ export default function SignIn() {
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-md bg-white/85 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-white/30">
+        <div className="w-full max-w-md bg-white/85 backdrop-blur-md rounded-2xl p-6 sm:p-7 shadow-xl border border-white/30 lg:-translate-y-2">
           {/* Back navigation */}
           {step === STEP_ROLE && (
             <Link
               to="/"
-              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-6 group"
+              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4 group"
             >
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               Back to home
@@ -246,7 +246,7 @@ export default function SignIn() {
             <button
               type="button"
               onClick={() => { setStep(STEP_ROLE); setError(''); }}
-              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-6 group"
+              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4 group"
             >
               <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               Back
@@ -261,14 +261,14 @@ export default function SignIn() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                className="space-y-4"
               >
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in to PAWRTAL</h2>
-                  <p className="text-gray-500">Select your role to get started</p>
+                  <p className="text-gray-500 text-sm">Select your role to get started</p>
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-3.5">
                   {roles.map((role) => {
                     const Icon = role.icon;
                     const isSelected = selectedRole === role.id;
@@ -281,18 +281,18 @@ export default function SignIn() {
                         animate={isSelected ? { scale: 1.02, y: -2 } : { scale: 1, y: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
                         className={`
-                          group relative w-full flex items-center gap-6 p-6 rounded-2xl 
+                          group relative w-full flex items-center gap-5 p-4 sm:p-5 rounded-2xl 
                           border-2 transition-all duration-300 text-left bg-white
                           ${isSelected 
                             ? `${role.border} ring-2 ${role.ring} shadow-lg` 
                             : `${role.border} hover:shadow-md hover:-translate-y-0.5`}
                         `}
                       >
-                        <div className={`w-12 h-12 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
-                          <Icon className={`w-6 h-6 ${role.iconColor}`} />
+                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
+                          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${role.iconColor}`} />
                         </div>
 
-                        <div className="flex-1 pr-10">
+                        <div className="flex-1 pr-8">
                           <p className="font-bold text-gray-900 text-base leading-tight">
                             {role.title}
                           </p>
@@ -306,7 +306,7 @@ export default function SignIn() {
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 400, damping: 25, delay: 0.1 }}
-                            className={`absolute right-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${role.dot} ring-2 ring-white shadow-sm`}
+                            className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${role.dot} ring-2 ring-white shadow-sm`}
                           />
                         )}
                       </motion.button>
@@ -318,7 +318,7 @@ export default function SignIn() {
                   type="button"
                   onClick={() => selectedRole && setStep(STEP_CREDENTIALS)}
                   disabled={!selectedRole}
-                  className={`w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all
+                  className={`w-full py-3.5 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all mt-4
                     ${selectedRole 
                       ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-200/50' 
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
@@ -326,7 +326,7 @@ export default function SignIn() {
                   Continue <ArrowRight className="w-5 h-5" />
                 </button>
 
-                <p className="text-center text-sm text-gray-500 mt-6">
+                <p className="text-center text-sm text-gray-500 mt-3.5">
                   New pet owner?{' '}
                   <Link to="/create-account" className="text-amber-600 font-medium hover:underline">
                     Create a Pet Owner account
@@ -339,9 +339,9 @@ export default function SignIn() {
             {step === STEP_CREDENTIALS && (
               <motion.div key="credentials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 {currentRole && (
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl ${currentRole.bg} border-2 ${currentRole.border} mb-6 shadow-sm`}>
-                    <div className={`w-8 h-8 rounded-lg ${currentRole.iconBg} flex items-center justify-center`}>
-                      <currentRole.icon className={`w-5 h-5 ${currentRole.iconColor}`} />
+                  <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl ${currentRole.bg} border-2 ${currentRole.border} mb-4 shadow-sm`}>
+                    <div className={`w-7 h-7 rounded-lg ${currentRole.iconBg} flex items-center justify-center`}>
+                      <currentRole.icon className={`w-4 h-4 ${currentRole.iconColor}`} />
                     </div>
                     <span className={`font-medium text-sm ${currentRole.accent}`}>
                       {currentRole.title}
@@ -350,12 +350,12 @@ export default function SignIn() {
                 )}
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h2>
-                <p className="text-gray-500 mb-8">
+                <p className="text-gray-500 text-sm mb-5">
                   Enter the email and password for your account.
                 </p>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
+                <div className="mb-3.5">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -363,13 +363,13 @@ export default function SignIn() {
                       value={email}
                       onChange={e => { setEmail(e.target.value); setError(''); }}
                       placeholder="name@pawrtal.com"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -377,7 +377,7 @@ export default function SignIn() {
                       value={password}
                       onChange={e => { setPassword(e.target.value); setError(''); }}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
                     />
                     <button
                       type="button"
@@ -405,7 +405,7 @@ export default function SignIn() {
                   )}
                 </button>
 
-                <p className="text-center text-sm text-gray-500 mt-4">
+                <p className="text-center text-sm text-gray-500 mt-3.5">
                   Pet owners can{' '}
                   <Link to="/create-account" className="text-amber-600 font-medium hover:underline">
                     create an account here

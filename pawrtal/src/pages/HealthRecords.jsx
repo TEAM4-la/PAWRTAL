@@ -38,7 +38,7 @@ const speciesIcons = {
 
 const recordTypeColors = {
   diagnosis: 'bg-purple-100 text-purple-700',
-  treatment: 'bg-teal-100 text-teal-700',
+  treatment: 'bg-orange-100 text-orange-700',
   prescription: 'bg-green-100 text-green-700',
   vaccination: 'bg-indigo-100 text-indigo-700',
   medication: 'bg-emerald-100 text-emerald-700',
@@ -242,8 +242,8 @@ export default function HealthRecords() {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-teal-600" />
+                        <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                          <FileText className="w-6 h-6 text-orange-600" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">

@@ -137,6 +137,7 @@ export default function Patients() {
           <EmptyState
             icon={PawPrint}
             title="No patients found"
+            colorScheme="teal"
             description={searchTerm ? "Try adjusting your search terms" : "No patients connected yet. Patients will appear here when appointments are scheduled with you, records are added, or emergency QR scans are performed."}
           />
         </Card>
@@ -188,7 +189,7 @@ export default function Patients() {
                         </Button>
                       </Link>
                       <Link to={createPageUrl(`VetAddRecord?petId=${pet.id}`)} className="flex-1 md:flex-none">
-                        <Button className="w-full bg-teal-600 hover:bg-teal-700">
+                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white shadow-sm font-medium">
                           Add Record
                         </Button>
                       </Link>

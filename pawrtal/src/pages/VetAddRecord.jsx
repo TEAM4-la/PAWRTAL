@@ -24,7 +24,10 @@ import {
   Bird,
   Rabbit,
   Fish,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  Package
 } from 'lucide-react';
 import { format, addMonths, addYears } from 'date-fns';
 import { toast } from "sonner";
@@ -125,6 +128,63 @@ export default function VetAddRecord() {
   const [medicationErrors, setMedicationErrors] = useState({});
   const [groomingErrors, setGroomingErrors] = useState({});
 
+  const [showVaccineSuggestions, setShowVaccineSuggestions] = useState(false);
+  const [showMedicationSuggestions, setShowMedicationSuggestions] = useState(false);
+
+  // Fetch clinical inventory
+  const { data: inventoryItems = [] } = useQuery({
+    queryKey: ['clinicalInventory'],
+    queryFn: () => api.entities.InventoryItem.list({ limit: 500 }),
+    staleTime: 30000,
+  });
+
+  const vaccineInventory = React.useMemo(() => {
+    return inventoryItems.filter(i => (i.item_type || '').toLowerCase() === 'vaccine');
+  }, [inventoryItems]);
+
+  const medicationInventory = React.useMemo(() => {
+    return inventoryItems.filter(i => (i.item_type || '').toLowerCase() === 'medication');
+  }, [inventoryItems]);
+
+  // Current matched inventory items (exact or prefix match)
+  const matchedVaccine = React.useMemo(() => {
+    const raw = (vaccinationForm.vaccine_name || '').trim().toLowerCase();
+    if (!raw) return null;
+    return vaccineInventory.find(i => i.name.toLowerCase() === raw) ||
+           vaccineInventory.find(i => i.name.toLowerCase().startsWith(raw)) || null;
+  }, [vaccineInventory, vaccinationForm.vaccine_name]);
+
+  const matchedMedication = React.useMemo(() => {
+    const raw = (medicationForm.name || '').trim().toLowerCase();
+    if (!raw) return null;
+    return medicationInventory.find(i => i.name.toLowerCase() === raw) ||
+           medicationInventory.find(i => i.name.toLowerCase().startsWith(raw)) || null;
+  }, [medicationInventory, medicationForm.name]);
+
+  // Suggestions while typing
+  const vaccineSuggestions = React.useMemo(() => {
+    const query = (vaccinationForm.vaccine_name || '').trim().toLowerCase();
+    if (!query) return [];
+    return vaccineInventory.filter(i => 
+      i.name.toLowerCase().includes(query) ||
+      (i.category && i.category.toLowerCase().includes(query)) ||
+      (i.sku && i.sku.toLowerCase().includes(query))
+    );
+  }, [vaccineInventory, vaccinationForm.vaccine_name]);
+
+  const medicationSuggestions = React.useMemo(() => {
+    const query = (medicationForm.name || '').trim().toLowerCase();
+    if (!query) return [];
+    return medicationInventory.filter(i => 
+      i.name.toLowerCase().includes(query) ||
+      (i.category && i.category.toLowerCase().includes(query)) ||
+      (i.sku && i.sku.toLowerCase().includes(query))
+    );
+  }, [medicationInventory, medicationForm.name]);
+
+  const isVaccineBlocked = matchedVaccine && (matchedVaccine.is_expired || matchedVaccine.is_out_of_stock || matchedVaccine.quantity <= 0);
+  const isMedicationBlocked = matchedMedication && (matchedMedication.is_expired || matchedMedication.is_out_of_stock || matchedMedication.quantity <= 0);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
@@ -187,12 +247,22 @@ export default function VetAddRecord() {
   });
 
   const createVaccinationMutation = useMutation({
-    mutationFn: (data) => api.entities.Vaccination.create({
-      ...data,
-      administered_by: user?.full_name,
-    }),
+    mutationFn: async (data) => {
+      const res = await api.entities.Vaccination.create({
+        ...data,
+        administered_by: user?.full_name,
+      });
+      if (matchedVaccine && matchedVaccine.quantity > 0) {
+        try {
+          await api.entities.InventoryItem.adjustStock(matchedVaccine.id, { mode: 'subtract', amount: 1 });
+        } catch {}
+      }
+      return res;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vaccinations'] });
+      queryClient.invalidateQueries({ queryKey: ['clinicalInventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success('Vaccination recorded!');
       navigate(createPageUrl('VetRecords'));
     },
@@ -202,12 +272,22 @@ export default function VetAddRecord() {
   });
 
   const createMedicationMutation = useMutation({
-    mutationFn: (data) => api.entities.Medication.create({
-      ...data,
-      prescribed_by: user?.full_name,
-    }),
+    mutationFn: async (data) => {
+      const res = await api.entities.Medication.create({
+        ...data,
+        prescribed_by: user?.full_name,
+      });
+      if (matchedMedication && matchedMedication.quantity > 0) {
+        try {
+          await api.entities.InventoryItem.adjustStock(matchedMedication.id, { mode: 'subtract', amount: 1 });
+        } catch {}
+      }
+      return res;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medications'] });
+      queryClient.invalidateQueries({ queryKey: ['clinicalInventory'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success('Medication prescribed!');
       navigate(createPageUrl('VetRecords'));
     },
@@ -263,12 +343,25 @@ export default function VetAddRecord() {
     const newErrors = {};
     if (!vaccinationForm.pet_id) newErrors.pet_id = true;
     if (!vaccinationForm.vaccine_name) newErrors.vaccine_name = true;
+    if (!vaccinationForm.next_due_date) newErrors.next_due_date = true;
 
     setVaccinationErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
       return;
     }
+
+    if (matchedVaccine) {
+      if (matchedVaccine.is_expired) {
+        toast.error(`Cannot save: ${matchedVaccine.name} expired on ${matchedVaccine.expiration_date}.`);
+        return;
+      }
+      if (matchedVaccine.is_out_of_stock || matchedVaccine.quantity <= 0) {
+        toast.error(`Cannot save: ${matchedVaccine.name} is out of stock (0 left in inventory).`);
+        return;
+      }
+    }
+
     createVaccinationMutation.mutate(vaccinationForm);
   };
 
@@ -277,12 +370,26 @@ export default function VetAddRecord() {
     const newErrors = {};
     if (!medicationForm.pet_id) newErrors.pet_id = true;
     if (!medicationForm.name) newErrors.name = true;
+    if (!medicationForm.dosage || !medicationForm.dosage.trim()) newErrors.dosage = true;
+    if (!medicationForm.end_date) newErrors.end_date = true;
 
     setMedicationErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
       return;
     }
+
+    if (matchedMedication) {
+      if (matchedMedication.is_expired) {
+        toast.error(`Cannot save: ${matchedMedication.name} expired on ${matchedMedication.expiration_date}.`);
+        return;
+      }
+      if (matchedMedication.is_out_of_stock || matchedMedication.quantity <= 0) {
+        toast.error(`Cannot save: ${matchedMedication.name} is out of stock (0 left in inventory).`);
+        return;
+      }
+    }
+
     createMedicationMutation.mutate(medicationForm);
   };
 
@@ -291,6 +398,7 @@ export default function VetAddRecord() {
     const newErrors = {};
     if (!groomingForm.pet_id) newErrors.pet_id = true;
     if (!groomingForm.grooming_type) newErrors.grooming_type = true;
+    if (!groomingForm.coat_condition_before) newErrors.coat_condition_before = true;
 
     setGroomingErrors(newErrors);
 
@@ -356,11 +464,11 @@ export default function VetAddRecord() {
                         setRecordErrors(prev => ({ ...prev, pet_id: false }));
                       }}
                     >
-                      <SelectTrigger className={cn("pr-10", recordErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectTrigger className={cn(recordErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       {recordErrors.pet_id && (
-                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                       )}
                       <SelectContent>
                         {availablePets.map(pet => (
@@ -466,7 +574,7 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createRecordMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-medium shadow-sm">
                   {createRecordMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Record'}
                 </Button>
               </form>
@@ -485,11 +593,11 @@ export default function VetAddRecord() {
                         setVaccinationErrors(prev => ({ ...prev, pet_id: false }));
                       }}
                     >
-                      <SelectTrigger className={cn("pr-10", vaccinationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectTrigger className={cn(vaccinationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       {vaccinationErrors.pet_id && (
-                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                       )}
                       <SelectContent>
                         {availablePets.map(pet => (
@@ -511,17 +619,120 @@ export default function VetAddRecord() {
                     <Input
                       maxLength={200}
                       value={vaccinationForm.vaccine_name}
+                      onFocus={() => setShowVaccineSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowVaccineSuggestions(false), 200)}
                       onChange={(e) => {
                         setVaccinationForm({...vaccinationForm, vaccine_name: e.target.value});
                         setVaccinationErrors(prev => ({ ...prev, vaccine_name: false }));
+                        setShowVaccineSuggestions(true);
                       }}
                       placeholder="e.g., Rabies, DHPP, FVRCP"
-                      className={cn("pr-10", vaccinationErrors.vaccine_name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                      className={cn(
+                        matchedVaccine ? "pr-36" : "pr-10",
+                        vaccinationErrors.vaccine_name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : ""
+                      )}
                     />
-                    {vaccinationErrors.vaccine_name && (
-                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    {matchedVaccine ? (
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-10 pointer-events-none">
+                        {matchedVaccine.is_expired ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                            Expired
+                          </span>
+                        ) : (matchedVaccine.is_out_of_stock || matchedVaccine.quantity <= 0) ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                            Out of stock (0)
+                          </span>
+                        ) : matchedVaccine.is_low_stock ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-xs">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                            Low stock: {matchedVaccine.quantity}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                            In stock: {matchedVaccine.quantity}
+                          </span>
+                        )}
+                      </div>
+                    ) : vaccinationErrors.vaccine_name ? (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    ) : null}
+
+                    {/* Suggestions dropdown */}
+                    {showVaccineSuggestions && vaccineSuggestions.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100">
+                        <div className="px-3 py-1.5 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-teal-600" />
+                            Inventory Suggestions ({vaccineSuggestions.length})
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-normal">Click to autofill</span>
+                        </div>
+                        {vaccineSuggestions.map((item) => (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setVaccinationForm(prev => ({
+                                ...prev,
+                                vaccine_name: item.name,
+                                batch_number: item.batch_number || prev.batch_number,
+                              }));
+                              setVaccinationErrors(prev => ({ ...prev, vaccine_name: false }));
+                              setShowVaccineSuggestions(false);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 hover:bg-teal-50/50 transition-colors flex items-center justify-between gap-3 text-sm cursor-pointer"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                              <p className="text-xs text-gray-500 truncate mt-0.5">
+                                {item.batch_number ? `Batch: ${item.batch_number}` : ''}
+                                {item.batch_number && item.manufacturer ? ' • ' : ''}
+                                {item.manufacturer || ''}
+                                {item.expiration_date ? ` • Exp: ${item.expiration_date}` : ''}
+                              </p>
+                            </div>
+                            <div className="shrink-0">
+                              {item.is_expired ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-red-100 text-red-700 border border-red-200">
+                                  Expired
+                                </span>
+                              ) : (item.is_out_of_stock || item.quantity <= 0) ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-red-100 text-red-700 border border-red-200">
+                                  0 in stock
+                                </span>
+                              ) : item.is_low_stock ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  Low stock: {item.quantity}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  In stock: {item.quantity}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
+
+                  {matchedVaccine?.is_expired && (
+                    <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-700 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>Warning: This vaccine expired on {matchedVaccine.expiration_date}. It cannot be administered or saved.</span>
+                    </div>
+                  )}
+                  {matchedVaccine && !matchedVaccine.is_expired && (matchedVaccine.is_out_of_stock || matchedVaccine.quantity <= 0) && (
+                    <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-700 animate-in fade-in">
+                      <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>Warning: This vaccine is out of stock (0 left in inventory). Please restock inventory before recording.</span>
+                    </div>
+                  )}
+
                   {vaccinationErrors.vaccine_name && (
                     <p className="text-sm text-red-600 mt-1.5">Please enter a vaccine name.</p>
                   )}
@@ -541,15 +752,28 @@ export default function VetAddRecord() {
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">Next Due Date</Label>
-                    <Input
-                      type="date"
-                      min={minCurrentYear}
-                      max={maxNextYear}
-                      value={vaccinationForm.next_due_date}
-                      onChange={(e) => setVaccinationForm({...vaccinationForm, next_due_date: e.target.value})}
-                      className="mt-1.5"
-                    />
+                    <Label className="text-sm font-medium">
+                      Next Due Date <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        type="date"
+                        min={minCurrentYear}
+                        max={maxNextYear}
+                        value={vaccinationForm.next_due_date}
+                        onChange={(e) => {
+                          setVaccinationForm({...vaccinationForm, next_due_date: e.target.value});
+                          setVaccinationErrors(prev => ({ ...prev, next_due_date: false }));
+                        }}
+                        className={cn(vaccinationErrors.next_due_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-16" : "")}
+                      />
+                      {vaccinationErrors.next_due_date && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-10 top-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
+                    {vaccinationErrors.next_due_date && (
+                      <p className="text-sm text-red-600 mt-1.5">Please select a next due date.</p>
+                    )}
                   </div>
                 </div>
 
@@ -575,8 +799,21 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createVaccinationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
-                  {createVaccinationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Record Vaccination'}
+                <Button 
+                  type="submit" 
+                  disabled={createVaccinationMutation.isPending || isVaccineBlocked} 
+                  className={cn(
+                    "w-full h-12 font-medium shadow-sm transition-colors text-white",
+                    isVaccineBlocked ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-80" : "bg-teal-600 hover:bg-teal-700"
+                  )}
+                >
+                  {createVaccinationMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isVaccineBlocked ? (
+                    matchedVaccine?.is_expired ? 'Cannot Save (Vaccine Expired)' : 'Cannot Save (Vaccine Out of Stock)'
+                  ) : (
+                    'Record Vaccination'
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -594,11 +831,11 @@ export default function VetAddRecord() {
                         setMedicationErrors(prev => ({ ...prev, pet_id: false }));
                       }}
                     >
-                      <SelectTrigger className={cn("pr-10", medicationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectTrigger className={cn(medicationErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       {medicationErrors.pet_id && (
-                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                       )}
                       <SelectContent>
                         {availablePets.map(pet => (
@@ -620,17 +857,119 @@ export default function VetAddRecord() {
                     <Input
                       maxLength={200}
                       value={medicationForm.name}
+                      onFocus={() => setShowMedicationSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowMedicationSuggestions(false), 200)}
                       onChange={(e) => {
                         setMedicationForm({...medicationForm, name: e.target.value});
                         setMedicationErrors(prev => ({ ...prev, name: false }));
+                        setShowMedicationSuggestions(true);
                       }}
-                      placeholder="e.g., Amoxicillin"
-                      className={cn("pr-10", medicationErrors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                      placeholder="e.g., Clavamox, Metacam, NexGard"
+                      className={cn(
+                        matchedMedication ? "pr-36" : "pr-10",
+                        medicationErrors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : ""
+                      )}
                     />
-                    {medicationErrors.name && (
-                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    {matchedMedication ? (
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-10 pointer-events-none">
+                        {matchedMedication.is_expired ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                            Expired
+                          </span>
+                        ) : (matchedMedication.is_out_of_stock || matchedMedication.quantity <= 0) ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
+                            Out of stock (0)
+                          </span>
+                        ) : matchedMedication.is_low_stock ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200 shadow-xs">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                            Low stock: {matchedMedication.quantity}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                            In stock: {matchedMedication.quantity}
+                          </span>
+                        )}
+                      </div>
+                    ) : medicationErrors.name ? (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    ) : null}
+
+                    {/* Suggestions dropdown */}
+                    {showMedicationSuggestions && medicationSuggestions.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100">
+                        <div className="px-3 py-1.5 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase tracking-wider flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-teal-600" />
+                            Inventory Suggestions ({medicationSuggestions.length})
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-normal">Click to autofill</span>
+                        </div>
+                        {medicationSuggestions.map((item) => (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setMedicationForm(prev => ({
+                                ...prev,
+                                name: item.name,
+                              }));
+                              setMedicationErrors(prev => ({ ...prev, name: false }));
+                              setShowMedicationSuggestions(false);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 hover:bg-teal-50/50 transition-colors flex items-center justify-between gap-3 text-sm cursor-pointer"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                              <p className="text-xs text-gray-500 truncate mt-0.5">
+                                {item.category ? `${item.category}` : ''}
+                                {item.category && item.manufacturer ? ' • ' : ''}
+                                {item.manufacturer || ''}
+                                {item.expiration_date ? ` • Exp: ${item.expiration_date}` : ''}
+                              </p>
+                            </div>
+                            <div className="shrink-0">
+                              {item.is_expired ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-red-100 text-red-700 border border-red-200">
+                                  Expired
+                                </span>
+                              ) : (item.is_out_of_stock || item.quantity <= 0) ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-red-100 text-red-700 border border-red-200">
+                                  0 in stock
+                                </span>
+                              ) : item.is_low_stock ? (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  Low stock: {item.quantity}
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  In stock: {item.quantity}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
+
+                  {matchedMedication?.is_expired && (
+                    <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-700 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>Warning: This medication expired on {matchedMedication.expiration_date}. It cannot be prescribed or saved.</span>
+                    </div>
+                  )}
+                  {matchedMedication && !matchedMedication.is_expired && (matchedMedication.is_out_of_stock || matchedMedication.quantity <= 0) && (
+                    <div className="flex items-center gap-2 mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs font-semibold text-red-700 animate-in fade-in">
+                      <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>Warning: This medication is out of stock (0 left in inventory). Please restock inventory before prescribing.</span>
+                    </div>
+                  )}
+
                   {medicationErrors.name && (
                     <p className="text-sm text-red-600 mt-1.5">Please enter a medication name.</p>
                   )}
@@ -639,14 +978,27 @@ export default function VetAddRecord() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium">Dosage</Label>
-                    <Input
-                      maxLength={100}
-                      value={medicationForm.dosage}
-                      onChange={(e) => setMedicationForm({...medicationForm, dosage: e.target.value})}
-                      placeholder="e.g., 250mg"
-                      className="mt-1.5"
-                    />
+                    <Label className="text-sm font-medium">
+                      Dosage <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        maxLength={100}
+                        value={medicationForm.dosage}
+                        onChange={(e) => {
+                          setMedicationForm({...medicationForm, dosage: e.target.value});
+                          setMedicationErrors(prev => ({ ...prev, dosage: false }));
+                        }}
+                        placeholder="e.g., 250mg"
+                        className={cn("pr-10", medicationErrors.dosage ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                      />
+                      {medicationErrors.dosage && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
+                    {medicationErrors.dosage && (
+                      <p className="text-sm text-red-600 mt-1.5">Please enter a dosage.</p>
+                    )}
                     <CharCount value={medicationForm.dosage} max={100} />
                   </div>
                   <div>
@@ -675,15 +1027,28 @@ export default function VetAddRecord() {
                     />
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">End Date</Label>
-                    <Input
-                      type="date"
-                      min={minCurrentYear}
-                      max={maxNextYear}
-                      value={medicationForm.end_date}
-                      onChange={(e) => setMedicationForm({...medicationForm, end_date: e.target.value})}
-                      className="mt-1.5"
-                    />
+                    <Label className="text-sm font-medium">
+                      End Date <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative mt-1.5">
+                      <Input
+                        type="date"
+                        min={medicationForm.start_date || minCurrentYear}
+                        max={maxNextYear}
+                        value={medicationForm.end_date}
+                        onChange={(e) => {
+                          setMedicationForm({...medicationForm, end_date: e.target.value});
+                          setMedicationErrors(prev => ({ ...prev, end_date: false }));
+                        }}
+                        className={cn(medicationErrors.end_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-16" : "")}
+                      />
+                      {medicationErrors.end_date && (
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-10 top-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
+                    {medicationErrors.end_date && (
+                      <p className="text-sm text-red-600 mt-1.5">Please select an end date.</p>
+                    )}
                   </div>
                 </div>
 
@@ -697,8 +1062,21 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createMedicationMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
-                  {createMedicationMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Prescribe Medication'}
+                <Button 
+                  type="submit" 
+                  disabled={createMedicationMutation.isPending || isMedicationBlocked} 
+                  className={cn(
+                    "w-full h-12 font-medium shadow-sm transition-colors text-white",
+                    isMedicationBlocked ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-80" : "bg-teal-600 hover:bg-teal-700"
+                  )}
+                >
+                  {createMedicationMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isMedicationBlocked ? (
+                    matchedMedication?.is_expired ? 'Cannot Save (Medication Expired)' : 'Cannot Save (Medication Out of Stock)'
+                  ) : (
+                    'Prescribe Medication'
+                  )}
                 </Button>
               </form>
             </TabsContent>
@@ -716,11 +1094,11 @@ export default function VetAddRecord() {
                         setGroomingErrors(prev => ({ ...prev, pet_id: false }));
                       }}
                     >
-                      <SelectTrigger className={cn("pr-10", groomingErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectTrigger className={cn(groomingErrors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                         <SelectValue placeholder="Select patient" />
                       </SelectTrigger>
                       {groomingErrors.pet_id && (
-                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                       )}
                       <SelectContent>
                         {availablePets.map(pet => (
@@ -772,11 +1150,11 @@ export default function VetAddRecord() {
                           setGroomingErrors(prev => ({ ...prev, grooming_type: false }));
                         }}
                       >
-                        <SelectTrigger className={cn("pr-10", groomingErrors.grooming_type ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                        <SelectTrigger className={cn(groomingErrors.grooming_type ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         {groomingErrors.grooming_type && (
-                          <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                          <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                         )}
                         <SelectContent>
                           <SelectItem value="full_groom">Full Groom</SelectItem>
@@ -795,19 +1173,35 @@ export default function VetAddRecord() {
                     )}
                   </div>
                   <div>
-                    <Label className="text-sm font-medium">Coat Condition (Before)</Label>
-                    <Select value={groomingForm.coat_condition_before} onValueChange={(v) => setGroomingForm({...groomingForm, coat_condition_before: v})}>
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Select condition" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="good">Good</SelectItem>
-                        <SelectItem value="matted">Matted</SelectItem>
-                        <SelectItem value="dirty">Dirty</SelectItem>
-                        <SelectItem value="flea_infested">Flea-infested</SelectItem>
-                        <SelectItem value="dry_flaky">Dry/Flaky</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-sm font-medium">
+                      Coat Condition (Before) <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative mt-1.5">
+                      <Select
+                        value={groomingForm.coat_condition_before}
+                        onValueChange={(v) => {
+                          setGroomingForm({...groomingForm, coat_condition_before: v});
+                          setGroomingErrors(prev => ({ ...prev, coat_condition_before: false }));
+                        }}
+                      >
+                        <SelectTrigger className={cn(groomingErrors.coat_condition_before ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
+                          <SelectValue placeholder="Select condition" />
+                        </SelectTrigger>
+                        {groomingErrors.coat_condition_before && (
+                          <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        )}
+                        <SelectContent>
+                          <SelectItem value="good">Good</SelectItem>
+                          <SelectItem value="matted">Matted</SelectItem>
+                          <SelectItem value="dirty">Dirty</SelectItem>
+                          <SelectItem value="flea_infested">Flea-infested</SelectItem>
+                          <SelectItem value="dry_flaky">Dry/Flaky</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {groomingErrors.coat_condition_before && (
+                      <p className="text-sm text-red-600 mt-1.5">Please select a coat condition.</p>
+                    )}
                   </div>
                 </div>
 
@@ -844,7 +1238,7 @@ export default function VetAddRecord() {
                   />
                 </div>
 
-                <Button type="submit" disabled={createGroomingMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700">
+                <Button type="submit" disabled={createGroomingMutation.isPending} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white font-medium shadow-sm">
                   {createGroomingMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save Grooming Record'}
                 </Button>
               </form>

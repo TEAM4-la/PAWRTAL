@@ -323,6 +323,7 @@ export default function VetRecords() {
           <EmptyState
             icon={FileText}
             title="No records found"
+            colorScheme="teal"
             description={searchTerm ? "Try adjusting your search" : "Add your first health record"}
             actionLabel="Add Record"
             onAction={() => navigate(createPageUrl('VetAddRecord'))}

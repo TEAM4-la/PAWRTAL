@@ -10,11 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { User, Bell, Upload, Loader2, Check, ChevronLeft, Lock, Building2, Mail, Eye, EyeOff } from 'lucide-react';
+import { User, Bell, Upload, Loader2, Check, ChevronLeft, Lock, Building2, Mail, Eye, EyeOff, CheckCircle2, AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { toast } from "sonner";
-
-const notificationSwitchClassName =
-  'data-[state=unchecked]:bg-red-500 data-[state=checked]:bg-teal-600 data-[state=unchecked]:border-red-600 data-[state=checked]:border-teal-700 border-2 shadow-sm [&>span]:bg-white';
 
 function roleLabel(userType) {
   const t = String(userType || '').toLowerCase();
@@ -45,14 +42,32 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [profileStatus, setProfileStatus] = useState(null);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
   });
 
-  const isStaff = user?.user_type === 'veterinarian' || user?.user_type === 'admin';
+  const isAdmin = user?.user_type === 'admin';
+  const isStaff = user?.user_type === 'veterinarian' || isAdmin;
   const isVet = user?.user_type === 'veterinarian';
+  const isOwner = !isStaff;
+
+  const accentText = isAdmin ? 'text-violet-600' : isVet ? 'text-teal-600' : 'text-orange-500';
+  const accentTextDark = isAdmin ? 'text-violet-700' : isVet ? 'text-teal-700' : 'text-orange-600';
+  const accentBorder = isAdmin ? 'border-violet-600 text-violet-700 hover:bg-violet-50' : isVet ? 'border-teal-600 text-teal-700 hover:bg-teal-50' : 'border-orange-500 text-orange-600 hover:bg-orange-50';
+  const avatarGrad = isAdmin ? 'from-violet-500 to-purple-600' : isVet ? 'from-teal-400 to-teal-500' : 'from-amber-400 to-orange-500';
+  const avatarUploadBg = isAdmin ? 'bg-violet-600 hover:bg-violet-700' : isVet ? 'bg-teal-500 hover:bg-teal-600' : 'bg-orange-500 hover:bg-orange-600';
+
+  const notificationSwitchClassName = `data-[state=unchecked]:bg-red-500 ${
+    isAdmin
+      ? 'data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-700'
+      : isVet
+      ? 'data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-700'
+      : 'data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-600'
+  } data-[state=unchecked]:border-red-600 border-2 shadow-sm [&>span]:bg-white`;
 
   const defaultPrefs = {
     email: true,
@@ -63,7 +78,10 @@ export default function Settings() {
   };
 
   const [formData, setFormData] = useState({
-    full_name: '',
+    display_name: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
     phone: '',
     address: '',
     license_number: '',
@@ -73,9 +91,53 @@ export default function Settings() {
 
   React.useEffect(() => {
     if (!user) return;
+    const np = user.notification_preferences || {};
+
+    let fallbackFirst = '';
+    let fallbackLast = '';
+    if (user.full_name) {
+      const cleanFull = user.full_name.replace(/^dr\.?\s+/i, '').trim();
+      const parts = cleanFull.split(/\s+/);
+      if (parts.length > 0 && parts[0]) {
+        fallbackFirst = parts[0];
+        if (parts.length > 1) {
+          fallbackLast = parts.slice(1).join(' ');
+        }
+      }
+    }
+
+    let effectiveFirstName = user.first_name || np.first_name || '';
+    if (/^dr\.?$/i.test(effectiveFirstName.trim())) {
+      effectiveFirstName = fallbackFirst;
+    } else if (!effectiveFirstName) {
+      effectiveFirstName = fallbackFirst;
+    }
+
+    let effectiveLastName = user.last_name || np.last_name || fallbackLast;
+    let effectiveDisplayName = user.display_name || np.display_name || user.full_name || '';
+
+    // Safeguard for default staff Dr. Rebecca Goyena
+    if ((user.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com') {
+      if (!effectiveFirstName || /^dr\.?$/i.test(effectiveFirstName.trim())) {
+        effectiveFirstName = 'Rebecca';
+      }
+      if (!effectiveDisplayName || effectiveDisplayName.trim() === 'Dr. Goyena') {
+        effectiveDisplayName = 'Dr. Rebecca Goyena';
+      }
+      if (!effectiveLastName) {
+        effectiveLastName = 'Goyena';
+      }
+    }
+
+    const rawPhone = user.phone || np.phone || '';
+    const cleanPhone = String(rawPhone).replace(/\D/g, '').slice(0, 11);
+
     setFormData({
-      full_name: user.full_name || '',
-      phone: user.phone || '',
+      display_name: effectiveDisplayName,
+      first_name: effectiveFirstName,
+      middle_name: user.middle_name || np.middle_name || '',
+      last_name: effectiveLastName,
+      phone: cleanPhone,
       address: user.address || '',
       license_number: user.license_number || '',
       specialization: user.specialization || '',
@@ -83,14 +145,84 @@ export default function Settings() {
     });
   }, [user]);
 
+  const getChangedFields = (prevUser, currentForm) => {
+    const changes = [];
+    if ((currentForm.display_name || '').trim() !== (prevUser?.display_name || '')) {
+      changes.push('Display name');
+    }
+    if ((currentForm.first_name || '').trim() !== (prevUser?.first_name || '')) {
+      changes.push('First name');
+    }
+    if ((currentForm.middle_name || '').trim() !== (prevUser?.middle_name || '')) {
+      changes.push('Middle name');
+    }
+    if ((currentForm.last_name || '').trim() !== (prevUser?.last_name || '')) {
+      changes.push('Last name');
+    }
+    if ((currentForm.phone || '').trim() !== (prevUser?.phone || '')) {
+      changes.push('Phone number');
+    }
+    if ((currentForm.address || '').trim() !== (prevUser?.address || '')) {
+      changes.push('Address');
+    }
+    if (isVet) {
+      if ((currentForm.specialization || '').trim() !== (prevUser?.specialization || '')) {
+        changes.push('Specialization');
+      }
+      if ((currentForm.license_number || '').trim() !== (prevUser?.license_number || '')) {
+        changes.push('PRC license');
+      }
+    }
+    return changes;
+  };
+
   const updateMutation = useMutation({
     mutationFn: (data) => api.auth.updateMe(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['currentUser']);
-      toast.success('Settings saved!');
+    onSuccess: (updatedUser, variables) => {
+      // 1. Immediately update formData so the text boxes show the saved values right away
+      setFormData((prev) => ({
+        ...prev,
+        display_name: variables.display_name !== undefined ? (variables.display_name || '') : prev.display_name,
+        first_name: variables.first_name !== undefined ? (variables.first_name || '') : prev.first_name,
+        middle_name: variables.middle_name !== undefined ? (variables.middle_name || '') : prev.middle_name,
+        last_name: variables.last_name !== undefined ? (variables.last_name || '') : prev.last_name,
+        phone: variables.phone !== undefined ? (variables.phone || '') : prev.phone,
+        address: variables.address !== undefined ? (variables.address || '') : prev.address,
+      }));
+
+      // 2. Immediately update react query cache so other components & refetches have the updated values
+      const mergedUser = {
+        ...(user || {}),
+        ...(updatedUser || {}),
+        ...variables,
+        display_name: variables.display_name,
+        first_name: variables.first_name,
+        middle_name: variables.middle_name,
+        last_name: variables.last_name,
+        notification_preferences: variables.notification_preferences,
+      };
+      queryClient.setQueryData(['currentUser'], mergedUser);
+      queryClient.setQueryData(['me'], mergedUser);
+
+      // 3. Invalidate query with object syntax for TanStack Query v5
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+
+      const changed = getChangedFields(user, variables);
+      let msg = 'Profile updated successfully!';
+      if (changed.length === 1) {
+        msg = `${changed[0]} updated successfully!`;
+      } else if (changed.length > 1) {
+        msg = `${changed.slice(0, 2).join(' and ')}${changed.length > 2 ? ' and others' : ''} updated successfully!`;
+      }
+      
+      setProfileStatus({ type: 'success', message: msg });
+      toast.success(msg);
     },
-    onError: () => {
-      toast.error('Failed to save settings');
+    onError: (err) => {
+      const msg = err instanceof Error ? err.message : String(err) || 'Failed to save settings';
+      setProfileStatus({ type: 'error', message: msg });
+      toast.error(msg);
     },
   });
 
@@ -103,10 +235,18 @@ export default function Settings() {
     onSuccess: () => {
       setPasswordForm({ current: '', next: '', confirm: '' });
       setPasswordSuccess(true);
-      toast.success('Password updated');
+      setPasswordError('');
+      toast.success('Password changed successfully');
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Failed to change password');
+      setPasswordSuccess(false);
+      const rawMsg = err instanceof Error ? err.message : String(err);
+      let friendlyMsg = 'Wrong current password';
+      if (rawMsg && !rawMsg.toLowerCase().includes('current password') && !rawMsg.toLowerCase().includes('unauthorized') && !rawMsg.toLowerCase().includes('incorrect')) {
+        friendlyMsg = rawMsg;
+      }
+      setPasswordError(friendlyMsg);
+      toast.error(friendlyMsg);
     },
   });
 
@@ -119,8 +259,11 @@ export default function Settings() {
       const { file_url } = await api.integrations.Core.UploadFile({ file });
       await api.auth.updateMe({ avatar_url: file_url });
       queryClient.invalidateQueries(['currentUser']);
+      queryClient.invalidateQueries(['me']);
+      setProfileStatus({ type: 'success', message: 'Profile picture updated successfully!' });
       toast.success('Avatar updated!');
     } catch {
+      setProfileStatus({ type: 'error', message: 'Failed to upload profile picture' });
       toast.error('Failed to upload avatar');
     } finally {
       setIsUploading(false);
@@ -128,18 +271,51 @@ export default function Settings() {
   };
 
   const handleSave = () => {
+    setProfileStatus(null);
     const rawPhone = (formData.phone || '').trim();
     if (rawPhone && !/^09\d{9}$/.test(rawPhone)) {
-      toast.error('Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)');
+      const err = 'Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)';
+      setProfileStatus({ type: 'error', message: err });
+      toast.error(err);
       return;
     }
+    if (!formData.first_name?.trim()) {
+      const err = 'First name is required';
+      setProfileStatus({ type: 'error', message: err });
+      toast.error(err);
+      return;
+    }
+    if (!formData.last_name?.trim()) {
+      const err = 'Last name is required';
+      setProfileStatus({ type: 'error', message: err });
+      toast.error(err);
+      return;
+    }
+    const trimmedFirst = formData.first_name.trim();
+    const trimmedMiddle = formData.middle_name.trim();
+    const trimmedLast = formData.last_name.trim();
+    const fullLegal = [trimmedFirst, trimmedMiddle, trimmedLast].filter(Boolean).join(' ');
+    const trimmedDisplay = formData.display_name.trim();
+    const resolvedDisplay = trimmedDisplay || (isVet ? `Dr. ${fullLegal}` : fullLegal);
+
     const payload = {
-      full_name: formData.full_name.trim() || null,
+      display_name: resolvedDisplay || null,
+      first_name: trimmedFirst || null,
+      middle_name: trimmedMiddle || null,
+      last_name: trimmedLast || null,
+      full_name: resolvedDisplay || fullLegal || null,
       phone: rawPhone || null,
       address: formData.address,
-      notification_preferences: formData.notification_preferences,
+      notification_preferences: {
+        ...(formData.notification_preferences || defaultPrefs),
+        display_name: resolvedDisplay,
+        first_name: trimmedFirst,
+        middle_name: trimmedMiddle,
+        last_name: trimmedLast,
+        phone: rawPhone || null,
+      },
     };
-    if (isStaff) {
+    if (isVet) {
       payload.license_number = formData.license_number.trim() || null;
       payload.specialization = formData.specialization.trim() || null;
     }
@@ -158,15 +334,20 @@ export default function Settings() {
 
   const handleChangePassword = (e) => {
     e.preventDefault();
+    setPasswordSuccess(false);
+    setPasswordError('');
     if (!passwordForm.current || !passwordForm.next) {
+      setPasswordError('Fill in current and new password');
       toast.error('Fill in current and new password');
       return;
     }
     if (passwordForm.next.length < 6) {
+      setPasswordError('New password must be at least 6 characters');
       toast.error('New password must be at least 6 characters');
       return;
     }
     if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError('New passwords do not match');
       toast.error('New passwords do not match');
       return;
     }
@@ -201,7 +382,7 @@ export default function Settings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-teal-600" />
+            <User className={`w-5 h-5 ${accentText}`} />
             <CardTitle>Account</CardTitle>
           </div>
           <CardDescription>Your sign-in identity and display name</CardDescription>
@@ -211,11 +392,11 @@ export default function Settings() {
             <div className="relative shrink-0">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={user?.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-teal-400 to-teal-500 text-white text-2xl">
-                  {(formData.full_name || user?.full_name)?.[0] || user?.email?.[0]?.toUpperCase()}
+                <AvatarFallback className={`bg-gradient-to-br ${avatarGrad} text-white text-2xl`}>
+                  {(formData.display_name || formData.first_name || user?.display_name || user?.first_name || user?.email)?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center cursor-pointer hover:bg-teal-600 transition-colors shadow-md">
+              <label className={`absolute bottom-0 right-0 w-8 h-8 rounded-full ${avatarUploadBg} flex items-center justify-center cursor-pointer transition-colors shadow-md`}>
                 {isUploading ? (
                   <Loader2 className="w-4 h-4 text-white animate-spin" />
                 ) : (
@@ -231,12 +412,54 @@ export default function Settings() {
             </div>
             <div className="flex-1 space-y-4 w-full">
               <div>
-                <Label htmlFor="full_name">Full name</Label>
+                <Label htmlFor="display_name" className="text-xs font-semibold text-gray-700">
+                  Display name <span className="text-gray-400 font-normal">(Optional)</span>
+                </Label>
                 <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder="Your name"
+                  id="display_name"
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                  placeholder={isVet ? "e.g. Dr. Rivera" : isAdmin ? "e.g. Admin Sam" : "e.g. Sam"}
+                  className="mt-1.5"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="first_name" className="text-xs font-semibold text-gray-700">
+                    First name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    placeholder="First name"
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="middle_name" className="text-xs font-semibold text-gray-700">
+                    Middle name <span className="text-gray-400 font-normal">(Optional)</span>
+                  </Label>
+                  <Input
+                    id="middle_name"
+                    value={formData.middle_name}
+                    onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
+                    placeholder="Middle name"
+                    className="mt-1.5"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="last_name" className="text-xs font-semibold text-gray-700">
+                  Last name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="last_name"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  placeholder="Last name"
                   className="mt-1.5"
                 />
               </div>
@@ -255,7 +478,7 @@ export default function Settings() {
                   Email is tied to your account and cannot be changed here. Contact support if you need to update it.
                 </p>
               </div>
-              <p className="text-sm text-teal-700 font-medium">
+              <p className={`text-sm ${accentTextDark} font-medium`}>
                 Role: <span className="font-normal capitalize">{roleLabel(user?.user_type)}</span>
               </p>
             </div>
@@ -297,8 +520,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Professional credentials (vets / admins) */}
-      {isStaff && (
+      {/* Professional credentials (vets only) */}
+      {isVet && (
         <Card className="border-0 shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -318,19 +541,17 @@ export default function Settings() {
                 className="mt-1.5"
               />
             </div>
-            {isVet && (
-              <div>
-                <Label htmlFor="license_number">PRC License / Registration No.</Label>
-                <Input
-                  id="license_number"
-                  value={formData.license_number}
-                  onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
-                  placeholder="e.g., 0012345 or PRC-0012345"
-                  className="mt-1.5"
-                />
-                <p className="text-xs text-gray-500 mt-1">Official 5–7 digit PRC veterinary board registration number</p>
-              </div>
-            )}
+            <div>
+              <Label htmlFor="license_number">PRC License / Registration No.</Label>
+              <Input
+                id="license_number"
+                value={formData.license_number}
+                onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
+                placeholder="e.g., 0012345 or PRC-0012345"
+                className="mt-1.5"
+              />
+              <p className="text-xs text-gray-500 mt-1">Official 5–7 digit PRC veterinary board registration number</p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -339,16 +560,40 @@ export default function Settings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-teal-600" />
+            <Lock className={`w-5 h-5 ${accentText}`} />
             <CardTitle>Security</CardTitle>
           </div>
           <CardDescription>Update the password you use to sign in</CardDescription>
         </CardHeader>
         <CardContent>
           {passwordSuccess && (
-            <div className="mb-5 p-4 bg-teal-50 border border-teal-200 text-teal-800 text-sm rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
-              <Check className="w-5 h-5 text-teal-600 flex-shrink-0" />
-              <span className="font-medium">Successfully changed password!</span>
+            <div className={`mb-5 p-4 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200 border ${isAdmin ? 'bg-violet-50 border-violet-200 text-violet-800' : isVet ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className={`w-5 h-5 ${accentText} flex-shrink-0`} />
+                <span className="font-semibold text-sm">Password changed successfully!</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasswordSuccess(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          {passwordError && (
+            <div className="mb-5 p-4 rounded-xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200 border bg-red-50 border-red-200 text-red-800">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <span className="font-semibold text-sm">{passwordError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPasswordError('')}
+                className="text-red-400 hover:text-red-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
@@ -425,7 +670,7 @@ export default function Settings() {
               type="submit"
               disabled={passwordMutation.isPending}
               variant="outline"
-              className="border-teal-600 text-teal-700 hover:bg-teal-50"
+              className={accentBorder}
             >
               {passwordMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -441,7 +686,7 @@ export default function Settings() {
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-teal-600" />
+            <Bell className={`w-5 h-5 ${accentText}`} />
             <CardTitle>Notification Preferences</CardTitle>
           </div>
           <CardDescription>Choose what notifications you want to receive</CardDescription>
@@ -471,50 +716,66 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">Appointment Reminders</p>
-              <p className="text-sm text-gray-500">Get notified about upcoming appointments</p>
-            </div>
-            <Switch
-              className={notificationSwitchClassName}
-              checked={!!formData.notification_preferences.appointments}
-              onCheckedChange={(checked) => handleNotificationToggle('appointments', checked)}
-            />
-          </div>
+          {!isAdmin && (
+            <>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-medium text-gray-900">Appointment Reminders</p>
+                  <p className="text-sm text-gray-500">Get notified about upcoming appointments</p>
+                </div>
+                <Switch
+                  className={notificationSwitchClassName}
+                  checked={!!formData.notification_preferences.appointments}
+                  onCheckedChange={(checked) => handleNotificationToggle('appointments', checked)}
+                />
+              </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">Vaccination Reminders</p>
-              <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
-            </div>
-            <Switch
-              className={notificationSwitchClassName}
-              checked={!!formData.notification_preferences.vaccinations}
-              onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
-            />
-          </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-medium text-gray-900">Vaccination Reminders</p>
+                  <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
+                </div>
+                <Switch
+                  className={notificationSwitchClassName}
+                  checked={!!formData.notification_preferences.vaccinations}
+                  onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
+                />
+              </div>
 
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">Medication Reminders</p>
-              <p className="text-sm text-gray-500">Reminders for pet medications</p>
-            </div>
-            <Switch
-              className={notificationSwitchClassName}
-              checked={!!formData.notification_preferences.medications}
-              onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
-            />
-          </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-medium text-gray-900">Medication Reminders</p>
+                  <p className="text-sm text-gray-500">Reminders for pet medications</p>
+                </div>
+                <Switch
+                  className={notificationSwitchClassName}
+                  checked={!!formData.notification_preferences.medications}
+                  onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+        {profileStatus?.type === 'success' && (
+          <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4" />
+            {profileStatus.message}
+          </span>
+        )}
+        {profileStatus?.type === 'error' && (
+          <span className="text-xs font-semibold text-red-600 flex items-center gap-1.5 animate-in fade-in">
+            <AlertCircle className="w-4 h-4" />
+            {profileStatus.message}
+          </span>
+        )}
         <Button
           type="button"
           onClick={handleSave}
           disabled={updateMutation.isPending}
-          className="bg-teal-600 hover:bg-teal-700 gap-2"
+          className={`${isAdmin ? 'bg-violet-600 hover:bg-violet-700' : isVet ? 'bg-teal-600 hover:bg-teal-700' : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-orange-100'} text-white gap-2 shadow-sm font-medium`}
         >
           {updateMutation.isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />

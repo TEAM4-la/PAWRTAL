@@ -27,6 +27,7 @@ import ClinicAdminDashboard from './pages/ClinicAdminDashboard';
 import AdminAppointments from './pages/AdminAppointments';
 import AdminStaff from './pages/AdminStaff';
 import AdminPatients from './pages/AdminPatients';
+import AdminInventory from './pages/AdminInventory';
 import AdminReports from './pages/AdminReports';
 import Messages from './pages/Messages';
 
@@ -73,6 +74,7 @@ export default function App() {
       <Route path="/admin-appointments" element={<AdminAppointments />} />
       <Route path="/admin-staff" element={<AdminStaff />} />
       <Route path="/admin-patients" element={<AdminPatients />} />
+      <Route path="/admin-inventory" element={<AdminInventory />} />
       <Route path="/admin-reports" element={<AdminReports />} />
       {/* Catch-all route for 404 */}
       <Route path="*" element={<NotFound />} />

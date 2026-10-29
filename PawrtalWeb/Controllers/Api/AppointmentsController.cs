@@ -67,7 +67,8 @@ public class AppointmentsController : ControllerBase
         var petIds = appts.Select(a => a.PetId).Distinct().ToList();
         var petNames = await _db.Pets.AsNoTracking().Where(p => petIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
         var vetEmails = appts.Where(a => !string.IsNullOrEmpty(a.VetEmail)).Select(a => a.VetEmail!.Trim()).Distinct().ToList();
-        var vetUsers = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToDictionaryAsync(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
+        var vetUsersList = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToListAsync();
+        var vetUsers = vetUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
         return Ok(appts.Select(a => ToDto(
             a,
             !string.IsNullOrEmpty(a.VetEmail) && vetUsers.TryGetValue(a.VetEmail.Trim(), out var vn) ? vn : null,
@@ -91,7 +92,8 @@ public class AppointmentsController : ControllerBase
         var petIds = appts.Select(a => a.PetId).Distinct().ToList();
         var petNames = await _db.Pets.AsNoTracking().Where(p => petIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name);
         var vetEmails = appts.Where(a => !string.IsNullOrEmpty(a.VetEmail)).Select(a => a.VetEmail!.Trim()).Distinct().ToList();
-        var vetUsers = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToDictionaryAsync(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
+        var vetUsersList = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToListAsync();
+        var vetUsers = vetUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
         return Ok(appts.Select(a => ToDto(
             a,
             !string.IsNullOrEmpty(a.VetEmail) && vetUsers.TryGetValue(a.VetEmail.Trim(), out var vn) ? vn : null,

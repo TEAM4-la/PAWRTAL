@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import React, { useState } from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -42,7 +42,16 @@ const isAppointmentTimeReached = (appt) => {
 export default function AdminAppointments() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status') || 'all';
+  const [statusFilter, setStatusFilter] = useState(urlStatus);
+
+  React.useEffect(() => {
+    const s = searchParams.get('status');
+    if (s) {
+      setStatusFilter(s);
+    }
+  }, [searchParams]);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const queryClient = useQueryClient();
@@ -234,7 +243,6 @@ export default function AdminAppointments() {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCancelTarget(null)}>Back</Button>
               <Button 
                 className="!bg-red-600 hover:!bg-red-700 !text-white"
                 disabled={!cancelReason.trim()}
@@ -250,6 +258,7 @@ export default function AdminAppointments() {
               >
                 Confirm Cancel
               </Button>
+              <Button variant="outline" onClick={() => setCancelTarget(null)}>Back</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

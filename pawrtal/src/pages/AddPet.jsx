@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Upload, Dog, Cat, Bird, Rabbit, Fish, Loader2, X, Plus, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Upload, Dog, Cat, Rabbit, Loader2, X, Plus, AlertTriangle } from 'lucide-react';
 import { toast } from "sonner";
+import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 import BreedAutocomplete from '@/components/shared/BreedAutocomplete';
 import PetPhotoUpload from '@/components/shared/PetPhotoUpload';
@@ -19,11 +20,7 @@ import PetPhotoUpload from '@/components/shared/PetPhotoUpload';
 const speciesOptions = [
   { value: 'dog', label: 'Dog', icon: Dog },
   { value: 'cat', label: 'Cat', icon: Cat },
-  { value: 'bird', label: 'Bird', icon: Bird },
   { value: 'rabbit', label: 'Rabbit', icon: Rabbit },
-  { value: 'hamster', label: 'Hamster', icon: null },
-  { value: 'fish', label: 'Fish', icon: Fish },
-  { value: 'reptile', label: 'Reptile', icon: null },
   { value: 'other', label: 'Other', icon: null },
 ];
 
@@ -85,13 +82,21 @@ export default function AddPet() {
   };
 
   const addAllergy = () => {
-    if (newAllergy.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        allergies: [...prev.allergies, newAllergy.trim()]
-      }));
-      setNewAllergy('');
+    const val = newAllergy.trim();
+    if (!val) return;
+    if (val.length > 50) {
+      toast.error('Allergy name must be 50 characters or less');
+      return;
     }
+    if (formData.allergies.some(a => a.toLowerCase() === val.toLowerCase())) {
+      toast.error('This allergy is already added');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      allergies: [...prev.allergies, val]
+    }));
+    setNewAllergy('');
   };
 
   const removeAllergy = (index) => {
@@ -102,13 +107,21 @@ export default function AddPet() {
   };
 
   const addCondition = () => {
-    if (newCondition.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        medical_conditions: [...prev.medical_conditions, newCondition.trim()]
-      }));
-      setNewCondition('');
+    const val = newCondition.trim();
+    if (!val) return;
+    if (val.length > 50) {
+      toast.error('Medical condition must be 50 characters or less');
+      return;
     }
+    if (formData.medical_conditions.some(c => c.toLowerCase() === val.toLowerCase())) {
+      toast.error('This condition is already added');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      medical_conditions: [...prev.medical_conditions, val]
+    }));
+    setNewCondition('');
   };
 
   const removeCondition = (index) => {
@@ -118,11 +131,22 @@ export default function AddPet() {
     }));
   };
 
+  const maxBirthDate = format(new Date(), 'yyyy-MM-dd');
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
     if (!formData.name) newErrors.name = true;
     if (!formData.species) newErrors.species = true;
+    if (!formData.date_of_birth) {
+      newErrors.date_of_birth = 'Please select a date of birth';
+    } else if (formData.date_of_birth > maxBirthDate) {
+      newErrors.date_of_birth = 'Date of birth cannot be in the future';
+    }
+    if (!formData.gender) newErrors.gender = true;
+    if (!formData.weight || parseFloat(formData.weight) <= 0 || isNaN(parseFloat(formData.weight))) {
+      newErrors.weight = true;
+    }
 
     setErrors(newErrors);
 
@@ -144,7 +168,7 @@ export default function AddPet() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
           <CardTitle className="text-2xl">Add New Pet</CardTitle>
           <p className="text-gray-500">Enter your pet's information below</p>
         </CardHeader>
@@ -197,11 +221,11 @@ export default function AddPet() {
                       setErrors(prev => ({ ...prev, species: false }));
                     }}
                   >
-                    <SelectTrigger className={cn("h-11 pr-10", errors.species ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                    <SelectTrigger className={cn("h-11", errors.species ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                       <SelectValue placeholder="Select species" />
                     </SelectTrigger>
                     {errors.species && (
-                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                     )}
                     <SelectContent>
                       {speciesOptions.map(option => (
@@ -234,41 +258,84 @@ export default function AddPet() {
               </div>
 
               <div>
-                <Label htmlFor="dob" className="text-sm font-medium">Date of Birth</Label>
-                <Input
-                  id="dob"
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                  className="mt-1.5 h-11"
-                />
+                <Label htmlFor="dob" className="text-sm font-medium">
+                  Date of Birth <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative mt-1.5">
+                  <Input
+                    id="dob"
+                    type="date"
+                    max={maxBirthDate}
+                    value={formData.date_of_birth}
+                    onChange={(e) => {
+                      setFormData({ ...formData, date_of_birth: e.target.value });
+                      setErrors(prev => ({ ...prev, date_of_birth: false }));
+                    }}
+                    className={cn("h-11", errors.date_of_birth ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-16" : "")}
+                  />
+                  {errors.date_of_birth && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-10 top-1/2 -translate-y-1/2" />
+                  )}
+                </div>
+                {errors.date_of_birth && (
+                  <p className="text-sm text-red-600 mt-1.5">{errors.date_of_birth}</p>
+                )}
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Gender</Label>
-                <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
-                  <SelectTrigger className="mt-1.5 h-11">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-sm font-medium">
+                  Gender <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative mt-1.5">
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(v) => {
+                      setFormData({ ...formData, gender: v });
+                      setErrors(prev => ({ ...prev, gender: false }));
+                    }}
+                  >
+                    <SelectTrigger className={cn("h-11", errors.gender ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    {errors.gender && (
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    )}
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {errors.gender && (
+                  <p className="text-sm text-red-600 mt-1.5">Please select a gender.</p>
+                )}
               </div>
 
               <div>
-                <Label htmlFor="weight" className="text-sm font-medium">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  placeholder="e.g., 12.5"
-                  className="mt-1.5 h-11"
-                />
+                <Label htmlFor="weight" className="text-sm font-medium">
+                  Weight (kg) <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative mt-1.5">
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={formData.weight}
+                    onChange={(e) => {
+                      setFormData({ ...formData, weight: e.target.value });
+                      setErrors(prev => ({ ...prev, weight: false }));
+                    }}
+                    placeholder="e.g., 12.5"
+                    className={cn("h-11", errors.weight ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-10" : "")}
+                  />
+                  {errors.weight && (
+                    <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  )}
+                </div>
+                {errors.weight && (
+                  <p className="text-sm text-red-600 mt-1.5">Please enter pet's weight.</p>
+                )}
               </div>
 
               <div>
@@ -308,12 +375,16 @@ export default function AddPet() {
 
             {/* Allergies */}
             <div>
-              <Label className="text-sm font-medium">Known Allergies</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Known Allergies</Label>
+                <span className="text-[11px] text-gray-400">Max 50 characters</span>
+              </div>
               <div className="flex gap-2 mt-1.5">
                 <Input
+                  maxLength={50}
                   value={newAllergy}
                   onChange={(e) => setNewAllergy(e.target.value)}
-                  placeholder="Add allergy"
+                  placeholder="e.g., Chicken, Flea bites, Penicillin"
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergy())}
                   className="h-11"
                 />
@@ -322,15 +393,22 @@ export default function AddPet() {
                 </Button>
               </div>
               {formData.allergies.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3 max-w-full">
                   {formData.allergies.map((allergy, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
+                      className="inline-flex items-center gap-1.5 max-w-full px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm shadow-xs"
                     >
-                      {allergy}
-                      <button type="button" onClick={() => removeAllergy(index)}>
-                        <X className="w-3 h-3" />
+                      <span className="truncate max-w-[260px] sm:max-w-md break-all" title={allergy}>
+                        {allergy}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeAllergy(index)}
+                        className="hover:bg-red-200/80 rounded-full p-0.5 text-red-700 flex-shrink-0 transition-colors"
+                        title="Remove allergy"
+                      >
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
@@ -340,12 +418,16 @@ export default function AddPet() {
 
             {/* Medical Conditions */}
             <div>
-              <Label className="text-sm font-medium">Medical Conditions</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Medical Conditions</Label>
+                <span className="text-[11px] text-gray-400">Max 50 characters</span>
+              </div>
               <div className="flex gap-2 mt-1.5">
                 <Input
+                  maxLength={50}
                   value={newCondition}
                   onChange={(e) => setNewCondition(e.target.value)}
-                  placeholder="Add condition"
+                  placeholder="e.g., Asthma, Diabetes, Arthritis"
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCondition())}
                   className="h-11"
                 />
@@ -354,15 +436,22 @@ export default function AddPet() {
                 </Button>
               </div>
               {formData.medical_conditions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3 max-w-full">
                   {formData.medical_conditions.map((condition, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm"
+                      className="inline-flex items-center gap-1.5 max-w-full px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm shadow-xs"
                     >
-                      {condition}
-                      <button type="button" onClick={() => removeCondition(index)}>
-                        <X className="w-3 h-3" />
+                      <span className="truncate max-w-[260px] sm:max-w-md break-all" title={condition}>
+                        {condition}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeCondition(index)}
+                        className="hover:bg-amber-200/80 rounded-full p-0.5 text-amber-800 flex-shrink-0 transition-colors"
+                        title="Remove condition"
+                      >
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
@@ -373,23 +462,23 @@ export default function AddPet() {
             {/* Submit */}
             <div className="flex gap-4 pt-4 border-t border-gray-200">
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(createPageUrl('Dashboard'))}
-                className="flex-1 h-12 border-gray-300"
-              >
-                Cancel
-              </Button>
-              <Button
                 type="submit"
                 disabled={createPetMutation.isPending}
-                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
+                className="flex-1 h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100"
               >
                 {createPetMutation.isPending ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   'Add Pet'
                 )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(createPageUrl('Dashboard'))}
+                className="flex-1 h-12 border-gray-300"
+              >
+                Cancel
               </Button>
             </div>
           </form>

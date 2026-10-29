@@ -64,6 +64,7 @@ export default function BookAppointment() {
     time: '',
     reason: '',
   });
+  const [vetManuallySelected, setVetManuallySelected] = useState(false);
   const [errors, setErrors] = useState({});
 
   const { data: user } = useQuery({
@@ -75,6 +76,21 @@ export default function BookAppointment() {
     queryKey: ['clinicVeterinarians'],
     queryFn: () => api.entities.User.veterinarians(),
   });
+
+  // Default preferred veterinarian to Dr. Rebecca Goyena if not manually overridden
+  React.useEffect(() => {
+    if (!vetManuallySelected && veterinarians.length > 0) {
+      const defaultVet = veterinarians.find(
+        (v) => (v.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com'
+      );
+      if (defaultVet) {
+        setFormData((prev) => ({
+          ...prev,
+          vet_email: defaultVet.email,
+        }));
+      }
+    }
+  }, [veterinarians, vetManuallySelected]);
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
@@ -196,9 +212,9 @@ export default function BookAppointment() {
       </Button>
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-teal-50 to-orange-50">
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
           <CardTitle className="text-2xl flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-teal-500 flex items-center justify-center text-white">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-100">
               <CalendarIcon className="w-6 h-6 text-white" />
             </div>
             Book Appointment
@@ -220,7 +236,7 @@ export default function BookAppointment() {
                   <Button
                     type="button"
                     onClick={() => navigate(createPageUrl('AddPet'))}
-                    className="mt-3 bg-amber-500 hover:bg-amber-600"
+                    className="mt-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
                   >
                     Add Pet
                   </Button>
@@ -240,18 +256,18 @@ export default function BookAppointment() {
                         className={cn(
                           "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
                           isSelected
-                            ? "border-teal-500 bg-teal-50"
+                            ? "border-orange-500 bg-orange-50/60"
                             : "border-gray-200 hover:border-gray-300"
                         )}
                       >
                         <div className={cn(
                           "w-12 h-12 rounded-full overflow-hidden flex items-center justify-center",
-                          isSelected ? "bg-teal-100" : "bg-gray-100"
+                          isSelected ? "bg-orange-100" : "bg-gray-100"
                         )}>
                           {pet.photo_url ? (
                             <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Icon className={cn("w-6 h-6", isSelected ? "text-teal-600" : "text-gray-400")} />
+                            <Icon className={cn("w-6 h-6", isSelected ? "text-orange-600" : "text-gray-400")} />
                           )}
                         </div>
                         <div>
@@ -286,7 +302,7 @@ export default function BookAppointment() {
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
                         isSelected
-                          ? "border-teal-500 bg-teal-50"
+                          ? "border-orange-500 bg-orange-50/60"
                           : "border-gray-200 hover:border-gray-300"
                       )}
                     >
@@ -306,12 +322,13 @@ export default function BookAppointment() {
             {/* Preferred Veterinarian Selection (Dropdown) */}
             <div>
               <Label htmlFor="vet-selection" className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Stethoscope className="w-4 h-4 text-teal-600" />
+                <Stethoscope className="w-4 h-4 text-orange-600" />
                 Select Preferred Veterinarian <span className="text-gray-400 font-normal text-xs">(Optional)</span>
               </Label>
               <Select
                 value={formData.vet_email || 'any'}
                 onValueChange={(val) => {
+                  setVetManuallySelected(true);
                   setFormData(prev => ({
                     ...prev,
                     vet_email: val === 'any' ? '' : val,
@@ -326,11 +343,16 @@ export default function BookAppointment() {
                   <SelectItem value="any">
                     Any Available Veterinarian (Fastest)
                   </SelectItem>
-                  {veterinarians.map((vet) => (
-                    <SelectItem key={vet.email} value={vet.email}>
-                      {formatDoctorName(vet.full_name, vet.email)}{vet.specialization ? ` (${vet.specialization})` : ''}
-                    </SelectItem>
-                  ))}
+                  {veterinarians.map((vet) => {
+                    const isRebecca = (vet.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com';
+                    return (
+                      <SelectItem key={vet.email} value={vet.email}>
+                        {formatDoctorName(vet.full_name, vet.email)}
+                        {isRebecca ? ' (Preferred)' : ''}
+                        {vet.specialization ? ` (${vet.specialization})` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-400 mt-1.5">
@@ -360,10 +382,10 @@ export default function BookAppointment() {
                     setFormData({ ...formData, date: new Date(y, m - 1, d) });
                     setErrors(prev => ({ ...prev, date: false }));
                   }}
-                  className={cn("h-12 mt-0 pr-10", errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                  className={cn("h-12 mt-0", errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-16" : "")}
                 />
                 {errors.date && (
-                  <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  <AlertTriangle className="w-5 h-5 text-red-500 absolute right-10 top-1/2 -translate-y-1/2" />
                 )}
               </div>
               {errors.date && (
@@ -400,7 +422,7 @@ export default function BookAppointment() {
                         }}
                         className={cn(
                           "h-10 w-full text-xs sm:text-sm transition-all",
-                          isSelected && "bg-teal-500 hover:bg-teal-600 text-white",
+                          isSelected && "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm",
                           disabled && isBooked && "opacity-40 line-through cursor-not-allowed bg-red-50 border-red-200 text-red-400",
                           disabled && !isBooked && "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400"
                         )}
@@ -420,7 +442,7 @@ export default function BookAppointment() {
               {/* Legend */}
               {formData.date && (
                 <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" /> Available</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-orange-500 inline-block" /> Available</span>
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 inline-block" /> Already booked</span>
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200 inline-block" /> Too soon (30-min gap)</span>
                 </div>
@@ -440,12 +462,23 @@ export default function BookAppointment() {
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 placeholder="Describe your pet's symptoms or the reason for this visit..."
-                className="min-h-[100px]"
+                className="min-h-[100px] focus-visible:ring-orange-400"
               />
             </div>
 
             {/* Submit */}
             <div className="flex gap-4 pt-4 border-t">
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || pets.length === 0}
+                className="flex-1 h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100"
+              >
+                {createMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  'Book Appointment'
+                )}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -453,17 +486,6 @@ export default function BookAppointment() {
                 className="flex-1 h-12"
               >
                 Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || pets.length === 0}
-                className="flex-1 h-12 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
-              >
-                {createMutation.isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  'Book Appointment'
-                )}
               </Button>
             </div>
           </form>

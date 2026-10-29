@@ -43,11 +43,29 @@ public class AuthController : ControllerBase
         if (exists)
             return Conflict(new { error = "An account with this email already exists." });
 
+        if (string.IsNullOrWhiteSpace(request.FirstName))
+            return BadRequest(new { error = "First name is required." });
+        if (string.IsNullOrWhiteSpace(request.LastName))
+            return BadRequest(new { error = "Last name is required." });
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return BadRequest(new { error = "Phone number is required." });
+
+        var legalParts = new[] { request.FirstName?.Trim(), request.MiddleName?.Trim(), request.LastName?.Trim() }
+            .Where(s => !string.IsNullOrWhiteSpace(s));
+        var fullLegalName = string.Join(" ", legalParts);
+
+        var rawPhone = request.Phone?.Trim();
+        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+
         var user = new User
         {
             Id = Guid.NewGuid(),
             Email = originalEmail,
-            FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
+            DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim(),
+            FirstName = request.FirstName?.Trim(),
+            MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? null : request.MiddleName.Trim(),
+            LastName = request.LastName?.Trim(),
+            Phone = cleanPhone,
             UserType = "pet_owner",
             PasswordHash = Utilities.Encrypt(request.Password),
             NotificationPrefsJson = JsonSerializer.Serialize(new
@@ -55,7 +73,13 @@ public class AuthController : ControllerBase
                 email = true,
                 appointments = true,
                 vaccinations = true,
-                medications = true
+                medications = true,
+                display_name = request.DisplayName?.Trim(),
+                first_name = request.FirstName?.Trim(),
+                middle_name = request.MiddleName?.Trim(),
+                last_name = request.LastName?.Trim(),
+                phone = cleanPhone,
+                legal_name = fullLegalName
             })
         };
         _db.Users.Add(user);
@@ -95,11 +119,29 @@ public class AuthController : ControllerBase
         if (exists)
             return Conflict(new { error = "An account with this email already exists." });
 
+        if (string.IsNullOrWhiteSpace(request.FirstName))
+            return BadRequest(new { error = "First name is required." });
+        if (string.IsNullOrWhiteSpace(request.LastName))
+            return BadRequest(new { error = "Last name is required." });
+        if (string.IsNullOrWhiteSpace(request.Phone))
+            return BadRequest(new { error = "Phone number is required." });
+
+        var legalParts = new[] { request.FirstName?.Trim(), request.MiddleName?.Trim(), request.LastName?.Trim() }
+            .Where(s => !string.IsNullOrWhiteSpace(s));
+        var fullLegalName = string.Join(" ", legalParts);
+
+        var rawPhone = request.Phone?.Trim();
+        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+
         var user = new User
         {
             Id = Guid.NewGuid(),
             Email = originalEmail,
-            FullName = string.IsNullOrWhiteSpace(request.FullName) ? null : request.FullName.Trim(),
+            DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim(),
+            FirstName = request.FirstName?.Trim(),
+            MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? null : request.MiddleName.Trim(),
+            LastName = request.LastName?.Trim(),
+            Phone = cleanPhone,
             UserType = newType,
             PasswordHash = Utilities.Encrypt(request.Password),
             LicenseNumber = string.IsNullOrWhiteSpace(request.LicenseNumber) ? null : request.LicenseNumber.Trim(),
@@ -109,7 +151,13 @@ public class AuthController : ControllerBase
                 email = true,
                 appointments = true,
                 vaccinations = true,
-                medications = true
+                medications = true,
+                display_name = request.DisplayName?.Trim(),
+                first_name = request.FirstName?.Trim(),
+                middle_name = request.MiddleName?.Trim(),
+                last_name = request.LastName?.Trim(),
+                phone = cleanPhone,
+                legal_name = fullLegalName
             })
         };
         _db.Users.Add(user);
@@ -186,7 +234,25 @@ public class AuthController : ControllerBase
             return Unauthorized(new { error = "User not found." });
         }
 
-        if (request.FullName is not null) user.FullName = request.FullName;
+        if (request.DisplayName is not null) user.DisplayName = request.DisplayName;
+        if (request.FirstName is not null)
+        {
+            var cleanFirst = System.Text.RegularExpressions.Regex.Replace(request.FirstName.Trim(), @"^dr\.?\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+            user.FirstName = cleanFirst.Length > 0 ? cleanFirst : request.FirstName.Trim();
+        }
+        if (request.MiddleName is not null) user.MiddleName = request.MiddleName;
+        if (request.LastName is not null) user.LastName = request.LastName;
+        if (!string.IsNullOrWhiteSpace(request.FullName))
+        {
+            if (string.IsNullOrWhiteSpace(user.DisplayName)) user.DisplayName = request.FullName.Trim();
+            if (string.IsNullOrWhiteSpace(user.FirstName))
+            {
+                var clean = System.Text.RegularExpressions.Regex.Replace(request.FullName.Trim(), @"^dr\.?\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+                var parts = clean.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length > 0) user.FirstName = parts[0];
+                if (parts.Length > 1 && string.IsNullOrWhiteSpace(user.LastName)) user.LastName = parts[1];
+            }
+        }
         if (request.UserType is not null) user.UserType = request.UserType;
         if (request.Phone is not null)
         {
@@ -211,6 +277,23 @@ public class AuthController : ControllerBase
         if (request.Specialization is not null) user.Specialization = request.Specialization;
         if (request.NotificationPreferences is not null)
             user.NotificationPrefsJson = JsonSerializer.Serialize(request.NotificationPreferences);
+
+        try
+        {
+            var dict = !string.IsNullOrWhiteSpace(user.NotificationPrefsJson)
+                ? JsonSerializer.Deserialize<Dictionary<string, object?>>(user.NotificationPrefsJson) ?? new()
+                : new Dictionary<string, object?>();
+
+            if (user.DisplayName != null) dict["display_name"] = user.DisplayName;
+            if (user.FirstName != null) dict["first_name"] = user.FirstName;
+            if (user.MiddleName != null) dict["middle_name"] = user.MiddleName;
+            if (user.LastName != null) dict["last_name"] = user.LastName;
+            if (user.Phone != null) dict["phone"] = user.Phone;
+
+            user.NotificationPrefsJson = JsonSerializer.Serialize(dict);
+        }
+        catch { }
+
         user.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -276,10 +359,29 @@ public class AuthController : ControllerBase
     private static UserDto ToDto(User u)
     {
         object? prefs = null;
+        string? displayName = u.DisplayName;
+        string? firstName = u.FirstName;
+        string? middleName = u.MiddleName;
+        string? lastName = u.LastName;
+        string? phone = u.Phone;
+
         if (!string.IsNullOrWhiteSpace(u.NotificationPrefsJson))
         {
             try
             {
+                using var doc = JsonDocument.Parse(u.NotificationPrefsJson);
+                var root = doc.RootElement;
+                if (string.IsNullOrWhiteSpace(displayName) && root.TryGetProperty("display_name", out var dn) && dn.ValueKind == JsonValueKind.String)
+                    displayName = dn.GetString();
+                if (string.IsNullOrWhiteSpace(firstName) && root.TryGetProperty("first_name", out var fn) && fn.ValueKind == JsonValueKind.String)
+                    firstName = fn.GetString();
+                if (string.IsNullOrWhiteSpace(middleName) && root.TryGetProperty("middle_name", out var mn) && mn.ValueKind == JsonValueKind.String)
+                    middleName = mn.GetString();
+                if (string.IsNullOrWhiteSpace(lastName) && root.TryGetProperty("last_name", out var ln) && ln.ValueKind == JsonValueKind.String)
+                    lastName = ln.GetString();
+                if (string.IsNullOrWhiteSpace(phone) && root.TryGetProperty("phone", out var ph) && ph.ValueKind == JsonValueKind.String)
+                    phone = ph.GetString();
+
                 prefs = JsonSerializer.Deserialize<object>(u.NotificationPrefsJson);
             }
             catch
@@ -288,13 +390,36 @@ public class AuthController : ControllerBase
             }
         }
 
+        // Clean up accidental title stored in firstName
+        if (firstName != null && (firstName.Equals("dr.", StringComparison.OrdinalIgnoreCase) || firstName.Equals("dr", StringComparison.OrdinalIgnoreCase)))
+        {
+            firstName = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(u.FullName))
+        {
+            var clean = System.Text.RegularExpressions.Regex.Replace(u.FullName.Trim(), @"^dr\.?\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+            var parts = clean.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 0) firstName = parts[0];
+            if (parts.Length > 1 && string.IsNullOrWhiteSpace(lastName))
+                lastName = parts[1];
+        }
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            displayName = !string.IsNullOrWhiteSpace(u.FullName) ? u.FullName : firstName;
+        }
+
         return new UserDto
         {
             Id = u.Id.ToString(),
             Email = u.Email,
-            FullName = u.FullName,
+            DisplayName = displayName,
+            FirstName = firstName,
+            MiddleName = middleName,
+            LastName = lastName,
+            FullName = !string.IsNullOrWhiteSpace(displayName) ? displayName : $"{firstName} {lastName}".Trim(),
             UserType = u.UserType,
-            Phone = u.Phone,
+            Phone = phone,
             Address = u.Address,
             AvatarUrl = u.AvatarUrl,
             LicenseNumber = u.LicenseNumber,

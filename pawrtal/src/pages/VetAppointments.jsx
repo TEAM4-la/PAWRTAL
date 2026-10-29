@@ -12,7 +12,7 @@ import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft, XCircle } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
 import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { toast } from "sonner";
@@ -175,6 +175,10 @@ export default function VetAppointments() {
     appointments.filter(apt => getAppointmentStatus(apt) === 'completed')
   );
 
+  const cancelledAppointments = filterAppointments(
+    appointments.filter(apt => getAppointmentStatus(apt) === 'cancelled')
+  );
+
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
       return (
@@ -182,6 +186,7 @@ export default function VetAppointments() {
           <EmptyState
             icon={CalendarIcon}
             title="No appointments found"
+            colorScheme="teal"
             description="No appointments match your current filters"
           />
         </Card>
@@ -269,7 +274,7 @@ export default function VetAppointments() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto md:grid md:grid-cols-5 h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
+        <TabsList className="w-full flex overflow-x-auto md:grid md:grid-cols-6 h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
           <TabsTrigger value="today" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             <CalendarIcon className="w-4 h-4" />
             Today ({todayAppointments.length})
@@ -287,6 +292,10 @@ export default function VetAppointments() {
           <TabsTrigger value="completed" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
             <CheckCircle className="w-4 h-4" />
             Completed
+          </TabsTrigger>
+          <TabsTrigger value="cancelled" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+            <XCircle className="w-4 h-4" />
+            Cancelled
           </TabsTrigger>
         </TabsList>
 
@@ -308,6 +317,10 @@ export default function VetAppointments() {
 
         <TabsContent value="completed" className="mt-6">
           {renderAppointmentList(completedAppointments.slice(0, 20))}
+        </TabsContent>
+
+        <TabsContent value="cancelled" className="mt-6">
+          {renderAppointmentList(cancelledAppointments)}
         </TabsContent>
       </Tabs>
     </div>

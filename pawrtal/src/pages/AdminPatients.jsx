@@ -136,6 +136,7 @@ export default function AdminPatients() {
           <EmptyState
             icon={PawPrint}
             title="No patients found"
+            colorScheme="violet"
             description={searchTerm ? "Try adjusting your search terms" : "No pets registered yet"}
           />
         </Card>

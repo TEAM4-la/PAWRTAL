@@ -98,11 +98,11 @@ export default function AppointmentCard({
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               {showPetInfo && (pet || appointment.pet_name) && (
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
                   {pet?.photo_url ? (
                     <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-lg font-bold text-teal-600">{(pet?.name || appointment.pet_name)?.[0]}</span>
+                    <span className="text-lg font-bold text-orange-600">{(pet?.name || appointment.pet_name)?.[0]}</span>
                   )}
                 </div>
               )}
@@ -154,8 +154,8 @@ export default function AppointmentCard({
               </div>
             )}
             {!isVetView && appointment.vet_email && (
-              <div className="flex items-center gap-2 text-teal-700">
-                <Stethoscope className="w-4 h-4 text-teal-600" />
+              <div className="flex items-center gap-2 text-orange-700">
+                <Stethoscope className="w-4 h-4 text-orange-600" />
                 <span className="text-sm font-medium">Assigned: {appointment.vet_email}</span>
               </div>
             )}
@@ -226,7 +226,6 @@ export default function AppointmentCard({
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Back</Button>
               <Button 
                 className="!bg-red-600 hover:!bg-red-700 !text-white"
                 disabled={!cancelReason.trim()}
@@ -243,6 +242,7 @@ export default function AppointmentCard({
               >
                 Confirm Cancel
               </Button>
+              <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Back</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

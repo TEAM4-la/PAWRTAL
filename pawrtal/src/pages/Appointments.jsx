@@ -73,7 +73,7 @@ export default function Appointments() {
           <p className="text-gray-500 mt-1">Manage your veterinary appointments</p>
         </div>
         <Link to={createPageUrl('BookAppointment')}>
-          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
+          <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-sm shadow-orange-100">
             <Plus className="w-5 h-5" />
             Book Appointment
           </Button>

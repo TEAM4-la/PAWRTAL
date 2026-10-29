@@ -48,7 +48,7 @@ export default function MyPets() {
           <p className="text-gray-500 mt-1">{pets.length} pet{pets.length !== 1 ? 's' : ''} registered</p>
         </div>
         <Link to={createPageUrl('AddPet')}>
-          <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
+          <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-sm shadow-orange-100">
             <Plus className="w-5 h-5" />
             Add New Pet
           </Button>
@@ -63,7 +63,7 @@ export default function MyPets() {
               placeholder="Search by name or breed..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-11"
+              className="pl-10 h-11 focus-visible:ring-orange-400"
             />
           </div>
           <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
@@ -79,12 +79,12 @@ export default function MyPets() {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex gap-1 border rounded-lg p-1">
+          <div className="flex gap-1 border rounded-lg p-1 bg-white">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="icon"
               onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'bg-teal-500' : ''}
+              className={viewMode === 'grid' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600' : 'text-gray-500 hover:text-orange-600'}
             >
               <Grid className="w-4 h-4" />
             </Button>
@@ -92,7 +92,7 @@ export default function MyPets() {
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="icon"
               onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? 'bg-teal-500' : ''}
+              className={viewMode === 'list' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600' : 'text-gray-500 hover:text-orange-600'}
             >
               <List className="w-4 h-4" />
             </Button>

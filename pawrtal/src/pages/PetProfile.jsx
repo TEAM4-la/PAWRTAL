@@ -187,7 +187,7 @@ export default function PetProfile() {
       {/* Header Card */}
       <Card className="overflow-hidden border border-gray-100 shadow-md bg-white">
         {/* Cover Banner: Solid Pawrtal light teal with subtle authentic pet doodle texture (No AI gradient) */}
-        <div className="relative h-44 sm:h-48 bg-teal-600 overflow-hidden">
+        <div className="relative h-44 sm:h-48 bg-gradient-to-r from-amber-500 to-orange-500 overflow-hidden">
           <img 
             src={backgroundImg} 
             alt="Pawrtal Pattern" 
@@ -204,7 +204,7 @@ export default function PetProfile() {
                 {pet.photo_url ? (
                   <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Icon className="w-16 h-16 text-teal-400" />
+                  <Icon className="w-16 h-16 text-orange-400" />
                 )}
               </div>
               
@@ -212,7 +212,7 @@ export default function PetProfile() {
               <div className="pb-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1.5">
                   <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{pet.name}</h1>
-                  <Badge className="capitalize bg-teal-50 text-teal-700 border border-teal-200 font-medium px-2.5 py-0.5">
+                  <Badge className="capitalize bg-orange-50 text-orange-700 border border-orange-200 font-medium px-2.5 py-0.5">
                     {pet.species}
                   </Badge>
                 </div>
@@ -220,8 +220,8 @@ export default function PetProfile() {
                   {pet.breed || 'Mixed breed'} • {pet.gender}
                 </p>
                 {pet.microchip_id && (
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-800 border border-orange-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
                     Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
                   </div>
                 )}
@@ -231,19 +231,19 @@ export default function PetProfile() {
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 pb-1">
               <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2 border-gray-300">
+                <Button variant="outline" className="gap-2 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                   <QrCode className="w-4 h-4" />
                   QR Code
                 </Button>
               </Link>
               <Link to={createPageUrl(`EditPet?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2 border-gray-300">
+                <Button variant="outline" className="gap-2 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                   <Edit className="w-4 h-4" />
                   Edit
                 </Button>
               </Link>
               <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-                <Button className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
+                <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
                   <Calendar className="w-4 h-4" />
                   Book
                 </Button>
@@ -256,7 +256,7 @@ export default function PetProfile() {
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-4 gap-4">
         <Card className="p-4 text-center border-0 shadow-sm">
-          <Clock className="w-8 h-8 mx-auto text-teal-500 mb-2" />
+          <Clock className="w-8 h-8 mx-auto text-orange-500 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{calculateAge(pet.date_of_birth)}</p>
           <p className="text-sm text-gray-500">Age</p>
         </Card>
@@ -289,8 +289,10 @@ export default function PetProfile() {
                     <p className="font-medium text-gray-900">Allergies:</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {pet.allergies.map((allergy, i) => (
-                        <Badge key={i} variant="outline" className="bg-red-100 text-red-700 border-red-200">
-                          {allergy}
+                        <Badge key={i} variant="outline" className="bg-red-100 text-red-700 border-red-200 max-w-full">
+                          <span className="truncate max-w-[260px] sm:max-w-md break-all" title={allergy}>
+                            {allergy}
+                          </span>
                         </Badge>
                       ))}
                     </div>
@@ -301,8 +303,10 @@ export default function PetProfile() {
                     <p className="font-medium text-gray-900">Medical Conditions:</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {pet.medical_conditions.map((condition, i) => (
-                        <Badge key={i} variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">
-                          {condition}
+                        <Badge key={i} variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 max-w-full">
+                          <span className="truncate max-w-[260px] sm:max-w-md break-all" title={condition}>
+                            {condition}
+                          </span>
                         </Badge>
                       ))}
                     </div>
@@ -366,7 +370,7 @@ export default function PetProfile() {
                           <p className="text-sm text-gray-500">
                             {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                             {formatDoctorName(vax.administered_by) && (
-                              <span className="text-teal-700 font-medium ml-2">
+                              <span className="text-orange-700 font-medium ml-2">
                                 • Added by: {formatDoctorName(vax.administered_by)}
                               </span>
                             )}
@@ -419,7 +423,7 @@ export default function PetProfile() {
                           <p className="text-sm text-gray-500">
                             {med.dosage} • {med.frequency}
                             {formatDoctorName(med.prescribed_by) && (
-                              <span className="text-teal-700 font-medium ml-2">
+                              <span className="text-orange-700 font-medium ml-2">
                                 • Prescribed by: {formatDoctorName(med.prescribed_by)}
                               </span>
                             )}
@@ -451,15 +455,15 @@ export default function PetProfile() {
                   {healthRecords.map((record) => (
                     <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
-                          <FileText className="w-5 h-5 text-teal-600" />
+                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">{record.title}</p>
                           <p className="text-sm text-gray-500">
                             {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                             {formatDoctorName(record.vet_name, record.vet_email) && (
-                              <span className="text-teal-700 font-medium ml-2">
+                              <span className="text-orange-700 font-medium ml-2">
                                 • Added by: {formatDoctorName(record.vet_name, record.vet_email)}
                               </span>
                             )}
@@ -500,7 +504,7 @@ export default function PetProfile() {
                           <p className="text-sm text-gray-500">
                             {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                             {record.groomer_name && (
-                              <span className="text-teal-700 font-medium ml-2">
+                              <span className="text-orange-700 font-medium ml-2">
                                 • Handled by: {formatDoctorName(record.groomer_name) || record.groomer_name}
                               </span>
                             )}
@@ -546,7 +550,7 @@ export default function PetProfile() {
                           <p className="text-sm text-gray-500">
                             {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
                             {formatDoctorName(apt.vet_name, apt.vet_email) && (
-                              <span className="text-teal-700 font-medium ml-2">
+                              <span className="text-orange-700 font-medium ml-2">
                                 • Doctor: {formatDoctorName(apt.vet_name, apt.vet_email)}
                               </span>
                             )}
@@ -597,13 +601,13 @@ export default function PetProfile() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => deleteMutation.mutate()}
                     className="bg-red-600 hover:bg-red-700"
                   >
                     Remove
                   </AlertDialogAction>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

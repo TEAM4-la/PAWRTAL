@@ -239,7 +239,7 @@ export default function Journal() {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
+            <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-sm shadow-orange-100">
               <Plus className="w-5 h-5" />
               Add Entry
             </Button>
@@ -260,11 +260,11 @@ export default function Journal() {
                         setErrors(prev => ({ ...prev, pet_id: false }));
                       }}
                     >
-                      <SelectTrigger className={cn("pr-10", errors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500" : "")}>
+                      <SelectTrigger className={cn(errors.pet_id ? "border-red-500 bg-red-50/10 focus:ring-red-500 [&>span]:pr-8" : "")}>
                         <SelectValue placeholder="Select pet" />
                       </SelectTrigger>
                       {errors.pet_id && (
-                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-8 top-1/2 -translate-y-1/2" />
+                        <AlertTriangle className="w-5 h-5 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                       )}
                       <SelectContent>
                         {pets.map(pet => (
@@ -289,10 +289,10 @@ export default function Journal() {
                         setFormData({...formData, date: e.target.value});
                         setErrors(prev => ({ ...prev, date: false }));
                       }}
-                      className={cn("pr-10", errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                      className={cn(errors.date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-16" : "")}
                     />
                     {errors.date && (
-                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                      <AlertTriangle className="w-5 h-5 text-red-500 absolute right-10 top-1/2 -translate-y-1/2" />
                     )}
                   </div>
                   {errors.date && (
@@ -367,7 +367,7 @@ export default function Journal() {
                       onClick={() => setFormData({...formData, mood: mood.value})}
                       className={cn(
                         "gap-1",
-                        formData.mood === mood.value && "bg-teal-500"
+                        formData.mood === mood.value && "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
                       )}
                     >
                       <mood.icon className={cn("w-4 h-4", formData.mood !== mood.value && mood.color)} />
@@ -378,14 +378,14 @@ export default function Journal() {
               </div>
 
               <div className="flex gap-3 pt-2">
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
+                  {createMutation.isPending || updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
+                </Button>
                 <Button type="button" variant="outline" onClick={() => {
                   setIsDialogOpen(false);
                   resetForm();
                 }} className="flex-1">
                   Cancel
-                </Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
-                  {createMutation.isPending || updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
                 </Button>
               </div>
             </form>
@@ -405,9 +405,6 @@ export default function Journal() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-3">
-              <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)} className="flex-1">
-                Cancel
-              </Button>
               <Button
                 type="button"
                 className="bg-red-600 hover:bg-red-700 text-white flex-1"
@@ -415,6 +412,9 @@ export default function Journal() {
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Delete'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)} className="flex-1">
+                Cancel
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -488,7 +488,7 @@ export default function Journal() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="w-8 h-8 text-gray-400 hover:text-teal-600"
+                            className="w-8 h-8 text-gray-400 hover:text-orange-600"
                             onClick={() => handleEditClick(entry)}
                           >
                             <Edit2 className="w-4 h-4" />

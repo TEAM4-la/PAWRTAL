@@ -67,11 +67,11 @@ export default function OwnerSidebar({ user, children }) {
             {user?.avatar_url ? (
               <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              user?.full_name?.[0] || '?'
+              user?.display_name?.[0] || user?.first_name?.[0] || '?'
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-amber-900 text-sm truncate">{user?.full_name || 'Pet Parent'}</p>
+            <p className="font-semibold text-amber-900 text-sm truncate">{user?.display_name?.trim() || user?.first_name?.trim() || 'Pet Parent'}</p>
             <p className="text-amber-600 text-xs truncate">Pet Owner</p>
           </div>
         </div>
@@ -131,10 +131,10 @@ export default function OwnerSidebar({ user, children }) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-700">
                 Sign Out
               </AlertDialogAction>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -176,7 +176,7 @@ export default function OwnerSidebar({ user, children }) {
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  user?.full_name?.[0] || '?'
+                  user?.display_name?.[0] || user?.first_name?.[0] || '?'
                 )}
               </div>
             </Link>

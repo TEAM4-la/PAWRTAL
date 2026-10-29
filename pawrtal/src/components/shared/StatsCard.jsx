@@ -29,7 +29,7 @@ export default function StatsCard({
 
   return (
     <Card className={cn(
-      "relative overflow-hidden border-0 bg-white hover:shadow-lg transition-all duration-300",
+      "relative overflow-hidden border-0 bg-white hover:shadow-lg transition-all duration-300 h-full",
       className
     )}>
       <div className={cn(
@@ -37,10 +37,15 @@ export default function StatsCard({
         colorClasses[color]
       )} />
       
-      <div className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</p>
+      <div className="p-5 sm:p-6 h-full flex flex-col justify-between">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 flex-1 min-w-0">
+            <p 
+              className="text-xs sm:text-[13px] font-semibold text-gray-500 uppercase tracking-tight whitespace-nowrap truncate"
+              title={title}
+            >
+              {title}
+            </p>
             <p className="text-3xl font-bold text-gray-900">{value}</p>
             {trend && (
               <p className={cn(
@@ -53,8 +58,8 @@ export default function StatsCard({
           </div>
           
           {Icon && (
-            <div className={cn("p-3 rounded-xl", iconBgClasses[color])}>
-              <Icon className="w-6 h-6" />
+            <div className={cn("p-2.5 sm:p-3 rounded-xl flex-shrink-0", iconBgClasses[color])}>
+              <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           )}
         </div>

@@ -50,6 +50,13 @@ builder.Services.AddHostedService<AppointmentExpirationService>();
 
 var app = builder.Build();
 
+// Ensure schema and starter clinical inventory exist
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<PawrtalDbContext>();
+    await DbInitializer.InitializeAsync(db);
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

@@ -70,11 +70,11 @@ export default function VetSidebar({ user, children }) {
             {user?.avatar_url ? (
               <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-              user?.full_name?.[0] || 'V'
+              user?.display_name?.[0] || user?.first_name?.[0] || 'V'
             )}
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-teal-900 text-sm truncate">Dr. {user?.full_name?.split(' ').pop() || 'Veterinarian'}</p>
+            <p className="font-semibold text-teal-900 text-sm truncate">{user?.display_name?.trim() || user?.first_name?.trim() || 'Veterinarian'}</p>
             <p className="text-teal-600 text-xs truncate flex items-center gap-1">
               <Stethoscope className="w-3 h-3" /> Veterinarian
             </p>
@@ -158,10 +158,10 @@ export default function VetSidebar({ user, children }) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout} className="bg-red-600 text-white hover:bg-red-700">
                 Sign Out
               </AlertDialogAction>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -211,7 +211,7 @@ export default function VetSidebar({ user, children }) {
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  user?.full_name?.[0] || 'V'
+                  user?.display_name?.[0] || user?.first_name?.[0] || 'V'
                 )}
               </div>
             </Link>

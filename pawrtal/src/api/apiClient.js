@@ -137,10 +137,19 @@ export const api = {
         skipAuthHeaders: true,
       });
     },
-    async register({ email, password, full_name }) {
+    async register({ email, password, full_name, phone, display_name, first_name, middle_name, last_name }) {
       return await http('/api/auth/register', {
         method: 'POST',
-        body: { email, password, fullName: full_name },
+        body: {
+          email,
+          password,
+          fullName: full_name,
+          phone,
+          displayName: display_name,
+          firstName: first_name,
+          middleName: middle_name,
+          lastName: last_name,
+        },
         skipAuthHeaders: true,
       });
     },
@@ -154,6 +163,11 @@ export const api = {
           userType: body.user_type,
           licenseNumber: body.license_number,
           specialization: body.specialization,
+          phone: body.phone,
+          displayName: body.display_name,
+          firstName: body.first_name,
+          middleName: body.middle_name,
+          lastName: body.last_name,
         },
       });
     },
@@ -223,6 +237,29 @@ export const api = {
       },
       async create(data) {
         return await http('/api/vaccinations', { method: 'POST', body: data });
+      },
+    },
+    InventoryItem: {
+      async filter(opts = {}, order, limit) {
+        return await http('/api/inventory', { query: { ...opts, order, limit } });
+      },
+      async list(order, limit = 200) {
+        return await http('/api/inventory', { query: { order, limit } });
+      },
+      async get(id) {
+        return await http(`/api/inventory/${id}`);
+      },
+      async create(data) {
+        return await http('/api/inventory', { method: 'POST', body: data });
+      },
+      async update(id, data) {
+        return await http(`/api/inventory/${id}`, { method: 'PUT', body: data });
+      },
+      async adjustStock(id, data) {
+        return await http(`/api/inventory/${id}/stock`, { method: 'PATCH', body: data });
+      },
+      async delete(id) {
+        return await http(`/api/inventory/${id}`, { method: 'DELETE' });
       },
     },
     Medication: {

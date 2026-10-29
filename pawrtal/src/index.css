@@ -33,3 +33,19 @@ input[type="password"]::-ms-clear {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Position native calendar picker icon to the right-most edge of date inputs */
+input[type="date"] {
+  position: relative;
+  justify-content: space-between;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
