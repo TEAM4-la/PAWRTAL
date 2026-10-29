@@ -95,6 +95,50 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(backfillSql);
 
+        // 1b. Ensure User Foreign Keys exist across Pets, Appointments, Notifications, Messages, and HealthRecords
+        const string ensureFksSql = @"
+IF NOT EXISTS (SELECT * FROM sys.key_constraints WHERE [type] = 'UQ' AND [parent_object_id] = OBJECT_ID('Users') AND [name] = 'UQ_Users_Email')
+BEGIN
+    ALTER TABLE [Users] ADD CONSTRAINT [UQ_Users_Email] UNIQUE ([Email]);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Pets_Users_OwnerEmail')
+BEGIN
+    ALTER TABLE [Pets] ADD CONSTRAINT [FK_Pets_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Appointments_Users_OwnerEmail')
+BEGIN
+    ALTER TABLE [Appointments] ADD CONSTRAINT [FK_Appointments_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Appointments_Users_VetEmail')
+BEGIN
+    ALTER TABLE [Appointments] ADD CONSTRAINT [FK_Appointments_Users_VetEmail] FOREIGN KEY ([VetEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Notifications_Users_UserEmail')
+BEGIN
+    ALTER TABLE [Notifications] ADD CONSTRAINT [FK_Notifications_Users_UserEmail] FOREIGN KEY ([UserEmail]) REFERENCES [Users]([Email]) ON DELETE CASCADE;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Messages_Users_SenderEmail')
+BEGIN
+    ALTER TABLE [Messages] ADD CONSTRAINT [FK_Messages_Users_SenderEmail] FOREIGN KEY ([SenderEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_Messages_Users_ReceiverEmail')
+BEGIN
+    ALTER TABLE [Messages] ADD CONSTRAINT [FK_Messages_Users_ReceiverEmail] FOREIGN KEY ([ReceiverEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE [name] = 'FK_HealthRecords_Users_VetEmail')
+BEGIN
+    ALTER TABLE [HealthRecords] ADD CONSTRAINT [FK_HealthRecords_Users_VetEmail] FOREIGN KEY ([VetEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL;
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureFksSql);
+
         // 2. Seed starter vaccines & medications if table is empty
         var hasItems = await db.InventoryItems.AnyAsync();
         if (!hasItems)

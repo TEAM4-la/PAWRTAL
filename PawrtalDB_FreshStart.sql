@@ -23,6 +23,13 @@ GO
 -- ======================================================================================
 -- 2. Drop Foreign Keys (if recreating over existing tables)
 -- ======================================================================================
+IF OBJECT_ID(N'FK_Pets_Users_OwnerEmail', 'F') IS NOT NULL ALTER TABLE [Pets] DROP CONSTRAINT FK_Pets_Users_OwnerEmail;
+IF OBJECT_ID(N'FK_Appointments_Users_OwnerEmail', 'F') IS NOT NULL ALTER TABLE [Appointments] DROP CONSTRAINT FK_Appointments_Users_OwnerEmail;
+IF OBJECT_ID(N'FK_Appointments_Users_VetEmail', 'F') IS NOT NULL ALTER TABLE [Appointments] DROP CONSTRAINT FK_Appointments_Users_VetEmail;
+IF OBJECT_ID(N'FK_Notifications_Users_UserEmail', 'F') IS NOT NULL ALTER TABLE [Notifications] DROP CONSTRAINT FK_Notifications_Users_UserEmail;
+IF OBJECT_ID(N'FK_Messages_Users_SenderEmail', 'F') IS NOT NULL ALTER TABLE [Messages] DROP CONSTRAINT FK_Messages_Users_SenderEmail;
+IF OBJECT_ID(N'FK_Messages_Users_ReceiverEmail', 'F') IS NOT NULL ALTER TABLE [Messages] DROP CONSTRAINT FK_Messages_Users_ReceiverEmail;
+IF OBJECT_ID(N'FK_HealthRecords_Users_VetEmail', 'F') IS NOT NULL ALTER TABLE [HealthRecords] DROP CONSTRAINT FK_HealthRecords_Users_VetEmail;
 IF OBJECT_ID(N'FK_Appointments_Pets_PetId', 'F') IS NOT NULL ALTER TABLE [Appointments] DROP CONSTRAINT FK_Appointments_Pets_PetId;
 IF OBJECT_ID(N'FK_HealthRecords_Pets_PetId', 'F') IS NOT NULL ALTER TABLE [HealthRecords] DROP CONSTRAINT FK_HealthRecords_Pets_PetId;
 IF OBJECT_ID(N'FK_Vaccinations_Pets_PetId', 'F') IS NOT NULL ALTER TABLE [Vaccinations] DROP CONSTRAINT FK_Vaccinations_Pets_PetId;
@@ -76,9 +83,9 @@ CREATE TABLE [Users] (
     [PasswordHash]         NVARCHAR(200)    NULL,
     [IsDeleted]            BIT              NOT NULL DEFAULT 0,
     [DeletedAt]            DATETIME2        NULL,
+    CONSTRAINT [UQ_Users_Email] UNIQUE ([Email]),
     CONSTRAINT [CK_Users_UserType] CHECK ([UserType] IS NULL OR [UserType] IN ('admin', 'clinic_admin', 'veterinarian', 'pet_owner'))
 );
-CREATE UNIQUE NONCLUSTERED INDEX [UQ_Users_Email] ON [Users] ([Email]) WHERE [IsDeleted] = 0;
 GO
 
 -- 4.2 Pets
@@ -99,6 +106,7 @@ CREATE TABLE [Pets] (
     [UpdatedAt]   DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
     [IsDeleted]   BIT              NOT NULL DEFAULT 0,
     [DeletedAt]   DATETIME2        NULL,
+    CONSTRAINT [FK_Pets_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL,
     CONSTRAINT [CK_Pets_Gender] CHECK ([Gender] IS NULL OR [Gender] IN ('male', 'female', 'unknown')),
     CONSTRAINT [CK_Pets_Species] CHECK ([Species] IN ('dog', 'cat', 'bird', 'rabbit', 'hamster', 'fish', 'reptile', 'other', 'Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Fish', 'Reptile', 'Other'))
 );
@@ -122,6 +130,8 @@ CREATE TABLE [Appointments] (
     [IsDeleted]          BIT              NOT NULL DEFAULT 0,
     [DeletedAt]          DATETIME2        NULL,
     CONSTRAINT [FK_Appointments_Pets_PetId] FOREIGN KEY ([PetId]) REFERENCES [Pets]([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_Appointments_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Appointments_Users_VetEmail] FOREIGN KEY ([VetEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION,
     CONSTRAINT [CK_Appointments_Status] CHECK ([Status] IN ('pending', 'confirmed', 'accepted', 'completed', 'cancelled', 'expired')),
     CONSTRAINT [CK_Appointments_Type] CHECK ([Type] IN ('checkup', 'general_checkup', 'General Checkup', 'vaccination', 'grooming', 'dental', 'follow_up', 'consultation', 'surgery', 'emergency', 'examination', 'other'))
 );
@@ -155,6 +165,7 @@ CREATE TABLE [HealthRecords] (
     [IsDeleted]       BIT              NOT NULL DEFAULT 0,
     [DeletedAt]       DATETIME2        NULL,
     CONSTRAINT [FK_HealthRecords_Pets_PetId] FOREIGN KEY ([PetId]) REFERENCES [Pets]([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_HealthRecords_Users_VetEmail] FOREIGN KEY ([VetEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL,
     CONSTRAINT [CK_HealthRecords_RecordType] CHECK ([RecordType] IN ('examination', 'vaccination', 'medication', 'surgery', 'grooming', 'other', 'prescription', 'lab_result', 'treatment', 'diagnosis'))
 );
 CREATE NONCLUSTERED INDEX [IX_HealthRecords_PetId] ON [HealthRecords] ([PetId]);
@@ -263,7 +274,9 @@ CREATE TABLE [Messages] (
     [CreatedAt]     DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),
     [IsRead]        BIT              NOT NULL DEFAULT 0,
     [IsDeleted]     BIT              NOT NULL DEFAULT 0,
-    [DeletedAt]     DATETIME2        NULL
+    [DeletedAt]     DATETIME2        NULL,
+    CONSTRAINT [FK_Messages_Users_SenderEmail] FOREIGN KEY ([SenderEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Messages_Users_ReceiverEmail] FOREIGN KEY ([ReceiverEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION
 );
 CREATE NONCLUSTERED INDEX [IX_Messages_Sender_Receiver] ON [Messages] ([SenderEmail], [ReceiverEmail]);
 GO
@@ -281,6 +294,7 @@ CREATE TABLE [Notifications] (
     [RelatedEntityId]   UNIQUEIDENTIFIER NULL,
     [IsDeleted]         BIT              NOT NULL DEFAULT 0,
     [DeletedAt]         DATETIME2        NULL,
+    CONSTRAINT [FK_Notifications_Users_UserEmail] FOREIGN KEY ([UserEmail]) REFERENCES [Users]([Email]) ON DELETE CASCADE,
     CONSTRAINT [CK_Notifications_Type] CHECK ([Type] IN ('appointment', 'grooming', 'health_record', 'medication', 'message', 'vaccination', 'general', 'system'))
 );
 CREATE NONCLUSTERED INDEX [IX_Notifications_UserEmail_IsRead] ON [Notifications] ([UserEmail], [IsRead]);
