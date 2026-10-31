@@ -88,6 +88,9 @@ export const MEDICATION_CATEGORIES = [
   'Other Medication',
 ];
 
+// Valid inventory code format: uppercase alphanumeric groups with optional hyphens (e.g. VAC-RAB-001, RB-2026-09A, LOT123, 123456789). No spaces.
+export const INVENTORY_CODE_REGEX = /^[A-Z0-9]+(-[A-Z0-9]+)*$/;
+
 export default function AdminInventory() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -291,6 +294,16 @@ export default function AdminInventory() {
     }
     if (formData.quantity === '' || formData.quantity === undefined || isNaN(parseInt(formData.quantity, 10)) || parseInt(formData.quantity, 10) < 0) {
       newErrors.quantity = true;
+    }
+    if (formData.sku && formData.sku.trim()) {
+      if (/\s/.test(formData.sku) || !INVENTORY_CODE_REGEX.test(formData.sku.trim())) {
+        newErrors.sku = true;
+      }
+    }
+    if (formData.batch_number && formData.batch_number.trim()) {
+      if (/\s/.test(formData.batch_number) || !INVENTORY_CODE_REGEX.test(formData.batch_number.trim())) {
+        newErrors.batch_number = true;
+      }
     }
 
     setErrors(newErrors);
@@ -966,23 +979,67 @@ export default function AdminInventory() {
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                   SKU / Barcode ID
                 </label>
-                <Input
-                  placeholder="e.g. VAC-RAB-001"
-                  value={formData.sku}
-                  onChange={(e) => setFormData((p) => ({ ...p, sku: e.target.value }))}
-                  className="rounded-xl font-mono text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    placeholder="e.g. VAC-RAB-001"
+                    value={formData.sku}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/\s+/g, '').toUpperCase();
+                      setFormData((p) => ({ ...p, sku: cleanVal }));
+                      if (errors.sku) {
+                        setErrors((p) => ({ ...p, sku: false }));
+                      }
+                    }}
+                    className={cn(
+                      "rounded-xl font-mono text-xs uppercase",
+                      errors.sku ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-9" : ""
+                    )}
+                  />
+                  {errors.sku && (
+                    <AlertTriangle className="w-4 h-4 text-red-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  )}
+                </div>
+                {errors.sku && (
+                  <p className="text-[11px] text-red-600 mt-1">
+                    Invalid format. Only letters, numbers, and hyphens allowed (no spaces).
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                   Batch / Lot Number
                 </label>
-                <Input
-                  placeholder="e.g. RB-2026-09A"
-                  value={formData.batch_number}
-                  onChange={(e) => setFormData((p) => ({ ...p, batch_number: e.target.value }))}
-                  className="rounded-xl font-mono text-xs"
-                />
+                <div className="relative">
+                  <Input
+                    placeholder="e.g. RB-2026-09A"
+                    value={formData.batch_number}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ') e.preventDefault();
+                    }}
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/\s+/g, '').toUpperCase();
+                      setFormData((p) => ({ ...p, batch_number: cleanVal }));
+                      if (errors.batch_number) {
+                        setErrors((p) => ({ ...p, batch_number: false }));
+                      }
+                    }}
+                    className={cn(
+                      "rounded-xl font-mono text-xs uppercase",
+                      errors.batch_number ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-9" : ""
+                    )}
+                  />
+                  {errors.batch_number && (
+                    <AlertTriangle className="w-4 h-4 text-red-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  )}
+                </div>
+                {errors.batch_number && (
+                  <p className="text-[11px] text-red-600 mt-1">
+                    Invalid format. Only letters, numbers, and hyphens allowed (no spaces).
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">

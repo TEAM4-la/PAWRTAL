@@ -80,6 +80,7 @@ public class MedicationsController : ControllerBase
             Name = request.Name!,
             Dosage = request.Dosage,
             Frequency = request.Frequency,
+            Quantity = Math.Max(1, request.Quantity ?? 1),
             StartDate = start,
             EndDate = end,
             Notes = request.Notes,
@@ -113,6 +114,7 @@ public class MedicationsController : ControllerBase
         Name = m.Name,
         Dosage = m.Dosage,
         Frequency = m.Frequency,
+        Quantity = m.Quantity > 0 ? m.Quantity : 1,
         StartDate = m.StartDate.ToString("yyyy-MM-dd"),
         EndDate = m.EndDate?.ToString("yyyy-MM-dd"),
         Notes = m.Notes,
@@ -121,4 +123,3 @@ public class MedicationsController : ControllerBase
         PrescribedBy = m.PrescribedBy
     };
 }
-

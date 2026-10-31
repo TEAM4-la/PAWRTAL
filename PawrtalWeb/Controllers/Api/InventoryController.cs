@@ -144,14 +144,36 @@ public class InventoryController : ControllerBase
             expiry = parsedExpiry;
         }
 
+        string? sku = null;
+        if (!string.IsNullOrWhiteSpace(request.Sku))
+        {
+            var trimmedSku = request.Sku.Trim();
+            if (trimmedSku.Contains(' ') || !System.Text.RegularExpressions.Regex.IsMatch(trimmedSku, @"^[A-Z0-9]+(-[A-Z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                return BadRequest(new { error = "Invalid SKU / Barcode ID format. Only alphanumeric characters and optional hyphens are allowed (no spaces)." });
+            }
+            sku = trimmedSku.ToUpperInvariant();
+        }
+
+        string? batchNumber = null;
+        if (!string.IsNullOrWhiteSpace(request.BatchNumber))
+        {
+            var trimmedBatch = request.BatchNumber.Trim();
+            if (trimmedBatch.Contains(' ') || !System.Text.RegularExpressions.Regex.IsMatch(trimmedBatch, @"^[A-Z0-9]+(-[A-Z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                return BadRequest(new { error = "Invalid Batch / Lot Number format. Only alphanumeric characters and optional hyphens are allowed (no spaces)." });
+            }
+            batchNumber = trimmedBatch.ToUpperInvariant();
+        }
+
         var item = new InventoryItem
         {
             Id = Guid.NewGuid(),
             ItemType = char.ToUpper(itemType[0]) + itemType.Substring(1).ToLower(),
             Name = request.Name.Trim(),
             Category = string.IsNullOrWhiteSpace(request.Category) ? null : request.Category.Trim(),
-            Sku = string.IsNullOrWhiteSpace(request.Sku) ? null : request.Sku.Trim(),
-            BatchNumber = string.IsNullOrWhiteSpace(request.BatchNumber) ? null : request.BatchNumber.Trim(),
+            Sku = sku,
+            BatchNumber = batchNumber,
             Quantity = Math.Max(0, request.Quantity ?? 0),
             Unit = string.IsNullOrWhiteSpace(request.Unit) ? "units" : request.Unit.Trim(),
             MinStockLevel = Math.Max(0, request.MinStockLevel ?? 5),
@@ -195,8 +217,41 @@ public class InventoryController : ControllerBase
         }
 
         if (request.Category is not null) item.Category = string.IsNullOrWhiteSpace(request.Category) ? null : request.Category.Trim();
-        if (request.Sku is not null) item.Sku = string.IsNullOrWhiteSpace(request.Sku) ? null : request.Sku.Trim();
-        if (request.BatchNumber is not null) item.BatchNumber = string.IsNullOrWhiteSpace(request.BatchNumber) ? null : request.BatchNumber.Trim();
+
+        if (request.Sku is not null)
+        {
+            var trimmedSku = request.Sku.Trim();
+            if (!string.IsNullOrWhiteSpace(trimmedSku))
+            {
+                if (trimmedSku.Contains(' ') || !System.Text.RegularExpressions.Regex.IsMatch(trimmedSku, @"^[A-Z0-9]+(-[A-Z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    return BadRequest(new { error = "Invalid SKU / Barcode ID format. Only alphanumeric characters and optional hyphens are allowed (no spaces)." });
+                }
+                item.Sku = trimmedSku.ToUpperInvariant();
+            }
+            else
+            {
+                item.Sku = null;
+            }
+        }
+
+        if (request.BatchNumber is not null)
+        {
+            var trimmedBatch = request.BatchNumber.Trim();
+            if (!string.IsNullOrWhiteSpace(trimmedBatch))
+            {
+                if (trimmedBatch.Contains(' ') || !System.Text.RegularExpressions.Regex.IsMatch(trimmedBatch, @"^[A-Z0-9]+(-[A-Z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                {
+                    return BadRequest(new { error = "Invalid Batch / Lot Number format. Only alphanumeric characters and optional hyphens are allowed (no spaces)." });
+                }
+                item.BatchNumber = trimmedBatch.ToUpperInvariant();
+            }
+            else
+            {
+                item.BatchNumber = null;
+            }
+        }
+
         if (request.Quantity.HasValue) item.Quantity = Math.Max(0, request.Quantity.Value);
         if (request.Unit is not null) item.Unit = string.IsNullOrWhiteSpace(request.Unit) ? "units" : request.Unit.Trim();
         if (request.MinStockLevel.HasValue) item.MinStockLevel = Math.Max(0, request.MinStockLevel.Value);

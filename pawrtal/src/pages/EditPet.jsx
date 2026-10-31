@@ -46,7 +46,7 @@ export default function EditPet() {
     if (pet && !formData) {
       setFormData({
         name: pet.name || '',
-        species: pet.species || '',
+        species: pet.species?.trim().toLowerCase() || '',
         breed: pet.breed || '',
         date_of_birth: pet.date_of_birth || '',
         gender: pet.gender || '',
@@ -251,7 +251,7 @@ export default function EditPet() {
                           {option.label}
                         </SelectItem>
                       ))}
-                      {formData.species && !speciesOptions.some(o => o.value === formData.species) && (
+                      {formData.species && !speciesOptions.some(o => o.value.toLowerCase() === formData.species.trim().toLowerCase()) && (
                         <SelectItem value={formData.species}>
                           {formData.species.charAt(0).toUpperCase() + formData.species.slice(1)}
                         </SelectItem>

@@ -88,6 +88,21 @@ public class HealthRecordsController : ControllerBase
                 return BadRequest(new { error = "date must be yyyy-MM-dd" });
         }
 
+        string? storedFileUrl = request.FileUrl;
+        if (request.FileUrls != null && request.FileUrls.Count > 0)
+        {
+            var validUrls = request.FileUrls
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u.Trim())
+                .Distinct()
+                .ToList();
+
+            if (validUrls.Count > 0)
+            {
+                storedFileUrl = System.Text.Json.JsonSerializer.Serialize(validUrls);
+            }
+        }
+
         var record = new HealthRecord
         {
             Id = Guid.NewGuid(),
@@ -96,7 +111,7 @@ public class HealthRecordsController : ControllerBase
             Title = request.Title!,
             Description = request.Description,
             Date = date,
-            FileUrl = request.FileUrl,
+            FileUrl = storedFileUrl,
             IsVisibleToOwner = request.IsVisibleToOwner ?? true,
             VetEmail = request.VetEmail,
             VetName = request.VetName,
@@ -124,18 +139,54 @@ public class HealthRecordsController : ControllerBase
         return Ok(ToDto(record));
     }
 
-    private static HealthRecordDto ToDto(HealthRecord r) => new()
+    private static HealthRecordDto ToDto(HealthRecord r)
     {
-        Id = r.Id.ToString(),
-        PetId = r.PetId.ToString(),
-        RecordType = r.RecordType,
-        Title = r.Title,
-        Description = r.Description,
-        Date = r.Date.ToString("yyyy-MM-dd"),
-        FileUrl = r.FileUrl,
-        IsVisibleToOwner = r.IsVisibleToOwner,
-        VetEmail = r.VetEmail,
-        VetName = r.VetName
-    };
-}
+        var fileUrls = new List<string>();
+        string? primaryUrl = r.FileUrl;
 
+        if (!string.IsNullOrWhiteSpace(r.FileUrl))
+        {
+            var trimmed = r.FileUrl.Trim();
+            if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+            {
+                try
+                {
+                    var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(trimmed);
+                    if (parsed != null && parsed.Count > 0)
+                    {
+                        fileUrls = parsed.Where(u => !string.IsNullOrWhiteSpace(u)).ToList();
+                        primaryUrl = fileUrls.FirstOrDefault();
+                    }
+                }
+                catch
+                {
+                    fileUrls = new List<string> { trimmed };
+                }
+            }
+            else if (trimmed.Contains(','))
+            {
+                fileUrls = trimmed.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                primaryUrl = fileUrls.FirstOrDefault();
+            }
+            else
+            {
+                fileUrls = new List<string> { trimmed };
+            }
+        }
+
+        return new HealthRecordDto
+        {
+            Id = r.Id.ToString(),
+            PetId = r.PetId.ToString(),
+            RecordType = r.RecordType,
+            Title = r.Title,
+            Description = r.Description,
+            Date = r.Date.ToString("yyyy-MM-dd"),
+            FileUrl = primaryUrl,
+            FileUrls = fileUrls,
+            IsVisibleToOwner = r.IsVisibleToOwner,
+            VetEmail = r.VetEmail,
+            VetName = r.VetName
+        };
+    }
+}

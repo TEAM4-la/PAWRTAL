@@ -22,6 +22,9 @@ public class HealthRecordCreateRequest
     [JsonPropertyName("file_url")]
     public string? FileUrl { get; set; }
 
+    [JsonPropertyName("file_urls")]
+    public List<string>? FileUrls { get; set; }
+
     [JsonPropertyName("is_visible_to_owner")]
     public bool? IsVisibleToOwner { get; set; }
 
@@ -31,4 +34,3 @@ public class HealthRecordCreateRequest
     [JsonPropertyName("vet_name")]
     public string? VetName { get; set; }
 }
-

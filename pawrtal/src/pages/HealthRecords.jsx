@@ -48,6 +48,24 @@ const recordTypeColors = {
   other: 'bg-gray-100 text-gray-700',
 };
 
+const parseAttachments = (record) => {
+  if (Array.isArray(record?.file_urls) && record.file_urls.length > 0) {
+    return record.file_urls.filter(Boolean);
+  }
+  if (!record?.file_url) return [];
+  const raw = String(record.file_url).trim();
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {}
+  }
+  if (raw.includes(',')) {
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [raw];
+};
+
 export default function HealthRecords() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -263,14 +281,32 @@ export default function HealthRecords() {
                           )}
                         </div>
                       </div>
-                      {record.file_url && (
-                        <a href={record.file_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <ExternalLink className="w-4 h-4" />
-                            View
-                          </Button>
-                        </a>
-                      )}
+                      {(() => {
+                        const attachments = parseAttachments(record);
+                        if (attachments.length === 0) return null;
+                        if (attachments.length === 1) {
+                          return (
+                            <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                              <Button variant="outline" size="sm" className="gap-2">
+                                <ExternalLink className="w-4 h-4" />
+                                View
+                              </Button>
+                            </a>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end max-w-xs">
+                            {attachments.map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 px-2.5">
+                                  <ExternalLink className="w-3 h-3" />
+                                  Attachment {i + 1}
+                                </Button>
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
@@ -364,7 +400,7 @@ export default function HealthRecords() {
                         <div>
                           <h4 className="font-semibold text-gray-900">{med.name}</h4>
                           <p className="text-sm text-gray-500">
-                            {getPetName(med.pet_id)} • {med.dosage} • {med.frequency}
+                            {getPetName(med.pet_id)} • {med.quantity ? `Qty: ${med.quantity} • ` : ''}{med.dosage} • {med.frequency}
                           </p>
                           <p className="text-sm text-gray-400">
                             {format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}

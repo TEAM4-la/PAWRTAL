@@ -137,7 +137,7 @@ public class PetsController : ControllerBase
             Id = Guid.NewGuid(),
             OwnerEmail = request.OwnerEmail,
             Name = request.Name.Trim(),
-            Species = request.Species.Trim(),
+            Species = request.Species.Trim().ToLowerInvariant(),
             Breed = request.Breed,
             Gender = request.Gender,
             WeightKg = request.Weight,
@@ -174,7 +174,7 @@ public class PetsController : ControllerBase
 
         if (request.OwnerEmail is not null) pet.OwnerEmail = request.OwnerEmail;
         if (request.Name is not null) pet.Name = request.Name.Trim();
-        if (request.Species is not null) pet.Species = request.Species.Trim();
+        if (request.Species is not null) pet.Species = request.Species.Trim().ToLowerInvariant();
         if (request.Breed is not null) pet.Breed = request.Breed;
         if (request.Gender is not null) pet.Gender = request.Gender;
         if (request.Weight is not null) pet.WeightKg = request.Weight;
@@ -282,7 +282,7 @@ public class PetsController : ControllerBase
         Id = p.Id.ToString(),
         OwnerEmail = p.OwnerEmail,
         Name = p.Name,
-        Species = p.Species,
+        Species = string.IsNullOrWhiteSpace(p.Species) ? "other" : p.Species.Trim().ToLowerInvariant(),
         Breed = p.Breed,
         DateOfBirth = p.DateOfBirth?.ToString("yyyy-MM-dd"),
         Gender = p.Gender,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
@@ -28,14 +28,23 @@ export default function MyPets() {
     enabled: !!user?.email,
   });
 
+  const speciesList = useMemo(() => {
+    const set = new Set();
+    pets.forEach(p => {
+      if (p.species) {
+        set.add(p.species.trim().toLowerCase());
+      }
+    });
+    return Array.from(set).sort();
+  }, [pets]);
+
   const filteredPets = pets.filter(pet => {
-    const matchesSearch = pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = pet.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           pet.breed?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecies = speciesFilter === 'all' || pet.species === speciesFilter;
+    const matchesSpecies = speciesFilter === 'all' || 
+      (pet.species?.trim().toLowerCase() === speciesFilter.toLowerCase());
     return matchesSearch && matchesSpecies;
   });
-
-  const speciesList = [...new Set(pets.map(p => p.species))];
 
   const content = (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">

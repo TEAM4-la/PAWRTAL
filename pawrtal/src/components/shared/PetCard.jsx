@@ -27,7 +27,9 @@ const speciesColors = {
 };
 
 export default function PetCard({ pet, showActions = true, compact = false }) {
-  const Icon = speciesIcons[pet.species] || Dog;
+  const normalizedSpecies = pet.species?.trim().toLowerCase();
+  const Icon = speciesIcons[normalizedSpecies] || Dog;
+  const badgeColor = speciesColors[normalizedSpecies] || speciesColors.other;
   
   const calculateAge = (dob) => {
     if (!dob) return 'Unknown';
@@ -52,7 +54,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
           <p className="font-semibold text-gray-900 truncate">{pet.name}</p>
           <p className="text-sm text-gray-500">{pet.breed || pet.species}</p>
         </div>
-        <Badge className={speciesColors[pet.species]}>{pet.species}</Badge>
+        <Badge className={`capitalize ${badgeColor}`}>{pet.species}</Badge>
       </div>
     );
   }
@@ -67,7 +69,7 @@ export default function PetCard({ pet, showActions = true, compact = false }) {
             <Icon className="w-20 h-20 text-amber-300" />
           </div>
         )}
-        <Badge className={`absolute top-3 right-3 ${speciesColors[pet.species]}`}>
+        <Badge className={`absolute top-3 right-3 capitalize ${badgeColor}`}>
           {pet.species}
         </Badge>
       </div>

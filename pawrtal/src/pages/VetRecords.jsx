@@ -61,6 +61,24 @@ const recordTypeColors = {
   other: 'bg-gray-100 text-gray-700',
 };
 
+const parseAttachments = (record) => {
+  if (Array.isArray(record?.file_urls) && record.file_urls.length > 0) {
+    return record.file_urls.filter(Boolean);
+  }
+  if (!record?.file_url) return [];
+  const raw = String(record.file_url).trim();
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {}
+  }
+  if (raw.includes(',')) {
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [raw];
+};
+
 const speciesIcons = {
   dog: Dog,
   cat: Cat,
@@ -223,7 +241,7 @@ export default function VetRecords() {
         pet_id: m.pet_id,
         record_type: 'medication',
         title: m.dosage ? `${m.name} (${m.dosage})` : m.name,
-        description: [m.frequency, m.notes].filter(Boolean).join(' • '),
+        description: [m.quantity ? `Qty: ${m.quantity}` : null, m.frequency, m.notes].filter(Boolean).join(' • '),
         date: m.start_date,
         vet_name: m.prescribed_by,
         is_visible_to_owner: true,
@@ -373,14 +391,32 @@ export default function VetRecords() {
                         )}
                       </div>
                     </div>
-                    {record.file_url && (
-                      <a href={record.file_url} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <ExternalLink className="w-4 h-4" />
-                          View
-                        </Button>
-                      </a>
-                    )}
+                    {(() => {
+                      const attachments = parseAttachments(record);
+                      if (attachments.length === 0) return null;
+                      if (attachments.length === 1) {
+                        return (
+                          <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <ExternalLink className="w-4 h-4" />
+                              View
+                            </Button>
+                          </a>
+                        );
+                      }
+                      return (
+                        <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end max-w-xs">
+                          {attachments.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 px-2.5">
+                                <ExternalLink className="w-3 h-3" />
+                                Attachment {i + 1}
+                              </Button>
+                            </a>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </CardContent>
               </Card>

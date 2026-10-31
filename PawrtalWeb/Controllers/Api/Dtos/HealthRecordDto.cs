@@ -25,6 +25,9 @@ public class HealthRecordDto
     [JsonPropertyName("file_url")]
     public string? FileUrl { get; set; }
 
+    [JsonPropertyName("file_urls")]
+    public List<string> FileUrls { get; set; } = new();
+
     [JsonPropertyName("is_visible_to_owner")]
     public bool IsVisibleToOwner { get; set; }
 
@@ -34,4 +37,3 @@ public class HealthRecordDto
     [JsonPropertyName("vet_name")]
     public string? VetName { get; set; }
 }
-

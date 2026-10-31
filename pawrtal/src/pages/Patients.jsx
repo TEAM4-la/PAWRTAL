@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
@@ -82,16 +82,25 @@ export default function Patients() {
     return petAppointments[0]?.date;
   };
 
+  const speciesList = useMemo(() => {
+    const set = new Set();
+    pets.forEach(p => {
+      if (p.species) {
+        set.add(p.species.trim().toLowerCase());
+      }
+    });
+    return Array.from(set).sort();
+  }, [pets]);
+
   const filteredPets = pets.filter(pet => {
     const matchesSearch = 
-      pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pet.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pet.breed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pet.owner_email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecies = speciesFilter === 'all' || pet.species === speciesFilter;
+    const matchesSpecies = speciesFilter === 'all' || 
+      (pet.species?.trim().toLowerCase() === speciesFilter.toLowerCase());
     return matchesSearch && matchesSpecies;
   });
-
-  const speciesList = [...new Set(pets.map(p => p.species))];
 
   const content = (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
@@ -144,7 +153,7 @@ export default function Patients() {
       ) : (
         <div className="grid gap-4">
           {filteredPets.map((pet) => {
-            const Icon = speciesIcons[pet.species] || Dog;
+            const Icon = speciesIcons[pet.species?.trim().toLowerCase()] || Dog;
             const lastVisit = getLastVisit(pet.id);
             
             return (
@@ -163,7 +172,7 @@ export default function Patients() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <h3 className="font-semibold text-gray-900 text-lg">{pet.name}</h3>
-                          <Badge className={speciesColors[pet.species]}>{pet.species}</Badge>
+                          <Badge className={speciesColors[pet.species?.trim().toLowerCase()] || speciesColors.other}>{pet.species}</Badge>
                         </div>
                         <p className="text-gray-600 text-sm">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">

@@ -349,13 +349,28 @@ export default function VetPatientDetail() {
                           <div>
                             <h4 className="font-semibold text-gray-900">{med.name}</h4>
                             <p className="text-sm text-gray-500">
-                              {med.dosage} • {med.frequency}
+                              {med.quantity ? `Qty: ${med.quantity} • ` : ''}{med.dosage} • {med.frequency}
                               {formatDoctorName(med.prescribed_by) && (
                                 <span className="text-teal-700 font-medium ml-2">
                                   • Prescribed by: {formatDoctorName(med.prescribed_by)}
                                 </span>
                               )}
                             </p>
+                            {(med.start_date || med.end_date) && (
+                              <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                <span>
+                                  {med.start_date ? `Start: ${format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}` : ''}
+                                  {med.start_date && med.end_date ? ' — ' : ''}
+                                  {med.end_date ? `End: ${format(new Date(med.end_date + 'T00:00:00'), 'MMM d, yyyy')}` : ''}
+                                </span>
+                              </p>
+                            )}
+                            {med.notes && (
+                              <p className="text-xs text-gray-400 italic mt-0.5">
+                                Note: {med.notes}
+                              </p>
+                            )}
                           </div>
                           <Badge className={isStillActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
                             {isStillActive ? 'Active' : 'Completed'}

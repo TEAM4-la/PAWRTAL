@@ -16,6 +16,9 @@ public class MedicationCreateRequest
     [JsonPropertyName("frequency")]
     public string? Frequency { get; set; }
 
+    [JsonPropertyName("quantity")]
+    public int? Quantity { get; set; }
+
     [JsonPropertyName("start_date")]
     public string? StartDate { get; set; }
 
@@ -31,4 +34,3 @@ public class MedicationCreateRequest
     [JsonPropertyName("prescribed_by")]
     public string? PrescribedBy { get; set; }
 }
-

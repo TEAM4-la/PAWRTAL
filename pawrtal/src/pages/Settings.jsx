@@ -730,29 +730,33 @@ export default function Settings() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <div>
-                  <p className="font-medium text-gray-900">Vaccination Reminders</p>
-                  <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
-                </div>
-                <Switch
-                  className={notificationSwitchClassName}
-                  checked={!!formData.notification_preferences.vaccinations}
-                  onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
-                />
-              </div>
+              {isOwner && (
+                <>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">Vaccination Reminders</p>
+                      <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
+                    </div>
+                    <Switch
+                      className={notificationSwitchClassName}
+                      checked={!!formData.notification_preferences.vaccinations}
+                      onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
+                    />
+                  </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <div>
-                  <p className="font-medium text-gray-900">Medication Reminders</p>
-                  <p className="text-sm text-gray-500">Reminders for pet medications</p>
-                </div>
-                <Switch
-                  className={notificationSwitchClassName}
-                  checked={!!formData.notification_preferences.medications}
-                  onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
-                />
-              </div>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-gray-900">Medication Reminders</p>
+                      <p className="text-sm text-gray-500">Reminders for pet medications</p>
+                    </div>
+                    <Switch
+                      className={notificationSwitchClassName}
+                      checked={!!formData.notification_preferences.medications}
+                      onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </CardContent>

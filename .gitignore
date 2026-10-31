@@ -6,3 +6,6 @@ node_modules
 /PawrtalWeb/bin/Debug/net9.0
 /PawrtalWeb/obj
 scratch/
+# Documentation files — for local reference only, do not push to repository
+system_design_specification.pdf
+*.pdf

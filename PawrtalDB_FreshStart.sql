@@ -108,7 +108,7 @@ CREATE TABLE [Pets] (
     [DeletedAt]   DATETIME2        NULL,
     CONSTRAINT [FK_Pets_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL,
     CONSTRAINT [CK_Pets_Gender] CHECK ([Gender] IS NULL OR [Gender] IN ('male', 'female', 'unknown')),
-    CONSTRAINT [CK_Pets_Species] CHECK ([Species] IN ('dog', 'cat', 'bird', 'rabbit', 'hamster', 'fish', 'reptile', 'other', 'Dog', 'Cat', 'Bird', 'Rabbit', 'Hamster', 'Fish', 'Reptile', 'Other'))
+    CONSTRAINT [CK_Pets_Species] CHECK ([Species] IN ('dog', 'cat', 'bird', 'rabbit', 'hamster', 'fish', 'reptile', 'other'))
 );
 CREATE NONCLUSTERED INDEX [IX_Pets_OwnerEmail] ON [Pets] ([OwnerEmail]);
 GO
@@ -151,7 +151,7 @@ CREATE TABLE [HealthRecords] (
     [Title]           NVARCHAR(200)    NOT NULL,
     [Description]     NVARCHAR(MAX)    NULL,
     [Date]            DATE             NOT NULL,
-    [FileUrl]         NVARCHAR(2000)   NULL,
+    [FileUrl]         NVARCHAR(MAX)    NULL,
     [IsVisibleToOwner] BIT             NOT NULL DEFAULT 1,
     [VetEmail]        NVARCHAR(320)    NULL,
     [VetName]         NVARCHAR(200)    NULL,
@@ -196,6 +196,7 @@ CREATE TABLE [Medications] (
     [Name]         NVARCHAR(200)    NOT NULL,
     [Dosage]       NVARCHAR(100)    NULL,
     [Frequency]    NVARCHAR(100)    NULL,
+    [Quantity]     INT              NOT NULL DEFAULT 1,
     [StartDate]    DATE             NOT NULL,
     [EndDate]      DATE             NULL,
     [Notes]        NVARCHAR(MAX)    NULL,

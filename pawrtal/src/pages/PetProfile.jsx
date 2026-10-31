@@ -25,7 +25,8 @@ import {
   Rabbit,
   Fish,
   AlertTriangle,
-  Trash2
+  Trash2,
+  ExternalLink
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fns';
 import { toast } from "sonner";
@@ -48,6 +49,24 @@ const speciesIcons = {
   bird: Bird,
   rabbit: Rabbit,
   fish: Fish,
+};
+
+const parseAttachments = (record) => {
+  if (Array.isArray(record?.file_urls) && record.file_urls.length > 0) {
+    return record.file_urls.filter(Boolean);
+  }
+  if (!record?.file_url) return [];
+  const raw = String(record.file_url).trim();
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {}
+  }
+  if (raw.includes(',')) {
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [raw];
 };
 
 export default function PetProfile() {
@@ -421,13 +440,28 @@ export default function PetProfile() {
                         <div>
                           <p className="font-medium text-gray-900">{med.name}</p>
                           <p className="text-sm text-gray-500">
-                            {med.dosage} • {med.frequency}
+                            {med.quantity ? `Qty: ${med.quantity} • ` : ''}{med.dosage} • {med.frequency}
                             {formatDoctorName(med.prescribed_by) && (
                               <span className="text-orange-700 font-medium ml-2">
                                 • Prescribed by: {formatDoctorName(med.prescribed_by)}
                               </span>
                             )}
                           </p>
+                          {(med.start_date || med.end_date) && (
+                            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                              <span>
+                                {med.start_date ? `Start: ${format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}` : ''}
+                                {med.start_date && med.end_date ? ' — ' : ''}
+                                {med.end_date ? `End: ${format(new Date(med.end_date + 'T00:00:00'), 'MMM d, yyyy')}` : ''}
+                              </span>
+                            </p>
+                          )}
+                          {med.notes && (
+                            <p className="text-xs text-gray-400 italic mt-0.5">
+                              Note: {med.notes}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <Badge variant="outline" className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}>
@@ -470,11 +504,32 @@ export default function PetProfile() {
                           </p>
                         </div>
                       </div>
-                      {record.file_url && (
-                        <a href={record.file_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">View</Button>
-                        </a>
-                      )}
+                      {(() => {
+                        const attachments = parseAttachments(record);
+                        if (attachments.length === 0) return null;
+                        if (attachments.length === 1) {
+                          return (
+                            <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                              <Button variant="outline" size="sm" className="gap-1.5">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                View
+                              </Button>
+                            </a>
+                          );
+                        }
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end max-w-xs">
+                            {attachments.map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 px-2.5">
+                                  <ExternalLink className="w-3 h-3" />
+                                  Attachment {i + 1}
+                                </Button>
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

@@ -19,6 +19,9 @@ public class MedicationDto
     [JsonPropertyName("frequency")]
     public string? Frequency { get; set; }
 
+    [JsonPropertyName("quantity")]
+    public int Quantity { get; set; } = 1;
+
     [JsonPropertyName("start_date")]
     public string StartDate { get; set; } = null!;
 
@@ -34,4 +37,3 @@ public class MedicationDto
     [JsonPropertyName("prescribed_by")]
     public string? PrescribedBy { get; set; }
 }
-

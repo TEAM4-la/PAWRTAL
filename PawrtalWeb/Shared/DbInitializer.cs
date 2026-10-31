@@ -139,6 +139,33 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureFksSql);
 
+        // Normalize Pets Species casing in DB to prevent duplicates across reports and filters
+        const string normalizeSpeciesSql = @"
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Pets')
+BEGIN
+    UPDATE [Pets] SET [Species] = LOWER(LTRIM(RTRIM([Species]))) WHERE [Species] IS NOT NULL AND [Species] <> LOWER(LTRIM(RTRIM([Species])));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(normalizeSpeciesSql);
+
+        // Ensure Medications table has Quantity column
+        const string ensureMedicationColumnsSql = @"
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Medications') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Medications') AND name = 'Quantity')
+BEGIN
+    ALTER TABLE [Medications] ADD [Quantity] INT NOT NULL DEFAULT 1;
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureMedicationColumnsSql);
+
+        // Ensure HealthRecords FileUrl column is NVARCHAR(MAX) to support multiple attachments
+        const string ensureHealthRecordFileUrlSql = @"
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HealthRecords') AND name = 'FileUrl')
+BEGIN
+    ALTER TABLE [HealthRecords] ALTER COLUMN [FileUrl] NVARCHAR(MAX) NULL;
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureHealthRecordFileUrlSql);
+
         // 2. Seed starter vaccines & medications if table is empty
         var hasItems = await db.InventoryItems.AnyAsync();
         if (!hasItems)
