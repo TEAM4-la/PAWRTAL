@@ -225,7 +225,7 @@ export default function Journal() {
   const maxDate = `${currentYear}-12-31`;
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
       <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
@@ -249,7 +249,7 @@ export default function Journal() {
               <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-5 pt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label className="text-sm font-medium">Pet *</Label>
                   <div className="relative mt-1.5">
@@ -357,7 +357,7 @@ export default function Journal() {
 
               <div>
                 <Label className="text-sm font-medium mb-2 block">Pet's Mood</Label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {moodOptions.map((mood) => (
                     <Button
                       key={mood.value}
@@ -377,7 +377,7 @@ export default function Journal() {
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
                 <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
                   {createMutation.isPending || updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
                 </Button>
@@ -424,7 +424,7 @@ export default function Journal() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <Select value={selectedPet} onValueChange={setSelectedPet}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="All pets" />
           </SelectTrigger>
           <SelectContent>
@@ -435,7 +435,7 @@ export default function Journal() {
           </SelectContent>
         </Select>
         <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>

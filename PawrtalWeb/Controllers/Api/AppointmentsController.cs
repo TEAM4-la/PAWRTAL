@@ -343,14 +343,7 @@ public class AppointmentsController : ControllerBase
             if (!string.IsNullOrWhiteSpace(appt.VetEmail))
             {
                 var vetUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.VetEmail);
-                if (vetUser != null && !string.IsNullOrWhiteSpace(vetUser.FullName))
-                {
-                    vetDisplayName = $"Dr. {vetUser.FullName}";
-                }
-                else
-                {
-                    vetDisplayName = $"Dr. {appt.VetEmail}";
-                }
+                vetDisplayName = FormatDoctorName(vetUser?.FullName, appt.VetEmail);
             }
 
             string msg = notifyTime 
@@ -483,5 +476,29 @@ public class AppointmentsController : ControllerBase
             Status = status
         };
     }
-}
+    private static string FormatDoctorName(string? name, string? email = null)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var trimmed = name.Trim();
+            trimmed = System.Text.RegularExpressions.Regex.Replace(trimmed, @"^(?i)(dr\.?\s*)+", "").Trim();
+            if (!string.IsNullOrWhiteSpace(trimmed))
+            {
+                return $"Dr. {trimmed}";
+            }
+        }
 
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var prefix = email.Split('@')[0];
+            prefix = System.Text.RegularExpressions.Regex.Replace(prefix, @"^(?i)(dr\.?\s*)+", "").Trim();
+            if (!string.IsNullOrWhiteSpace(prefix))
+            {
+                var capitalized = char.ToUpperInvariant(prefix[0]) + (prefix.Length > 1 ? prefix[1..] : "");
+                return $"Dr. {capitalized}";
+            }
+        }
+
+        return "our veterinary team";
+    }
+}

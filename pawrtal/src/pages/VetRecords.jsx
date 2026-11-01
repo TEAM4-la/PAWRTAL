@@ -296,7 +296,7 @@ export default function VetRecords() {
   });
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <button onClick={() => navigate(createPageUrl('VetDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
@@ -323,7 +323,7 @@ export default function VetRecords() {
           />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>

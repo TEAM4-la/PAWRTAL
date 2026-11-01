@@ -22,7 +22,10 @@ import {
   Cat,
   Bird,
   Rabbit,
-  Fish
+  Fish,
+  Pill,
+  Activity,
+  Waves
 } from 'lucide-react';
 import { format, startOfDay, parse, isToday } from 'date-fns';
 import { toast } from "sonner";
@@ -32,9 +35,11 @@ import OwnerSidebar from '@/components/layout/OwnerSidebar';
 const appointmentTypes = [
   { value: 'checkup', label: 'General Checkup', icon: Stethoscope, color: 'bg-teal-100 text-teal-700' },
   { value: 'vaccination', label: 'Vaccination', icon: Syringe, color: 'bg-purple-100 text-purple-700' },
+  { value: 'deworming', label: 'Deworming', icon: Pill, color: 'bg-amber-100 text-amber-700' },
   { value: 'grooming', label: 'Grooming', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
   { value: 'dental', label: 'Dental Care', icon: Heart, color: 'bg-blue-100 text-blue-700' },
-  { value: 'follow_up', label: 'Follow-up', icon: CalendarIcon, color: 'bg-gray-100 text-gray-700' },
+  { value: 'surgery', label: 'Surgery', icon: Activity, color: 'bg-red-100 text-red-700' },
+  { value: 'ultra_sound', label: 'Ultra Sound', icon: Waves, color: 'bg-cyan-100 text-cyan-700' },
   { value: 'consultation', label: 'Consultation', icon: Stethoscope, color: 'bg-indigo-100 text-indigo-700' },
 ];
 
@@ -254,7 +259,7 @@ export default function BookAppointment() {
                           setErrors(prev => ({ ...prev, pet_id: false }));
                         }}
                         className={cn(
-                          "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                          "flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all",
                           isSelected
                             ? "border-orange-500 bg-orange-50/60"
                             : "border-gray-200 hover:border-gray-300"
@@ -289,7 +294,7 @@ export default function BookAppointment() {
               <Label className="text-sm font-medium mb-3 block">
                 Appointment Type <span className="text-red-500">*</span>
               </Label>
-              <div className={cn("grid sm:grid-cols-2 gap-3 p-2 rounded-xl transition-all border", errors.type ? "border-red-500 bg-red-50/5" : "border-transparent")}>
+              <div className={cn("grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 p-2 rounded-xl transition-all border", errors.type ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {appointmentTypes.map((type) => {
                   const isSelected = formData.type === type.value;
                   return (
@@ -404,7 +409,7 @@ export default function BookAppointment() {
                   Please select a date first to see available time slots.
                 </p>
               )}
-              <div className={cn("grid grid-cols-3 sm:grid-cols-4 gap-2 p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
+              <div className={cn("grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {timeSlots.map((time) => {
                   const isSelected = formData.time === time;
                   const disabled = isSlotDisabled(time);
@@ -421,7 +426,7 @@ export default function BookAppointment() {
                           setErrors(prev => ({ ...prev, time: false }));
                         }}
                         className={cn(
-                          "h-10 w-full text-xs sm:text-sm transition-all",
+                          "h-9 sm:h-10 w-full text-[11px] sm:text-sm px-1 sm:px-3 transition-all",
                           isSelected && "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm",
                           disabled && isBooked && "opacity-40 line-through cursor-not-allowed bg-red-50 border-red-200 text-red-400",
                           disabled && !isBooked && "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400"

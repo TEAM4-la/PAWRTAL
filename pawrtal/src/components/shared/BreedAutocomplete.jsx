@@ -21,7 +21,7 @@ const BREEDS_BY_SPECIES = {
     'Pug', 'Rhodesian Ridgeback', 'Rottweiler', 'Saint Bernard', 'Samoyed', 'Schipperke', 
     'Schnauzer', 'Scottish Terrier', 'Shetland Sheepdog', 'Shiba Inu', 'Shih Tzu', 
     'Siberian Husky', 'Staffordshire Bull Terrier', 'Vizsla', 'Weimaraner', 'Welsh Corgi', 
-    'West Highland White Terrier', 'Whippet', 'Yorkshire Terrier', 'Mixed Breed (Dog)', 'Askal / Aspin'
+    'West Highland White Terrier', 'Whippet', 'Yorkshire Terrier', 'Mixed Breed (Dog)', 'Aspin'
   ],
   cat: [
     'Abyssinian', 'American Curl', 'American Shorthair', 'American Wirehair', 

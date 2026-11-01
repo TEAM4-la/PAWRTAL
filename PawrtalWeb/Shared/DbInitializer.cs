@@ -166,6 +166,28 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureHealthRecordFileUrlSql);
 
+        // Ensure CK_Appointments_Type check constraint supports all appointment types including deworming, surgery, and ultrasound
+        const string ensureAppointmentTypeCheckConstraintSql = @"
+IF OBJECT_ID(N'CK_Appointments_Type', 'C') IS NOT NULL
+BEGIN
+    ALTER TABLE [Appointments] DROP CONSTRAINT [CK_Appointments_Type];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments')
+BEGIN
+    ALTER TABLE [Appointments] WITH CHECK ADD CONSTRAINT [CK_Appointments_Type] 
+    CHECK ([Type] IN (
+        'checkup', 'general_checkup', 'General Checkup', 
+        'vaccination', 'grooming', 'dental', 
+        'follow_up', 'consultation', 'surgery', 'Surgery',
+        'emergency', 'examination', 'other',
+        'deworming', 'Deworming',
+        'ultrasound', 'ultra_sound', 'Ultra Sound'
+    ));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureAppointmentTypeCheckConstraintSql);
+
         // 2. Seed starter vaccines & medications if table is empty
         var hasItems = await db.InventoryItems.AnyAsync();
         if (!hasItems)
@@ -466,5 +488,16 @@ END
         {
             await db.SaveChangesAsync();
         }
+
+        // Clean up any historical notifications that contain duplicate 'Dr. Dr.'
+        try
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                UPDATE [Notifications]
+                SET [Message] = REPLACE(REPLACE([Message], 'Dr. Dr. ', 'Dr. '), 'Dr. Dr.', 'Dr. ')
+                WHERE [Message] LIKE '%Dr. Dr.%';
+            ");
+        }
+        catch { }
     }
 }

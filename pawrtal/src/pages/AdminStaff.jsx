@@ -46,7 +46,7 @@ function ResetPasswordModal({ targetUser, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+      <div className="bg-white rounded-2xl shadow-2xl w-[calc(100%-2rem)] max-w-md p-4 sm:p-6 relative">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -167,7 +167,7 @@ export default function AdminStaff() {
 
   return (
     <AdminSidebar currentUser={user}>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
@@ -192,7 +192,7 @@ export default function AdminStaff() {
             <h2 className="text-lg font-semibold text-gray-900">Veterinarians</h2>
             <Badge className="bg-teal-100 text-teal-700">{vets.length}</Badge>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {vets.length === 0 ? (
               <p className="text-gray-400 text-sm col-span-3">No veterinarians registered yet.</p>
             ) : vets.map(vet => {
@@ -265,7 +265,55 @@ export default function AdminStaff() {
             <Badge className="bg-amber-100 text-amber-700">{owners.length}</Badge>
           </div>
           <Card className="border-0 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+            
+          {/* Mobile Owner Cards (< md) */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {owners.length === 0 ? (
+              <div className="py-8 text-center text-gray-400 text-sm">No pet owners registered yet.</div>
+            ) : (
+              owners.map(owner => {
+                const ownerAppts = allAppointments.filter(a => a.owner_email === owner.email);
+                return (
+                  <div key={owner.id} className="p-4 space-y-3 bg-white">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0">
+                          {owner.full_name?.[0] || '?'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm">{owner.full_name}</p>
+                          <p className="text-xs text-gray-500 break-all">{owner.email}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-xs shrink-0">
+                        {ownerAppts.length} appts
+                      </Badge>
+                    </div>
+
+                    {owner.phone && (
+                      <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span>{owner.phone}</span>
+                      </p>
+                    )}
+
+                    <div className="pt-1">
+                      <button
+                        onClick={() => setResetTarget(owner)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        Reset Password
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-sm min-w-[650px]">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>

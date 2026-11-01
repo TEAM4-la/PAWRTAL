@@ -38,16 +38,26 @@ export function getAppointmentStatus(appointment) {
  */
 export function formatDoctorName(name, email) {
   if (name && typeof name === 'string' && name.trim()) {
-    const trimmed = name.trim();
-    if (/^dr\.?\s*/i.test(trimmed)) {
-      return trimmed.replace(/^dr\.?\s*/i, 'Dr. ');
+    const clean = name.trim().replace(/^(dr\.?\s*)+/i, '').trim();
+    if (clean) {
+      return `Dr. ${clean}`;
     }
-    return `Dr. ${trimmed}`;
   }
   if (email && typeof email === 'string' && email.trim()) {
-    const prefix = email.split('@')[0];
-    const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-    return `Dr. ${capitalized}`;
+    let prefix = email.split('@')[0];
+    prefix = prefix.replace(/^(dr\.?\s*)+/i, '').trim();
+    if (prefix) {
+      const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+      return `Dr. ${capitalized}`;
+    }
   }
   return null;
+}
+
+/**
+ * Clean up notification message to eliminate duplicate 'Dr. Dr.' or similar artifacts
+ */
+export function cleanNotificationMessage(msg) {
+  if (!msg || typeof msg !== 'string') return msg;
+  return msg.replace(/(dr\.?\s*){2,}/gi, 'Dr. ');
 }

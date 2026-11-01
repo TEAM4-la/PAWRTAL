@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
+import { cleanNotificationMessage } from '@/utils';
 
 export default function NotificationsPopover({ user }) {
   const queryClient = useQueryClient();
@@ -74,7 +75,7 @@ export default function NotificationsPopover({ user }) {
                         {notification.title}
                       </h5>
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {notification.message}
+                        {cleanNotificationMessage(notification.message)}
                       </p>
                       <span className="text-xs text-gray-400 mt-2 block">
                         {formatDistanceToNow(new Date(notification.createdDate), {

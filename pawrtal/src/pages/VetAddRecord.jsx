@@ -985,12 +985,12 @@ export default function VetAddRecord() {
                               }}
                               placeholder="e.g., Rabies, DHPP, FVRCP"
                               className={cn(
-                                matched ? "pr-36" : "pr-10",
+                                matched ? "sm:pr-36 pr-10" : "pr-10",
                                 itemErrors.vaccine_name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : ""
                               )}
                             />
                             {matched ? (
-                              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-10 pointer-events-none">
+                              <div className="hidden sm:flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center z-10 pointer-events-none">
                                 {matched.is_expired ? (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
                                     <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
@@ -1108,11 +1108,11 @@ export default function VetAddRecord() {
                                 onChange={(e) => updateVaccineItem(item.id, 'next_due_date', e.target.value)}
                                 className={cn(
                                   "h-10",
-                                  itemErrors.next_due_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-10" : ""
+                                  itemErrors.next_due_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-14" : ""
                                 )}
                               />
                               {itemErrors.next_due_date && (
-                                <AlertTriangle className="w-4 h-4 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                                <AlertTriangle className="w-4 h-4 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                               )}
                             </div>
                             {itemErrors.next_due_date && (
@@ -1330,12 +1330,12 @@ export default function VetAddRecord() {
                               }}
                               placeholder="e.g., Clavamox, Metacam, NexGard"
                               className={cn(
-                                matched ? "pr-36" : "pr-10",
+                                matched ? "sm:pr-36 pr-10" : "pr-10",
                                 itemErrors.name ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : ""
                               )}
                             />
                             {matched ? (
-                              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-10 pointer-events-none">
+                              <div className="hidden sm:flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center z-10 pointer-events-none">
                                 {matched.is_expired ? (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shadow-xs">
                                     <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
@@ -1553,11 +1553,11 @@ export default function VetAddRecord() {
                                 onChange={(e) => updateMedicationItem(item.id, 'end_date', e.target.value)}
                                 className={cn(
                                   "h-10",
-                                  itemErrors.end_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-10" : ""
+                                  itemErrors.end_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-14" : ""
                                 )}
                               />
                               {itemErrors.end_date && (
-                                <AlertTriangle className="w-4 h-4 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                                <AlertTriangle className="w-4 h-4 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
                               )}
                             </div>
                             {itemErrors.end_date && (
@@ -1724,6 +1724,8 @@ export default function VetAddRecord() {
                           <SelectItem value="dirty">Dirty</SelectItem>
                           <SelectItem value="flea_infested">Flea-infested</SelectItem>
                           <SelectItem value="dry_flaky">Dry/Flaky</SelectItem>
+                          <SelectItem value="ticks">Tick/s</SelectItem>
+                          <SelectItem value="hotspots">Hotspots</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

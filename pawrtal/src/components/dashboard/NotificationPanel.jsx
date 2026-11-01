@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
+import { cleanNotificationMessage } from '@/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 
@@ -159,7 +160,7 @@ export default function NotificationPanel({ userEmail, accentColor = 'amber', al
                                 {notification.title}
                               </p>
                               <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
-                                {notification.message}
+                                {cleanNotificationMessage(notification.message)}
                               </p>
                               <p className="text-xs text-gray-400 mt-1.5">
                                 {formatDistanceToNow(new Date(notification.created_date), { addSuffix: true })}

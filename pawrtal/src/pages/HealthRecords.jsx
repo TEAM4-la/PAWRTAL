@@ -178,7 +178,7 @@ export default function HealthRecords() {
   });
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
@@ -187,10 +187,10 @@ export default function HealthRecords() {
           <h1 className="text-3xl font-bold text-gray-900">Health Records</h1>
           <p className="text-gray-500 mt-1">View all health information for your pets</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           <Filter className="w-5 h-5 text-gray-400" />
           <Select value={selectedPet} onValueChange={setSelectedPet}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Filter by pet" />
             </SelectTrigger>
             <SelectContent>
@@ -258,10 +258,10 @@ export default function HealthRecords() {
               {healthRecords.map((record) => (
                 <Card key={record.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-orange-600" />
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2 mb-1">

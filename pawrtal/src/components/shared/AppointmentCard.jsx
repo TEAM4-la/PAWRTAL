@@ -54,6 +54,9 @@ const typeColors = {
   emergency: 'bg-orange-50 text-orange-700',
   follow_up: 'bg-gray-50 text-gray-700',
   consultation: 'bg-indigo-50 text-indigo-700',
+  deworming: 'bg-amber-50 text-amber-700',
+  ultra_sound: 'bg-cyan-50 text-cyan-700',
+  ultrasound: 'bg-cyan-50 text-cyan-700',
 };
 
 export default function AppointmentCard({ 
@@ -94,7 +97,7 @@ export default function AppointmentCard({
           derivedStatus === 'expired' && "bg-gray-400",
         )} />
         
-        <div className="flex-1 p-5">
+        <div className="flex-1 p-4 sm:p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
               {showPetInfo && (pet || appointment.pet_name) && (
@@ -110,8 +113,8 @@ export default function AppointmentCard({
                 {showPetInfo && (pet || appointment.pet_name) && (
                   <h4 className="font-semibold text-gray-900">{pet?.name || appointment.pet_name}</h4>
                 )}
-                <Badge className={cn("mt-1", typeColors[appointment.type])}>
-                  {appointment.type.replace('_', ' ')}
+                <Badge className={cn("mt-1 capitalize", typeColors[appointment.type] || "bg-gray-100 text-gray-700")}>
+                  {appointment.type?.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
@@ -168,7 +171,7 @@ export default function AppointmentCard({
           )}
 
           {(onConfirm || onCancel || onComplete) && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
-            <div className="flex gap-2 pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
               {onConfirm && derivedStatus === 'pending' && (
                 <Button 
                   size="sm" 

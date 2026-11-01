@@ -193,7 +193,7 @@ export default function PetProfile() {
   const activeMeds = medications.filter(m => m.is_active);
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       <Button
         variant="ghost"
         onClick={() => navigate(createPageUrl('Dashboard'))}
@@ -214,12 +214,12 @@ export default function PetProfile() {
           />
         </div>
         
-        <div className="relative z-10 px-6 pb-6 pt-3">
+        <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6 pt-3">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             {/* Avatar & Pet Info Group */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-5">
               {/* Pet Avatar - overlaps banner */}
-              <div className="relative z-20 -mt-16 sm:-mt-20 w-32 h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
+              <div className="relative z-20 -mt-14 sm:-mt-20 w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
                 {pet.photo_url ? (
                   <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
@@ -273,7 +273,7 @@ export default function PetProfile() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-4 text-center border-0 shadow-sm">
           <Clock className="w-8 h-8 mx-auto text-orange-500 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{calculateAge(pet.date_of_birth)}</p>
@@ -379,7 +379,7 @@ export default function PetProfile() {
                       (v.date_administered === vax.date_administered && v.id > vax.id))
                     );
                     return (
-                    <div key={vax.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div key={vax.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                           <Syringe className="w-5 h-5 text-purple-600" />
@@ -432,7 +432,7 @@ export default function PetProfile() {
                   {medications.map((med) => {
                     const isStillActive = med.is_active && (!med.end_date || new Date(med.end_date + 'T00:00:00') >= new Date());
                     return (
-                    <div key={med.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div key={med.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
                           <Pill className={`w-5 h-5 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
@@ -487,7 +487,7 @@ export default function PetProfile() {
               ) : (
                 <div className="space-y-3">
                   {healthRecords.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
                           <FileText className="w-5 h-5 text-orange-600" />

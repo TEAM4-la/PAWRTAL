@@ -47,6 +47,11 @@ namespace PawtralWeb.Services
                 catch { }
             }
 
+            if (!string.IsNullOrEmpty(message))
+            {
+                message = System.Text.RegularExpressions.Regex.Replace(message, @"(?i)\b(dr\.?\s*){2,}", "Dr. ");
+            }
+
             _db.Notifications.Add(new Notification
             {
                 Id = Guid.NewGuid(),

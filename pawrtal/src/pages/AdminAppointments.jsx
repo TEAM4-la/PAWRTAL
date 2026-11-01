@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Search, Calendar, Clock, Check, X, Stethoscope, ChevronLeft } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { toast } from 'sonner';
+import { cn } from "@/lib/utils";
 import { getAppointmentStatus, createPageUrl } from '@/utils';
 import {
   Dialog,
@@ -98,7 +99,7 @@ export default function AdminAppointments() {
 
   return (
     <AdminSidebar currentUser={user}>
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
         <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
@@ -107,13 +108,13 @@ export default function AdminAppointments() {
           <p className="text-gray-500 mt-1">Manage clinic-wide appointments</p>
         </div>
 
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input placeholder="Search by pet, owner, or veterinarian..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -128,7 +129,96 @@ export default function AdminAppointments() {
         </div>
 
         <Card className="border-0 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List (< md) */}
+          <div className="divide-y divide-gray-100 md:hidden">
+            {filtered.length === 0 ? (
+              <div className="py-12 text-center text-gray-400 text-sm">No appointments found</div>
+            ) : (
+              filtered.map(appt => {
+                const pet = pets.find(p => p.id === appt.pet_id);
+                const vet = getVet(appt.vet_email);
+                const currentStatus = getAppointmentStatus(appt);
+                return (
+                  <div key={appt.id} className="p-4 space-y-3 bg-white">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-semibold text-gray-900 text-base">{pet?.name || '—'}</span>
+                        <span className="text-xs text-gray-500 block break-all">{appt.owner_email}</span>
+                      </div>
+                      <Badge className={cn("shrink-0", statusConfig[currentStatus])}>{currentStatus}</Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50/70 p-2.5 rounded-lg">
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Type</span>
+                        <span className="font-medium text-gray-800 capitalize">{appt.type?.replace('_', ' ')}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Schedule</span>
+                        <div className="flex items-center gap-1 font-medium text-gray-800">
+                          <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+                          <span>{format(new Date(appt.date + 'T00:00:00'), 'MMM d, yyyy')}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                          <span>{appt.time}</span>
+                        </div>
+                      </div>
+                      <div className="col-span-2 pt-1 border-t border-gray-100">
+                        <span className="text-gray-400 block text-[11px]">Veterinarian</span>
+                        {appt.vet_email ? (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <Stethoscope className="w-3 h-3 text-teal-600 shrink-0" />
+                            <span className="font-medium text-gray-800">
+                              {vet?.full_name ? (vet.full_name.startsWith('Dr.') ? vet.full_name : `Dr. ${vet.full_name}`) : (appt.vet_email || 'Assigned')}
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-normal mt-0.5">
+                            Any Available Vet
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {(currentStatus === 'pending' || currentStatus === 'confirmed') && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {currentStatus === 'pending' && (
+                          <Button size="sm" className="h-8 text-xs bg-blue-500 hover:bg-blue-600 flex-1" onClick={() => updateMutation.mutate({ id: appt.id, status: 'confirmed' })}>
+                            <Check className="w-3.5 h-3.5 mr-1" /> Confirm
+                          </Button>
+                        )}
+                        {currentStatus === 'confirmed' && (
+                          <Button 
+                            size="sm" 
+                            className="h-8 text-xs bg-green-500 hover:bg-green-600 flex-1 disabled:opacity-50" 
+                            disabled={!isAppointmentTimeReached(appt)}
+                            title={!isAppointmentTimeReached(appt) ? "Cannot complete appointment before its scheduled date and time" : ""}
+                            onClick={() => updateMutation.mutate({ id: appt.id, status: 'completed' })}
+                          >
+                            <Check className="w-3.5 h-3.5 mr-1" /> Complete
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 text-xs text-red-500 border-red-200 hover:bg-red-50" 
+                          onClick={() => {
+                            setCancelTarget(appt);
+                            setCancelReason('');
+                          }}
+                        >
+                          <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-sm min-w-[900px]">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>

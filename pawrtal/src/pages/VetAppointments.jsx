@@ -214,7 +214,7 @@ export default function VetAppointments() {
   };
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <button onClick={() => navigate(createPageUrl('VetDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
         <ChevronLeft className="w-4 h-4" /> Back
       </button>
@@ -226,7 +226,7 @@ export default function VetAppointments() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -238,7 +238,7 @@ export default function VetAppointments() {
         </div>
 
         <Select value={scopeFilter} onValueChange={setScopeFilter}>
-          <SelectTrigger className="w-[190px] h-10 bg-white">
+          <SelectTrigger className="w-full sm:w-[190px] h-10 bg-white">
             <SelectValue placeholder="All visible" />
           </SelectTrigger>
           <SelectContent>
@@ -250,7 +250,7 @@ export default function VetAppointments() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 w-full sm:w-auto">
               <CalendarIcon className="w-4 h-4" />
               {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Filter by date'}
             </Button>
