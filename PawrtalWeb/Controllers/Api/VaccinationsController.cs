@@ -95,6 +95,25 @@ public class VaccinationsController : ControllerBase
             );
         }
 
+        int qtyUsed = Math.Max(1, request.Quantity ?? 1);
+        string doctorName = !string.IsNullOrWhiteSpace(request.AdministeredBy) 
+            ? request.AdministeredBy.Trim() 
+            : "Veterinarian";
+        if (!doctorName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase))
+        {
+            doctorName = $"Dr. {doctorName}";
+        }
+
+        string petName = pet?.Name ?? "Patient";
+
+        // Notify Admin of vaccine used and quantity deducted
+        await _notifications.NotifyAdminsAsync(
+            "vaccination",
+            $"Vaccine Administered: {v.VaccineName}",
+            $"{doctorName} administered {v.VaccineName} for {petName}. Quantity deducted: {qtyUsed} unit{(qtyUsed == 1 ? "" : "s")}.",
+            "vaccinations"
+        );
+
         return Ok(ToDto(v));
     }
 

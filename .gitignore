@@ -1,4 +1,4 @@
-node_modules
+ï»¿node_modules
 /.vs
 /PawtralWeb/bin/Debug/net9.0
 /PawtralWeb/obj
@@ -6,6 +6,19 @@ node_modules
 /PawrtalWeb/bin/Debug/net9.0
 /PawrtalWeb/obj
 scratch/
-# Documentation files — for local reference only, do not push to repository
-system_design_specification.pdf
+
+# Documentation & Manuals - local documentation only, strictly ignored by git
 *.pdf
+*manual*.md
+*Manual*.md
+*manual*.pdf
+*Manual*.pdf
+*documentation*
+*Documentation*
+system_design_specification*
+docs/
+manuals/
+
+# Storyboards & Visual Specifications - local documentation only, strictly ignored by git
+*storyboard*
+*Storyboard*

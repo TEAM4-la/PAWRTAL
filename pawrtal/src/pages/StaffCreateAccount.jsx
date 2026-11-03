@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/apiClient';
 import VetSidebar from '@/components/layout/VetSidebar';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { ShieldAlert, RefreshCw, Mail, Lock, User, Phone, Eye, EyeOff, Stethoscope, Building2, ChevronLeft, ChevronDown, AlertTriangle } from 'lucide-react';
 
 function StaffForm({ isAdminOnly }) {
@@ -40,8 +41,13 @@ function StaffForm({ isAdminOnly }) {
     if (!lastName.trim()) {
       newErrors.lastName = 'Last name is required.';
     }
-    if (!phone.trim()) {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone) {
       newErrors.phone = 'Phone number is required.';
+    } else if (cleanPhone.length !== 11) {
+      newErrors.phone = 'Phone number must be exactly 11 digits.';
+    } else if (!cleanPhone.startsWith('09')) {
+      newErrors.phone = 'Phone number must start with 09 (e.g., 09123456789).';
     }
     if (!email.trim()) {
       newErrors.email = 'Email address is required.';
@@ -82,7 +88,7 @@ function StaffForm({ isAdminOnly }) {
         middle_name: middleName.trim() || undefined,
         last_name: lastName.trim(),
       });
-      setDone(`Account created for ${email.trim()}. They can sign in from the staff sign-in flow.`);
+      setDone(`Account created for ${email.trim()}. They can now sign in using their credentials.`);
       setEmail('');
       setPassword('');
       setConfirm('');
@@ -113,13 +119,7 @@ function StaffForm({ isAdminOnly }) {
 
   return (
     <div className="p-6 lg:p-10 max-w-2xl mx-auto">
-      <button 
-        type="button"
-        onClick={() => navigate(isAdminOnly ? createPageUrl('AdminStaff') : createPageUrl('VetDashboard'))} 
-        className={`inline-flex items-center gap-1 text-sm text-gray-500 ${isAdminOnly ? 'hover:text-violet-700' : 'hover:text-teal-700'} transition-colors mb-4`}
-      >
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      <BackButton to={isAdminOnly ? createPageUrl('AdminStaff') : createPageUrl('VetDashboard')} />
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Create staff account</h1>
       <p className="text-gray-500 text-sm mb-8">
         Add a veterinarian or clinic admin. They will use this email and password to sign in.
@@ -234,9 +234,12 @@ function StaffForm({ isAdminOnly }) {
               <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={11}
                 value={phone}
                 onChange={(e) => {
-                  setPhone(e.target.value);
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                  setPhone(val);
                   setErrors((prev) => ({ ...prev, phone: undefined }));
                 }}
                 className={`w-full pl-10 pr-3.5 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
@@ -244,14 +247,16 @@ function StaffForm({ isAdminOnly }) {
                     ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
                     : `border-gray-200 ${ring}`
                 }`}
-                placeholder="0912 345 6789"
+                placeholder="09123456789"
               />
             </div>
-            {errors.phone && (
+            {errors.phone ? (
               <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                 {errors.phone}
               </p>
+            ) : (
+              <p className="text-[11px] text-gray-500 mt-1">Format: 09XXXXXXXXX (11 digits)</p>
             )}
           </div>
         </div>

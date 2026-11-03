@@ -69,10 +69,14 @@ public class AppointmentsController : ControllerBase
         var vetEmails = appts.Where(a => !string.IsNullOrEmpty(a.VetEmail)).Select(a => a.VetEmail!.Trim()).Distinct().ToList();
         var vetUsersList = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToListAsync();
         var vetUsers = vetUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
+        var ownerEmails = appts.Where(a => !string.IsNullOrEmpty(a.OwnerEmail)).Select(a => a.OwnerEmail!.Trim()).Distinct().ToList();
+        var ownerUsersList = await _db.Users.AsNoTracking().Where(u => ownerEmails.Contains(u.Email)).ToListAsync();
+        var ownerUsers = ownerUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
         return Ok(appts.Select(a => ToDto(
             a,
             !string.IsNullOrEmpty(a.VetEmail) && vetUsers.TryGetValue(a.VetEmail.Trim(), out var vn) ? vn : null,
-            petNames.TryGetValue(a.PetId, out var pn) ? pn : null
+            petNames.TryGetValue(a.PetId, out var pn) ? pn : null,
+            !string.IsNullOrEmpty(a.OwnerEmail) && ownerUsers.TryGetValue(a.OwnerEmail.Trim(), out var on) ? on : null
         )).ToList());
     }
 
@@ -94,10 +98,14 @@ public class AppointmentsController : ControllerBase
         var vetEmails = appts.Where(a => !string.IsNullOrEmpty(a.VetEmail)).Select(a => a.VetEmail!.Trim()).Distinct().ToList();
         var vetUsersList = await _db.Users.AsNoTracking().Where(u => vetEmails.Contains(u.Email)).ToListAsync();
         var vetUsers = vetUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
+        var ownerEmails = appts.Where(a => !string.IsNullOrEmpty(a.OwnerEmail)).Select(a => a.OwnerEmail!.Trim()).Distinct().ToList();
+        var ownerUsersList = await _db.Users.AsNoTracking().Where(u => ownerEmails.Contains(u.Email)).ToListAsync();
+        var ownerUsers = ownerUsersList.ToDictionary(u => u.Email.Trim(), u => u.FullName, StringComparer.OrdinalIgnoreCase);
         return Ok(appts.Select(a => ToDto(
             a,
             !string.IsNullOrEmpty(a.VetEmail) && vetUsers.TryGetValue(a.VetEmail.Trim(), out var vn) ? vn : null,
-            petNames.TryGetValue(a.PetId, out var pn) ? pn : null
+            petNames.TryGetValue(a.PetId, out var pn) ? pn : null,
+            !string.IsNullOrEmpty(a.OwnerEmail) && ownerUsers.TryGetValue(a.OwnerEmail.Trim(), out var on) ? on : null
         )).ToList());
     }
 
@@ -213,7 +221,8 @@ public class AppointmentsController : ControllerBase
             createdVetName = vUser?.FullName;
         }
         var createdPet = await _db.Pets.AsNoTracking().FirstOrDefaultAsync(p => p.Id == appt.PetId);
-        return Ok(ToDto(appt, createdVetName, createdPet?.Name));
+        var createdOwner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail);
+        return Ok(ToDto(appt, createdVetName, createdPet?.Name, createdOwner?.FullName));
     }
 
     [HttpPut("{id:guid}")]
@@ -285,6 +294,40 @@ public class AppointmentsController : ControllerBase
         if (request.Status is not null) 
         {
             appt.Status = request.Status;
+        }
+
+        if (string.Equals(appt.Status, "cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            string whoCancelledTag;
+            if (callerUser?.UserType?.Equals("veterinarian", StringComparison.OrdinalIgnoreCase) == true ||
+                string.Equals(callerRole, "veterinarian", StringComparison.OrdinalIgnoreCase))
+            {
+                var docName = FormatDoctorName(callerUser?.FullName ?? callerUser?.DisplayName, callerEmail);
+                whoCancelledTag = $"by Veterinarian: {docName}";
+            }
+            else if (callerUser?.UserType?.Equals("admin", StringComparison.OrdinalIgnoreCase) == true ||
+                     string.Equals(callerRole, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                var adminName = callerUser?.FullName ?? callerUser?.DisplayName ?? "Clinic Administrator";
+                whoCancelledTag = $"by Clinic Admin: {adminName}";
+            }
+            else
+            {
+                var ownerName = callerUser?.FullName ?? callerUser?.DisplayName ?? "Pet Owner";
+                whoCancelledTag = $"by Pet Owner: {ownerName}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(appt.Reason) && appt.Reason.Contains("Cancellation Reason:"))
+            {
+                if (!appt.Reason.Contains("Cancellation Reason (by") && !appt.Reason.Contains("Cancellation Reason [by"))
+                {
+                    appt.Reason = appt.Reason.Replace("Cancellation Reason:", $"Cancellation Reason ({whoCancelledTag}):");
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(appt.Reason))
+            {
+                appt.Reason = $"Cancellation Reason ({whoCancelledTag}): Cancelled";
+            }
         }
 
         if (request.Date is not null)
@@ -434,10 +477,11 @@ public class AppointmentsController : ControllerBase
             updatedVetName = vUser?.FullName;
         }
         var updatedPet = await _db.Pets.AsNoTracking().FirstOrDefaultAsync(p => p.Id == appt.PetId);
-        return Ok(ToDto(appt, updatedVetName, updatedPet?.Name));
+        var updatedOwner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail);
+        return Ok(ToDto(appt, updatedVetName, updatedPet?.Name, updatedOwner?.FullName));
     }
 
-    private static AppointmentDto ToDto(Appointment a, string? vetName = null, string? petName = null) 
+    private static AppointmentDto ToDto(Appointment a, string? vetName = null, string? petName = null, string? ownerName = null) 
     {
         var status = a.Status;
         if (status == "pending")
@@ -451,7 +495,8 @@ public class AppointmentsController : ControllerBase
             }
             else if (a.Date == today)
             {
-                if (DateTime.TryParseExact($"{a.Date:yyyy-MM-dd} {a.TimeSlot}", "yyyy-MM-dd hh:mm tt", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var apptDateTime))
+                string[] timeFormats = { "yyyy-MM-dd hh:mm tt", "yyyy-MM-dd h:mm tt", "yyyy-MM-dd hh:mmtt", "yyyy-MM-dd h:mmtt" };
+                if (DateTime.TryParseExact($"{a.Date:yyyy-MM-dd} {a.TimeSlot}", timeFormats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var apptDateTime))
                 {
                     if (apptDateTime <= now)
                     {
@@ -461,19 +506,50 @@ public class AppointmentsController : ControllerBase
             }
         }
 
+        string? cancelledBy = null;
+        string? cancelledByName = null;
+        if (status == "cancelled" && !string.IsNullOrWhiteSpace(a.Reason))
+        {
+            if (a.Reason.Contains("by Veterinarian", StringComparison.OrdinalIgnoreCase) ||
+                a.Reason.Contains("by Doctor", StringComparison.OrdinalIgnoreCase) ||
+                a.Reason.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ||
+                a.Reason.Contains("Dr.", StringComparison.OrdinalIgnoreCase))
+            {
+                cancelledBy = "veterinarian";
+                cancelledByName = vetName ?? "Veterinarian";
+            }
+            else if (a.Reason.Contains("by Clinic Admin", StringComparison.OrdinalIgnoreCase) ||
+                     a.Reason.Contains("by Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                cancelledBy = "admin";
+                cancelledByName = "Clinic Administrator";
+            }
+            else if (a.Reason.Contains("by Pet Owner", StringComparison.OrdinalIgnoreCase) ||
+                     a.Reason.Contains("by Owner", StringComparison.OrdinalIgnoreCase))
+            {
+                cancelledBy = "pet_owner";
+                cancelledByName = ownerName ?? "Pet Owner";
+            }
+        }
+
         return new AppointmentDto
         {
             Id = a.Id.ToString(),
             PetId = a.PetId.ToString(),
             PetName = petName,
             OwnerEmail = a.OwnerEmail,
+            OwnerName = ownerName,
             VetEmail = a.VetEmail,
             VetName = vetName,
             Type = a.Type,
             Date = a.Date.ToString("yyyy-MM-dd"),
             Time = a.TimeSlot,
             Reason = a.Reason,
-            Status = status
+            Status = status,
+            CancelledBy = cancelledBy,
+            CancelledByName = cancelledByName,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
         };
     }
     private static string FormatDoctorName(string? name, string? email = null)

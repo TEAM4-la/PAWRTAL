@@ -15,7 +15,10 @@ import {
   Lock,
   Eye,
   EyeOff,
+  CheckCircle2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import BackButton from '@/components/ui/BackButton';
 
 const roles = [
   {
@@ -70,6 +73,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successPrompt, setSuccessPrompt] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,6 +87,19 @@ export default function SignIn() {
   useEffect(() => {
     const reg = location.state?.registeredEmail;
     if (typeof reg === 'string' && reg) setEmail(reg);
+
+    if (location.state?.registeredSuccess) {
+      const msg = location.state?.successMessage || 'Account created successfully! Please enter your password to sign in.';
+      setSuccessPrompt(msg);
+      setSelectedRole(location.state?.registeredRole || 'owner');
+      setStep(STEP_CREDENTIALS);
+      toast.success('Account created successfully! Please sign in with your credentials.');
+      try {
+        window.history.replaceState({}, document.title);
+      } catch {
+        // ignore
+      }
+    }
   }, [location.state]);
 
   useEffect(() => {
@@ -233,24 +250,11 @@ export default function SignIn() {
         <div className="w-full max-w-md bg-white/85 backdrop-blur-md rounded-2xl p-6 sm:p-7 shadow-xl border border-white/30 lg:-translate-y-2">
           {/* Back navigation */}
           {step === STEP_ROLE && (
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4 group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Back to home
-            </Link>
+            <BackButton to="/" label="Back to home" className="mb-4" />
           )}
 
           {step === STEP_CREDENTIALS && (
-            <button
-              type="button"
-              onClick={() => { setStep(STEP_ROLE); setError(''); }}
-              className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-4 group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Back
-            </button>
+            <BackButton onClick={() => { setStep(STEP_ROLE); setError(''); }} className="mb-4" />
           )}
 
           <AnimatePresence mode="wait">
@@ -267,6 +271,16 @@ export default function SignIn() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in to PAWRTAL</h2>
                   <p className="text-gray-500 text-sm">Select your role to get started</p>
                 </div>
+
+                {successPrompt && (
+                  <div className="p-3.5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2.5 text-sm text-green-800 animate-in fade-in">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-green-900">Account Created Successfully</p>
+                      <p className="text-green-700 text-xs sm:text-sm mt-0.5">{successPrompt}</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3.5">
                   {roles.map((role) => {
@@ -350,9 +364,19 @@ export default function SignIn() {
                 )}
 
                 <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h2>
-                <p className="text-gray-500 text-sm mb-5">
+                <p className="text-gray-500 text-sm mb-4">
                   Enter the email and password for your account.
                 </p>
+
+                {successPrompt && (
+                  <div className="mb-4 p-3.5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2.5 text-sm text-green-800 animate-in fade-in">
+                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-green-900">Account Created Successfully</p>
+                      <p className="text-green-700 text-xs sm:text-sm mt-0.5">{successPrompt}</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mb-3.5">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>

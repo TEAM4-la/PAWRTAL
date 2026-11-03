@@ -46,5 +46,8 @@ public class UserDto
 
     [JsonPropertyName("notification_preferences")]
     public object? NotificationPreferences { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public DateTime? CreatedAt { get; set; }
 }
 

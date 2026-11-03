@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft, XCircle } from 'lucide-react';
 import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
@@ -72,7 +73,7 @@ export default function VetAppointments() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['vetAppointments']);
-      toast.success('Appointment confirmed and assigned to your schedule');
+
     },
     onError: (err) => {
       queryClient.invalidateQueries(['vetAppointments']);
@@ -215,9 +216,7 @@ export default function VetAppointments() {
 
   const content = (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('VetDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      <BackButton to={createPageUrl('VetDashboard')} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>

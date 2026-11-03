@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPageUrl } from '@/utils';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -85,18 +87,18 @@ export default function Journal() {
   });
   const [errors, setErrors] = useState({});
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => api.auth.me(),
   });
 
-  const { data: pets = [] } = useQuery({
+  const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
     queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
-  const { data: entries = [], isLoading } = useQuery({
+  const { data: entries = [], isLoading: entriesLoading } = useQuery({
     queryKey: ['journalEntries', pets, selectedPet, selectedType],
     queryFn: async () => {
       let allEntries = [];
@@ -114,7 +116,11 @@ export default function Journal() {
         allEntries = allEntries.filter(e => e.entry_type === selectedType);
       }
       
-      return allEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+      return allEntries.sort((a, b) => {
+        const timeA = a.date ? new Date(a.date).getTime() : 0;
+        const timeB = b.date ? new Date(b.date).getTime() : 0;
+        return timeB - timeA;
+      });
     },
     enabled: pets.length > 0,
   });
@@ -220,15 +226,32 @@ export default function Journal() {
     return moodOptions.find(m => m.value === mood);
   };
 
+  const formatJournalDate = (dateValue) => {
+    if (!dateValue) return '';
+    try {
+      const str = String(dateValue).trim();
+      const datePart = str.includes('T') ? str.split('T')[0] : str.split(' ')[0];
+      const parsed = new Date(datePart + 'T00:00:00');
+      if (!isNaN(parsed.getTime())) {
+        return format(parsed, 'MMMM d, yyyy');
+      }
+      const fallback = new Date(str);
+      if (!isNaN(fallback.getTime())) {
+        return format(fallback, 'MMMM d, yyyy');
+      }
+      return datePart || str;
+    } catch {
+      return String(dateValue);
+    }
+  };
+
   const currentYear = new Date().getFullYear();
   const minDate = `${currentYear}-01-01`;
   const maxDate = `${currentYear}-12-31`;
 
   const content = (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      <BackButton to={createPageUrl('Dashboard')} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Pet Journal</h1>
@@ -463,24 +486,27 @@ export default function Journal() {
           {entries.map((entry) => {
             const typeConfig = getEntryTypeConfig(entry.entry_type);
             const moodConfig = getMoodConfig(entry.mood);
-            const TypeIcon = typeConfig.icon;
+            const TypeIcon = typeConfig?.icon || BookOpen;
+            const typeColor = typeConfig?.color || 'bg-yellow-100 text-yellow-700';
+            const bgClass = typeColor.replace('text-', 'bg-').split(' ')[0] || 'bg-yellow-100';
+            const textClass = typeColor.split(' ')[1] || 'text-yellow-700';
             
             return (
               <Card key={entry.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
-                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", typeConfig.color.replace('text-', 'bg-').split(' ')[0])}>
-                      <TypeIcon className={cn("w-6 h-6", typeConfig.color.split(' ')[1])} />
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", bgClass)}>
+                      <TypeIcon className={cn("w-6 h-6", textClass)} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-semibold text-gray-900">{entry.title}</h4>
-                          <Badge className={typeConfig.color}>{typeConfig.label}</Badge>
-                          {moodConfig && (
+                          <Badge className={typeColor}>{typeConfig?.label || 'General'}</Badge>
+                          {moodConfig && moodConfig.icon && (
                             <Badge variant="outline" className="gap-1">
-                              <moodConfig.icon className={cn("w-3 h-3", moodConfig.color)} />
-                              {moodConfig.label}
+                              <moodConfig.icon className={cn("w-3 h-3", moodConfig.color || 'text-gray-500')} />
+                              {moodConfig.label || entry.mood}
                             </Badge>
                           )}
                         </div>
@@ -504,7 +530,7 @@ export default function Journal() {
                         </div>
                       </div>
                       <p className="text-sm text-gray-500 mb-2">
-                        {getPetName(entry.pet_id)} • {format(new Date(entry.date + 'T00:00:00'), 'MMMM d, yyyy')}
+                        {getPetName(entry.pet_id)} • {formatJournalDate(entry.date)}
                       </p>
                       {entry.content && (
                         <p className="text-gray-600">{entry.content}</p>
@@ -520,7 +546,7 @@ export default function Journal() {
     </div>
   );
 
-  if (isLoading) {
+  if (userLoading || (petsLoading && pets.length === 0) || entriesLoading) {
     return (
       <OwnerSidebar user={user}>
         <div className="min-h-screen flex items-center justify-center">

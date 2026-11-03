@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,14 +9,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
-import { Plus, Calendar, Clock, CheckCircle, ChevronLeft } from 'lucide-react';
-import { isAfter, isBefore } from 'date-fns';
+import BackButton from '@/components/ui/BackButton';
+import { Plus, Calendar, Clock, CheckCircle, ChevronLeft, CalendarCheck } from 'lucide-react';
+import { isAfter, isBefore, parse } from 'date-fns';
 import { toast } from "sonner";
+
+const parseAppointmentDateTime = (apt) => {
+  if (!apt || !apt.date) return new Date(8640000000000000);
+  try {
+    if (apt.time) {
+      const dt = parse(`${apt.date} ${apt.time}`, 'yyyy-MM-dd hh:mm a', new Date());
+      if (!isNaN(dt.getTime())) return dt;
+    }
+    const d = new Date(apt.date + 'T00:00:00');
+    if (!isNaN(d.getTime())) return d;
+  } catch {
+    // fallback
+  }
+  return new Date(apt.date);
+};
 
 export default function Appointments() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('upcoming');
+
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    tabParam && ['upcoming', 'past', 'confirmed', 'cancelled'].includes(tabParam)
+      ? tabParam
+      : 'upcoming'
+  );
+
+  useEffect(() => {
+    if (tabParam && ['upcoming', 'past', 'confirmed', 'cancelled'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -46,27 +76,47 @@ export default function Appointments() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingAppointments = appointments.filter(
-    apt => {
+  const upcomingAppointments = appointments
+    .filter(apt => {
       const status = getAppointmentStatus(apt);
       return status !== 'cancelled' && status !== 'completed' && status !== 'expired' && !isBefore(new Date(apt.date + 'T00:00:00'), today);
-    }
-  );
+    })
+    .sort((a, b) => {
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeA - timeB;
+    });
 
-  const pastAppointments = appointments.filter(
-    apt => {
+  const pastAppointments = appointments
+    .filter(apt => {
       const status = getAppointmentStatus(apt);
       return status === 'completed' || status === 'expired' || isBefore(new Date(apt.date + 'T00:00:00'), today);
-    }
-  );
+    })
+    .sort((a, b) => {
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeB - timeA;
+    });
 
-  const cancelledAppointments = appointments.filter(apt => getAppointmentStatus(apt) === 'cancelled');
+  const confirmedAppointments = appointments
+    .filter(apt => getAppointmentStatus(apt) === 'confirmed')
+    .sort((a, b) => {
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeA - timeB;
+    });
+
+  const cancelledAppointments = appointments
+    .filter(apt => getAppointmentStatus(apt) === 'cancelled')
+    .sort((a, b) => {
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeB - timeA;
+    });
 
   const content = (
     <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('Dashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-amber-700 transition-colors mb-2">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      <BackButton to={createPageUrl('Dashboard')} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
@@ -89,6 +139,10 @@ export default function Appointments() {
           <TabsTrigger value="past" className="gap-2 flex-1 sm:flex-none">
             <CheckCircle className="w-4 h-4" />
             Past ({pastAppointments.length})
+          </TabsTrigger>
+          <TabsTrigger value="confirmed" className="gap-2 flex-1 sm:flex-none">
+            <CalendarCheck className="w-4 h-4" />
+            Confirmed ({confirmedAppointments.length})
           </TabsTrigger>
           <TabsTrigger value="cancelled" className="gap-2 flex-1 sm:flex-none">
             Cancelled ({cancelledAppointments.length})
@@ -141,6 +195,32 @@ export default function Appointments() {
                     key={appointment.id}
                     appointment={appointment}
                     pet={pet}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="confirmed" className="mt-6">
+          {confirmedAppointments.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
+              <EmptyState
+                icon={CalendarCheck}
+                title="No confirmed appointments"
+                description="Approved bookings from the clinic will appear here"
+              />
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {confirmedAppointments.map((appointment) => {
+                const pet = pets.find(p => p.id === appointment.pet_id);
+                return (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    pet={pet}
+                    onCancel={cancelMutation.mutate}
                   />
                 );
               })}

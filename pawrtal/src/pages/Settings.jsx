@@ -10,8 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import BackButton from '@/components/ui/BackButton';
 import { User, Bell, Upload, Loader2, Check, ChevronLeft, Lock, Building2, Mail, Eye, EyeOff, CheckCircle2, AlertCircle, AlertTriangle, X } from 'lucide-react';
-import { toast } from "sonner";
+
 
 function roleLabel(userType) {
   const t = String(userType || '').toLowerCase();
@@ -141,7 +142,10 @@ export default function Settings() {
       address: user.address || '',
       license_number: user.license_number || '',
       specialization: user.specialization || '',
-      notification_preferences: user.notification_preferences || defaultPrefs,
+      notification_preferences: {
+        ...defaultPrefs,
+        ...(user.notification_preferences || {}),
+      },
     });
   }, [user]);
 
@@ -217,12 +221,10 @@ export default function Settings() {
       }
       
       setProfileStatus({ type: 'success', message: msg });
-      toast.success(msg);
     },
     onError: (err) => {
       const msg = err instanceof Error ? err.message : String(err) || 'Failed to save settings';
       setProfileStatus({ type: 'error', message: msg });
-      toast.error(msg);
     },
   });
 
@@ -236,7 +238,6 @@ export default function Settings() {
       setPasswordForm({ current: '', next: '', confirm: '' });
       setPasswordSuccess(true);
       setPasswordError('');
-      toast.success('Password changed successfully');
     },
     onError: (err) => {
       setPasswordSuccess(false);
@@ -246,7 +247,6 @@ export default function Settings() {
         friendlyMsg = rawMsg;
       }
       setPasswordError(friendlyMsg);
-      toast.error(friendlyMsg);
     },
   });
 
@@ -261,10 +261,8 @@ export default function Settings() {
       queryClient.invalidateQueries(['currentUser']);
       queryClient.invalidateQueries(['me']);
       setProfileStatus({ type: 'success', message: 'Profile picture updated successfully!' });
-      toast.success('Avatar updated!');
     } catch {
       setProfileStatus({ type: 'error', message: 'Failed to upload profile picture' });
-      toast.error('Failed to upload avatar');
     } finally {
       setIsUploading(false);
     }
@@ -276,19 +274,16 @@ export default function Settings() {
     if (rawPhone && !/^09\d{9}$/.test(rawPhone)) {
       const err = 'Phone number must be an 11-digit Philippine mobile number starting with 09 (e.g., 09123456789)';
       setProfileStatus({ type: 'error', message: err });
-      toast.error(err);
       return;
     }
     if (!formData.first_name?.trim()) {
       const err = 'First name is required';
       setProfileStatus({ type: 'error', message: err });
-      toast.error(err);
       return;
     }
     if (!formData.last_name?.trim()) {
       const err = 'Last name is required';
       setProfileStatus({ type: 'error', message: err });
-      toast.error(err);
       return;
     }
     const trimmedFirst = formData.first_name.trim();
@@ -338,17 +333,14 @@ export default function Settings() {
     setPasswordError('');
     if (!passwordForm.current || !passwordForm.next) {
       setPasswordError('Fill in current and new password');
-      toast.error('Fill in current and new password');
       return;
     }
     if (passwordForm.next.length < 6) {
       setPasswordError('New password must be at least 6 characters');
-      toast.error('New password must be at least 6 characters');
       return;
     }
     if (passwordForm.next !== passwordForm.confirm) {
       setPasswordError('New passwords do not match');
-      toast.error('New passwords do not match');
       return;
     }
     passwordMutation.mutate();
@@ -364,15 +356,7 @@ export default function Settings() {
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={() => navigate(homePathForUserType(user?.user_type))}
-        className="-ml-2 mb-2 gap-1 text-gray-600 hover:text-amber-800 hover:bg-amber-50"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back
-      </Button>
+      <BackButton to={homePathForUserType(user?.user_type)} className="mb-4" />
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-500 mt-1">Manage your account preferences</p>
@@ -716,47 +700,61 @@ export default function Settings() {
             />
           </div>
 
-          {!isAdmin && (
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div>
+              <p className="font-medium text-gray-900">
+                {isAdmin ? 'Appointment Alerts' : 'Appointment Reminders'}
+              </p>
+              <p className="text-sm text-gray-500">
+                {isAdmin
+                  ? 'Receive alerts for incoming booking requests and cancellations'
+                  : 'Get notified about upcoming appointments'}
+              </p>
+            </div>
+            <Switch
+              className={notificationSwitchClassName}
+              checked={formData.notification_preferences?.appointments !== false}
+              onCheckedChange={(checked) => handleNotificationToggle('appointments', checked)}
+            />
+          </div>
+
+          {(isAdmin || isOwner) && (
             <>
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                 <div>
-                  <p className="font-medium text-gray-900">Appointment Reminders</p>
-                  <p className="text-sm text-gray-500">Get notified about upcoming appointments</p>
+                  <p className="font-medium text-gray-900">
+                    {isAdmin ? 'Vaccination Alerts' : 'Vaccination Reminders'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {isAdmin
+                      ? 'Receive alerts for low vaccine supplies and expiring vaccine batches'
+                      : 'Reminders for due vaccinations'}
+                  </p>
                 </div>
                 <Switch
                   className={notificationSwitchClassName}
-                  checked={!!formData.notification_preferences.appointments}
-                  onCheckedChange={(checked) => handleNotificationToggle('appointments', checked)}
+                  checked={formData.notification_preferences?.vaccinations !== false}
+                  onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
                 />
               </div>
 
-              {isOwner && (
-                <>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Vaccination Reminders</p>
-                      <p className="text-sm text-gray-500">Reminders for due vaccinations</p>
-                    </div>
-                    <Switch
-                      className={notificationSwitchClassName}
-                      checked={!!formData.notification_preferences.vaccinations}
-                      onCheckedChange={(checked) => handleNotificationToggle('vaccinations', checked)}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-gray-900">Medication Reminders</p>
-                      <p className="text-sm text-gray-500">Reminders for pet medications</p>
-                    </div>
-                    <Switch
-                      className={notificationSwitchClassName}
-                      checked={!!formData.notification_preferences.medications}
-                      onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
-                    />
-                  </div>
-                </>
-              )}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {isAdmin ? 'Medication Alerts' : 'Medication Reminders'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {isAdmin
+                      ? 'Receive alerts for low medication inventory and expiring medications'
+                      : 'Reminders for pet medications'}
+                  </p>
+                </div>
+                <Switch
+                  className={notificationSwitchClassName}
+                  checked={formData.notification_preferences?.medications !== false}
+                  onCheckedChange={(checked) => handleNotificationToggle('medications', checked)}
+                />
+              </div>
             </>
           )}
         </CardContent>

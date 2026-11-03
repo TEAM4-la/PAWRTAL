@@ -87,6 +87,19 @@ namespace PawtralWeb.Services
                 });
             }
         }
+
+        public async Task NotifyAdminsAsync(string type, string title, string message, string? prefKey = null)
+        {
+            var admins = await _db.Users
+                .AsNoTracking()
+                .Where(u => !u.IsDeleted && u.UserType == "admin")
+                .ToListAsync();
+
+            foreach (var admin in admins)
+            {
+                await CreateNotificationAsync(admin.Email, type, title, message, prefKey);
+            }
+        }
     }
 }
 

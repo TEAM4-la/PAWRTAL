@@ -2,13 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import React, { useState } from 'react';
 import { api } from '@/api/apiClient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award, ChevronLeft, UserPlus, Plus } from 'lucide-react';
+import { Stethoscope, Users, Mail, Phone, Briefcase, KeyRound, X, Eye, EyeOff, RefreshCw, CheckCircle2, AlertCircle, Award, ChevronLeft, UserPlus, Plus, Trash2 } from 'lucide-react';
 
-// ─── Reset Password Modal ──────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Reset Password Modal ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function ResetPasswordModal({ targetUser, onClose }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -117,7 +118,7 @@ function ResetPasswordModal({ targetUser, onClose }) {
                   type={showPassword ? 'text' : 'password'}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 text-sm"
                 />
               </div>
@@ -153,24 +154,107 @@ function ResetPasswordModal({ targetUser, onClose }) {
   );
 }
 
-// ─── Main Page ─────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Main Page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Delete User Modal ────────────────────────────────────────────────────────
+function DeleteUserModal({ targetUser, onClose, onDeleted }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const roleLabels = {
+    veterinarian: 'Doctor / Veterinarian',
+    admin: 'Staff / Clinic Administrator',
+    pet_owner: 'Pet Owner'
+  };
+
+  async function handleDelete() {
+    setLoading(true);
+    setError('');
+    try {
+      await api.entities.User.delete(targetUser.id);
+      onDeleted();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err) || 'Failed to delete user profile.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-[calc(100%-2rem)] max-w-md p-6 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center flex-shrink-0 text-red-600">
+            <Trash2 className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Delete Profile</h3>
+            <p className="text-xs text-gray-500">{roleLabels[targetUser.user_type] || 'User Profile'}</p>
+          </div>
+        </div>
+
+        <div className="bg-red-50 border border-red-100 rounded-xl p-3.5 mb-4 text-sm text-red-900">
+          <p className="font-semibold">{targetUser.full_name || targetUser.email}</p>
+          <p className="text-xs text-red-700 mt-1">
+            Are you sure you want to remove this profile? This will revoke their access to the clinic. Past appointments and medical records will be safely preserved.
+          </p>
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-600 mb-4 bg-red-50 p-2.5 rounded-lg border border-red-200">
+            {error}
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-sm hover:shadow transition-all disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminStaff() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [resetTarget, setResetTarget] = useState(null); // user to reset
+  const [deleteTarget, setDeleteTarget] = useState(null); // user to delete
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
   const { data: allUsers = [] } = useQuery({ queryKey: ['allUsers'], queryFn: () => api.entities.User.list() });
   const { data: allAppointments = [] } = useQuery({ queryKey: ['allAppts'], queryFn: () => api.entities.Appointment.list() });
 
   const vets = allUsers.filter(u => u.user_type === 'veterinarian');
+  const clinicStaff = allUsers.filter(u => u.user_type === 'admin');
   const owners = allUsers.filter(u => u.user_type === 'pet_owner');
 
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+        <BackButton to={createPageUrl('ClinicAdminDashboard')} />
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Staff &amp; Users</h1>
@@ -243,14 +327,88 @@ export default function AdminStaff() {
                       <p className="text-gray-500 text-xs">Completed</p>
                     </div>
                   </div>
-                  {/* Reset Password Button */}
-                  <button
-                    onClick={() => setResetTarget(vet)}
-                    className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-sm font-medium"
-                  >
-                    <KeyRound className="w-4 h-4" />
-                    Reset Password
-                  </button>
+                  {/* Actions Row */}
+                  <div className="mt-4 pt-2 flex items-center gap-2">
+                    <button
+                      onClick={() => setResetTarget(vet)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-semibold"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      Reset Password
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(vet)}
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-semibold"
+                      title="Delete Profile"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Clinic Staff & Admin Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Clinic Staff &amp; Administrators</h2>
+            <Badge className="bg-indigo-100 text-indigo-700">{clinicStaff.length}</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {clinicStaff.length === 0 ? (
+              <p className="text-gray-400 text-sm col-span-3">No staff members found.</p>
+            ) : clinicStaff.map(staff => {
+              const isSelf = user?.email?.toLowerCase() === staff.email?.toLowerCase();
+              return (
+                <Card key={staff.id} className="border-0 shadow-sm p-5 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+                        {staff.full_name?.[0] || 'S'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-gray-900 truncate">{staff.full_name}</p>
+                          {isSelf && (
+                            <Badge className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0 font-normal">You</Badge>
+                          )}
+                        </div>
+                        <Badge className="bg-indigo-50 text-indigo-600 text-xs mt-0.5">Clinic Staff</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Mail className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                        <span className="truncate">{staff.email}</span>
+                      </div>
+                      {staff.phone && (
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <Phone className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                          <span>{staff.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {!isSelf ? (
+                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-end">
+                      <button
+                        onClick={() => setDeleteTarget(staff)}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-semibold"
+                        title="Delete Profile"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete Profile
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+                      <span className="text-xs text-gray-400 italic">Current Active Session</span>
+                    </div>
+                  )}
                 </Card>
               );
             })}
@@ -297,13 +455,20 @@ export default function AdminStaff() {
                       </p>
                     )}
 
-                    <div className="pt-1">
+                    <div className="pt-1 flex items-center gap-2">
                       <button
                         onClick={() => setResetTarget(owner)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
                       >
                         <KeyRound className="w-3.5 h-3.5" />
                         Reset Password
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(owner)}
+                        className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                        title="Delete Profile"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -340,16 +505,26 @@ export default function AdminStaff() {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.email}</td>
-                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.phone || '—'}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.phone || 'ΓÇö'}</td>
                         <td className="px-5 py-3 text-gray-700 font-medium whitespace-nowrap">{ownerAppts.length}</td>
                         <td className="px-5 py-3 whitespace-nowrap">
-                          <button
-                            onClick={() => setResetTarget(owner)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                            Reset Password
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setResetTarget(owner)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              Reset Password
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(owner)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                              title="Delete Profile"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -366,6 +541,19 @@ export default function AdminStaff() {
         <ResetPasswordModal
           targetUser={resetTarget}
           onClose={() => setResetTarget(null)}
+        />
+      )}
+
+      {/* Delete User Modal */}
+      {deleteTarget && (
+        <DeleteUserModal
+          targetUser={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => {
+            queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+            queryClient.invalidateQueries({ queryKey: ['allAppts'] });
+            queryClient.invalidateQueries({ queryKey: ['me'] });
+          }}
         />
       )}
     </AdminSidebar>

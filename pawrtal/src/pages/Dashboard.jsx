@@ -23,7 +23,22 @@ import {
   Heart,
   ChevronRight
 } from 'lucide-react';
-import { format, isAfter, isBefore, addDays } from 'date-fns';
+import { format, isAfter, isBefore, addDays, parse } from 'date-fns';
+
+const parseAppointmentDateTime = (apt) => {
+  if (!apt || !apt.date) return new Date(8640000000000000);
+  try {
+    if (apt.time) {
+      const dt = parse(`${apt.date} ${apt.time}`, 'yyyy-MM-dd hh:mm a', new Date());
+      if (!isNaN(dt.getTime())) return dt;
+    }
+    const d = new Date(apt.date + 'T00:00:00');
+    if (!isNaN(d.getTime())) return d;
+  } catch {
+    // fallback
+  }
+  return new Date(apt.date);
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -41,7 +56,7 @@ export default function Dashboard() {
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['appointments', user?.email],
-    queryFn: () => api.entities.Appointment.filter({ owner_email: user?.email }, '-date', 10),
+    queryFn: () => api.entities.Appointment.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
   });
 
@@ -91,12 +106,16 @@ export default function Dashboard() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingAppointments = appointments.filter(
-    apt => {
+  const upcomingAppointments = appointments
+    .filter(apt => {
       const status = getAppointmentStatus(apt);
       return status !== 'cancelled' && status !== 'completed' && status !== 'expired' && !isBefore(new Date(apt.date + 'T00:00:00'), today);
-    }
-  ).slice(0, 3);
+    })
+    .sort((a, b) => {
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeA - timeB;
+    });
 
   const upcomingVaccinations = vaccinations.filter(vax => {
     if (!vax.next_due_date) return false;

@@ -233,9 +233,10 @@ export default function AppointmentCard({
                 className="!bg-red-600 hover:!bg-red-700 !text-white"
                 disabled={!cancelReason.trim()}
                 onClick={() => {
+                  const roleTag = isVetView ? 'Veterinarian' : 'Pet Owner';
                   const newReason = appointment.reason 
-                    ? `${appointment.reason}\n\nCancellation Reason: ${cancelReason}`
-                    : `Cancellation Reason: ${cancelReason}`;
+                    ? `${appointment.reason}\n\nCancellation Reason (by ${roleTag}): ${cancelReason}`
+                    : `Cancellation Reason (by ${roleTag}): ${cancelReason}`;
                   setIsCancelOpen(false);
                   setCancelReason("");
                   setTimeout(() => {

@@ -347,6 +347,9 @@ export const api = {
       async list(order, limit = 200) {
         return await http('/api/users/list', { query: { order, limit } });
       },
+      async delete(id) {
+        return await http(`/api/users/${id}`, { method: 'DELETE' });
+      },
     },
   },
   integrations: {

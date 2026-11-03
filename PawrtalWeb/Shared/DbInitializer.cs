@@ -62,6 +62,16 @@ BEGIN
     ALTER TABLE Users ADD LastName NVARCHAR(100) NULL;
 END
 
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Users') AND name = 'IsDeleted')
+BEGIN
+    ALTER TABLE Users ADD IsDeleted BIT NOT NULL DEFAULT 0;
+END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Users') AND name = 'DeletedAt')
+BEGIN
+    ALTER TABLE Users ADD DeletedAt DATETIME2 NULL;
+END
+
 ";
         await db.Database.ExecuteSqlRawAsync(createTableSql);
 
@@ -147,6 +157,24 @@ BEGIN
 END
 ";
         await db.Database.ExecuteSqlRawAsync(normalizeSpeciesSql);
+
+        // Ensure CK_Pets_Species check constraint only allows dog, cat, rabbit, other
+        const string ensureSpeciesCheckConstraintSql = @"
+IF OBJECT_ID(N'CK_Pets_Species', 'C') IS NOT NULL
+BEGIN
+    ALTER TABLE [Pets] DROP CONSTRAINT [CK_Pets_Species];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Pets')
+BEGIN
+    ALTER TABLE [Pets] WITH CHECK ADD CONSTRAINT [CK_Pets_Species] 
+    CHECK ([Species] IN (
+        'dog', 'cat', 'rabbit', 'other',
+        'Dog', 'Cat', 'Rabbit', 'Other'
+    ));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureSpeciesCheckConstraintSql);
 
         // Ensure Medications table has Quantity column
         const string ensureMedicationColumnsSql = @"

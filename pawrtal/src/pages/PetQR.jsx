@@ -6,8 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Share2, QrCode, Dog, Cat, Bird, Rabbit, Fish, Printer } from 'lucide-react';
-import { toast } from "sonner";
+
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
+import BackButton from '@/components/ui/BackButton';
 import PrintablePetId from '@/components/shared/PrintablePetId';
 
 const speciesIcons = {
@@ -63,9 +64,9 @@ export default function PetQR() {
       link.href = url;
       link.click();
       window.URL.revokeObjectURL(url);
-      toast.success('QR Code downloaded!');
+
     } catch (error) {
-      toast.error('Failed to download QR code');
+      console.error('Failed to download QR code', error);
     }
   };
 
@@ -85,7 +86,7 @@ export default function PetQR() {
       }
     } else {
       await navigator.clipboard.writeText(pageUrl);
-      toast.success('Link copied to clipboard!');
+
     }
   };
 
@@ -116,14 +117,10 @@ export default function PetQR() {
 
   const content = (
     <div className="p-6 lg:p-8 max-w-lg mx-auto space-y-6">
-      <Button
-        variant="ghost"
+      <BackButton
         onClick={() => petId ? navigate(createPageUrl(`PetProfile?id=${petId}`)) : navigate(createPageUrl('Dashboard'))}
-        className="gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+        className="mb-2"
+      />
 
       <div className="text-center space-y-2">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-orange-200 text-white">

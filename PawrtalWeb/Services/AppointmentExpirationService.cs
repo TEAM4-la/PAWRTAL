@@ -62,7 +62,8 @@ public class AppointmentExpirationService : BackgroundService
             bool isExpired = appt.Date < today;
             if (!isExpired && appt.Date == today)
             {
-                if (DateTime.TryParseExact($"{appt.Date:yyyy-MM-dd} {appt.TimeSlot}", "yyyy-MM-dd hh:mm tt", CultureInfo.InvariantCulture, DateTimeStyles.None, out var apptDateTime))
+                string[] timeFormats = { "yyyy-MM-dd hh:mm tt", "yyyy-MM-dd h:mm tt", "yyyy-MM-dd hh:mmtt", "yyyy-MM-dd h:mmtt" };
+                if (DateTime.TryParseExact($"{appt.Date:yyyy-MM-dd} {appt.TimeSlot}", timeFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var apptDateTime))
                 {
                     if (apptDateTime <= now)
                     {

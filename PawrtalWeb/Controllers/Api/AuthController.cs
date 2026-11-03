@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
     private async Task<User?> FindUserByEmailAsync(string email, CancellationToken ct = default)
     {
         var norm = NormalizeEmail(email);
-        return await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == norm, ct);
+        return await _db.Users.FirstOrDefaultAsync(u => !u.IsDeleted && u.Email.ToLower() == norm, ct);
     }
 
     [HttpPost("register")]
@@ -37,12 +37,6 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < MinPasswordLength)
             return BadRequest(new { error = $"Password must be at least {MinPasswordLength} characters." });
 
-        var originalEmail = request.Email.Trim();
-        var email = NormalizeEmail(request.Email);
-        var exists = await _db.Users.AnyAsync(u => u.Email.ToLower() == email, ct);
-        if (exists)
-            return Conflict(new { error = "An account with this email already exists." });
-
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return BadRequest(new { error = "First name is required." });
         if (string.IsNullOrWhiteSpace(request.LastName))
@@ -50,12 +44,54 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Phone))
             return BadRequest(new { error = "Phone number is required." });
 
+        var rawPhone = request.Phone?.Trim();
+        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+        if (string.IsNullOrWhiteSpace(cleanPhone) || cleanPhone.Length != 11 || !cleanPhone.StartsWith("09"))
+            return BadRequest(new { error = "Phone number must be an 11-digit number starting with 09 (e.g., 09123456789)." });
+
+        var originalEmail = request.Email.Trim();
+        var email = NormalizeEmail(request.Email);
+        var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email, ct);
+        if (existingUser != null && !existingUser.IsDeleted)
+        {
+            return Conflict(new { error = "An account with this email already exists." });
+        }
+
         var legalParts = new[] { request.FirstName?.Trim(), request.MiddleName?.Trim(), request.LastName?.Trim() }
             .Where(s => !string.IsNullOrWhiteSpace(s));
         var fullLegalName = string.Join(" ", legalParts);
 
-        var rawPhone = request.Phone?.Trim();
-        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+        var prefsJson = JsonSerializer.Serialize(new
+        {
+            email = true,
+            appointments = true,
+            vaccinations = true,
+            medications = true,
+            display_name = request.DisplayName?.Trim(),
+            first_name = request.FirstName?.Trim(),
+            middle_name = request.MiddleName?.Trim(),
+            last_name = request.LastName?.Trim(),
+            phone = cleanPhone,
+            legal_name = fullLegalName
+        });
+
+        if (existingUser != null)
+        {
+            // Reactivate soft-deleted user
+            existingUser.IsDeleted = false;
+            existingUser.DeletedAt = null;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+            existingUser.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim();
+            existingUser.FirstName = request.FirstName?.Trim();
+            existingUser.MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? null : request.MiddleName.Trim();
+            existingUser.LastName = request.LastName?.Trim();
+            existingUser.Phone = cleanPhone;
+            existingUser.UserType = "pet_owner";
+            existingUser.PasswordHash = Utilities.Encrypt(request.Password);
+            existingUser.NotificationPrefsJson = prefsJson;
+            await _db.SaveChangesAsync(ct);
+            return Ok(ToDto(existingUser));
+        }
 
         var user = new User
         {
@@ -68,19 +104,7 @@ public class AuthController : ControllerBase
             Phone = cleanPhone,
             UserType = "pet_owner",
             PasswordHash = Utilities.Encrypt(request.Password),
-            NotificationPrefsJson = JsonSerializer.Serialize(new
-            {
-                email = true,
-                appointments = true,
-                vaccinations = true,
-                medications = true,
-                display_name = request.DisplayName?.Trim(),
-                first_name = request.FirstName?.Trim(),
-                middle_name = request.MiddleName?.Trim(),
-                last_name = request.LastName?.Trim(),
-                phone = cleanPhone,
-                legal_name = fullLegalName
-            })
+            NotificationPrefsJson = prefsJson
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
@@ -113,12 +137,6 @@ public class AuthController : ControllerBase
         if (newType == "admin" && callerType != "admin")
             return StatusCode(StatusCodes.Status403Forbidden, new { error = "Only admins can create admin accounts." });
 
-        var originalEmail = request.Email.Trim();
-        var email = NormalizeEmail(request.Email);
-        var exists = await _db.Users.AnyAsync(u => u.Email.ToLower() == email, ct);
-        if (exists)
-            return Conflict(new { error = "An account with this email already exists." });
-
         if (string.IsNullOrWhiteSpace(request.FirstName))
             return BadRequest(new { error = "First name is required." });
         if (string.IsNullOrWhiteSpace(request.LastName))
@@ -126,12 +144,56 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Phone))
             return BadRequest(new { error = "Phone number is required." });
 
+        var rawPhone = request.Phone?.Trim();
+        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+        if (string.IsNullOrWhiteSpace(cleanPhone) || cleanPhone.Length != 11 || !cleanPhone.StartsWith("09"))
+            return BadRequest(new { error = "Phone number must be an 11-digit number starting with 09 (e.g., 09123456789)." });
+
+        var originalEmail = request.Email.Trim();
+        var email = NormalizeEmail(request.Email);
+        var existingUser = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email, ct);
+        if (existingUser != null && !existingUser.IsDeleted)
+        {
+            return Conflict(new { error = "An account with this email already exists." });
+        }
+
         var legalParts = new[] { request.FirstName?.Trim(), request.MiddleName?.Trim(), request.LastName?.Trim() }
             .Where(s => !string.IsNullOrWhiteSpace(s));
         var fullLegalName = string.Join(" ", legalParts);
 
-        var rawPhone = request.Phone?.Trim();
-        var cleanPhone = !string.IsNullOrWhiteSpace(rawPhone) ? new string(rawPhone.Where(char.IsDigit).ToArray()) : null;
+        var prefsJson = JsonSerializer.Serialize(new
+        {
+            email = true,
+            appointments = true,
+            vaccinations = true,
+            medications = true,
+            display_name = request.DisplayName?.Trim(),
+            first_name = request.FirstName?.Trim(),
+            middle_name = request.MiddleName?.Trim(),
+            last_name = request.LastName?.Trim(),
+            phone = cleanPhone,
+            legal_name = fullLegalName
+        });
+
+        if (existingUser != null)
+        {
+            // Reactivate soft-deleted user
+            existingUser.IsDeleted = false;
+            existingUser.DeletedAt = null;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+            existingUser.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim();
+            existingUser.FirstName = request.FirstName?.Trim();
+            existingUser.MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? null : request.MiddleName.Trim();
+            existingUser.LastName = request.LastName?.Trim();
+            existingUser.Phone = cleanPhone;
+            existingUser.UserType = newType;
+            existingUser.PasswordHash = Utilities.Encrypt(request.Password);
+            existingUser.LicenseNumber = string.IsNullOrWhiteSpace(request.LicenseNumber) ? null : request.LicenseNumber.Trim();
+            existingUser.Specialization = string.IsNullOrWhiteSpace(request.Specialization) ? null : request.Specialization.Trim();
+            existingUser.NotificationPrefsJson = prefsJson;
+            await _db.SaveChangesAsync(ct);
+            return Ok(ToDto(existingUser));
+        }
 
         var user = new User
         {
@@ -146,19 +208,7 @@ public class AuthController : ControllerBase
             PasswordHash = Utilities.Encrypt(request.Password),
             LicenseNumber = string.IsNullOrWhiteSpace(request.LicenseNumber) ? null : request.LicenseNumber.Trim(),
             Specialization = string.IsNullOrWhiteSpace(request.Specialization) ? null : request.Specialization.Trim(),
-            NotificationPrefsJson = JsonSerializer.Serialize(new
-            {
-                email = true,
-                appointments = true,
-                vaccinations = true,
-                medications = true,
-                display_name = request.DisplayName?.Trim(),
-                first_name = request.FirstName?.Trim(),
-                middle_name = request.MiddleName?.Trim(),
-                last_name = request.LastName?.Trim(),
-                phone = cleanPhone,
-                legal_name = fullLegalName
-            })
+            NotificationPrefsJson = prefsJson
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(ct);
@@ -424,7 +474,8 @@ public class AuthController : ControllerBase
             AvatarUrl = u.AvatarUrl,
             LicenseNumber = u.LicenseNumber,
             Specialization = u.Specialization,
-            NotificationPreferences = prefs
+            NotificationPreferences = prefs,
+            CreatedAt = u.CreatedAt
         };
     }
 }

@@ -24,5 +24,8 @@ public class VaccinationCreateRequest
 
     [JsonPropertyName("administered_by")]
     public string? AdministeredBy { get; set; }
+
+    [JsonPropertyName("quantity")]
+    public int? Quantity { get; set; }
 }
 

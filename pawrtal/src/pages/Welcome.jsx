@@ -161,7 +161,7 @@ export default function Welcome() {
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </Link>
-                  <a href="https://share.google/Zwuj9pzFKEpv75TF1" target="_blank" rel="noopener noreferrer">
+                  <a href="https://www.facebook.com/vmvetclinic/" target="_blank" rel="noopener noreferrer">
                     <button className="btn-outline px-8 h-14 text-lg rounded-full">
                       Learn More
                     </button>

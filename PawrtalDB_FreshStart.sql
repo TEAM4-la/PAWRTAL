@@ -108,7 +108,10 @@ CREATE TABLE [Pets] (
     [DeletedAt]   DATETIME2        NULL,
     CONSTRAINT [FK_Pets_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE SET NULL,
     CONSTRAINT [CK_Pets_Gender] CHECK ([Gender] IS NULL OR [Gender] IN ('male', 'female', 'unknown')),
-    CONSTRAINT [CK_Pets_Species] CHECK ([Species] IN ('dog', 'cat', 'bird', 'rabbit', 'hamster', 'fish', 'reptile', 'other'))
+    CONSTRAINT [CK_Pets_Species] CHECK ([Species] IN (
+        'dog', 'cat', 'rabbit', 'other',
+        'Dog', 'Cat', 'Rabbit', 'Other'
+    ))
 );
 CREATE NONCLUSTERED INDEX [IX_Pets_OwnerEmail] ON [Pets] ([OwnerEmail]);
 GO
@@ -133,7 +136,14 @@ CREATE TABLE [Appointments] (
     CONSTRAINT [FK_Appointments_Users_OwnerEmail] FOREIGN KEY ([OwnerEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION,
     CONSTRAINT [FK_Appointments_Users_VetEmail] FOREIGN KEY ([VetEmail]) REFERENCES [Users]([Email]) ON DELETE NO ACTION,
     CONSTRAINT [CK_Appointments_Status] CHECK ([Status] IN ('pending', 'confirmed', 'accepted', 'completed', 'cancelled', 'expired')),
-    CONSTRAINT [CK_Appointments_Type] CHECK ([Type] IN ('checkup', 'general_checkup', 'General Checkup', 'vaccination', 'grooming', 'dental', 'follow_up', 'consultation', 'surgery', 'emergency', 'examination', 'other'))
+    CONSTRAINT [CK_Appointments_Type] CHECK ([Type] IN (
+        'checkup', 'general_checkup', 'General Checkup', 
+        'vaccination', 'grooming', 'dental', 
+        'follow_up', 'consultation', 'surgery', 'Surgery',
+        'emergency', 'examination', 'other',
+        'deworming', 'Deworming',
+        'ultrasound', 'ultra_sound', 'Ultra Sound'
+    ))
 );
 -- Unique index: Prevents double-booking for the same vet, date, and timeslot
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_Appointments_Vet_Date_Slot]
@@ -479,11 +489,16 @@ GO
 -- ======================================================================================
 -- 6. Verification
 -- ======================================================================================
+DECLARE @UserCount INT = (SELECT COUNT(*) FROM [Users]);
+DECLARE @SupplyCount INT = (SELECT COUNT(*) FROM [InventoryItems]);
+DECLARE @PetCount INT = (SELECT COUNT(*) FROM [Pets]);
+DECLARE @ApptCount INT = (SELECT COUNT(*) FROM [Appointments]);
+
 PRINT '======================================================================================';
 PRINT 'PawrtalDB initialized successfully with clean production schema and zero mock data.';
-PRINT 'Active Users: ' + CAST((SELECT COUNT(*) FROM [Users]) AS NVARCHAR(10));
-PRINT 'Clinical Supplies: ' + CAST((SELECT COUNT(*) FROM [InventoryItems]) AS NVARCHAR(10));
-PRINT 'Pets: ' + CAST((SELECT COUNT(*) FROM [Pets]) AS NVARCHAR(10)) + ' (Clean fresh start)';
-PRINT 'Appointments: ' + CAST((SELECT COUNT(*) FROM [Appointments]) AS NVARCHAR(10)) + ' (Clean fresh start)';
+PRINT 'Active Users: ' + CAST(@UserCount AS NVARCHAR(10));
+PRINT 'Clinical Supplies: ' + CAST(@SupplyCount AS NVARCHAR(10));
+PRINT 'Pets: ' + CAST(@PetCount AS NVARCHAR(10)) + ' (Clean fresh start)';
+PRINT 'Appointments: ' + CAST(@ApptCount AS NVARCHAR(10)) + ' (Clean fresh start)';
 PRINT '======================================================================================';
 GO

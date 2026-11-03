@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -414,13 +415,7 @@ export default function AdminInventory() {
         {/* Back navigation & Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <button
-              onClick={() => navigate('/clinic-admin-dashboard')}
-              className="inline-flex items-center gap-1 text-sm text-violet-700 hover:text-violet-900 font-medium transition-colors mb-1 group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Back to Dashboard
-            </button>
+            <BackButton to="/clinic-admin-dashboard" className="mb-2" />
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-700 shadow-sm">
                 <Package className="w-5 h-5" />

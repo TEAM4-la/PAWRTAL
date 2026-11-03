@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImg from '@/assets/background.png';
 import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
+import BackButton from '@/components/ui/BackButton';
 import { api, userTypeToRole } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,14 +135,10 @@ export default function VetPatientDetail() {
   return (
     <Sidebar user={user} currentUser={user}>
     <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <Button
-        variant="ghost"
+      <BackButton
         onClick={() => navigate(isClinicAdmin ? createPageUrl('AdminPatients') : createPageUrl('VetDashboard'))}
-        className="gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+        className="mb-2"
+      />
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Patient Info */}

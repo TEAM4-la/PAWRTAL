@@ -104,6 +104,26 @@ public class MedicationsController : ControllerBase
             );
         }
 
+        int qtyUsed = Math.Max(1, med.Quantity);
+        string doctorName = !string.IsNullOrWhiteSpace(request.PrescribedBy) 
+            ? request.PrescribedBy.Trim() 
+            : "Veterinarian";
+        if (!doctorName.StartsWith("Dr.", StringComparison.OrdinalIgnoreCase))
+        {
+            doctorName = $"Dr. {doctorName}";
+        }
+
+        string petName = pet?.Name ?? "Patient";
+        string dosageInfo = !string.IsNullOrWhiteSpace(med.Dosage) ? $" ({med.Dosage})" : "";
+
+        // Notify Admin of medication prescribed and quantity deducted
+        await _notifications.NotifyAdminsAsync(
+            "medication",
+            $"Medication Prescribed: {med.Name}",
+            $"{doctorName} prescribed {med.Name}{dosageInfo} for {petName}. Quantity deducted: {qtyUsed} unit{(qtyUsed == 1 ? "" : "s")}.",
+            "medications"
+        );
+
         return Ok(ToDto(med));
     }
 

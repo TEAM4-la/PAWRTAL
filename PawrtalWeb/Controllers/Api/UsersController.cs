@@ -64,6 +64,36 @@ public class UsersController : ControllerBase
         return Ok(users.Select(ToDto).ToList());
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        if (!Guid.TryParse(id, out var userGuid))
+        {
+            return BadRequest(new { message = "Invalid user ID" });
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userGuid && !u.IsDeleted);
+        if (user == null)
+        {
+            return NotFound(new { message = "User not found" });
+        }
+
+        // Prevent self-deletion if caller is the same user
+        var callerEmail = ApiUserContext.GetUserEmail(Request);
+        if (!string.IsNullOrWhiteSpace(callerEmail) && user.Email.Equals(callerEmail.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "You cannot delete your own account." });
+        }
+
+        // Soft delete
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync();
+        return Ok(new { success = true, message = "User profile removed successfully" });
+    }
+
     private static UserDto ToDto(User u)
     {
         object? prefs = null;
@@ -132,7 +162,8 @@ public class UsersController : ControllerBase
             AvatarUrl = u.AvatarUrl,
             LicenseNumber = u.LicenseNumber,
             Specialization = u.Specialization,
-            NotificationPreferences = prefs
+            NotificationPreferences = prefs,
+            CreatedAt = u.CreatedAt
         };
     }
 }

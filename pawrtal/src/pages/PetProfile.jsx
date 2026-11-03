@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImg from '@/assets/background.png';
 import { createPageUrl, getAppointmentStatus, formatDoctorName } from "@/utils";
+import BackButton from '@/components/ui/BackButton';
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,14 +195,7 @@ export default function PetProfile() {
 
   const content = (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate(createPageUrl('Dashboard'))}
-        className="gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+      <BackButton to={createPageUrl('Dashboard')} className="mb-2" />
 
       {/* Header Card */}
       <Card className="overflow-hidden border border-gray-100 shadow-md bg-white">

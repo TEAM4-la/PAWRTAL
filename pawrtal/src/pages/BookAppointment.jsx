@@ -31,22 +31,121 @@ import { format, startOfDay, parse, isToday } from 'date-fns';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
+import BackButton from '@/components/ui/BackButton';
+
+export const appointmentTypeConfigs = {
+  // General check up: 45 mins gap starting from 8am up until 6:15pm. Break: 12pm to 1pm
+  checkup: {
+    label: 'General Checkup',
+    gap: '45 mins',
+    gapMinutes: 45,
+    gapLabel: '45 mins gap',
+    timeSlots: [
+      '08:00 AM', '08:45 AM', '09:30 AM', '10:15 AM', '11:00 AM',
+      '01:00 PM', '01:45 PM', '02:30 PM', '03:15 PM', '04:00 PM', '04:45 PM', '05:30 PM', '06:15 PM'
+    ]
+  },
+  // Vaccination: 30 mins gap starting from 8am up until 6:30pm. Break: 12pm to 1pm
+  vaccination: {
+    label: 'Vaccination',
+    gap: '30 mins',
+    gapMinutes: 30,
+    gapLabel: '30 mins gap',
+    timeSlots: [
+      '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+      '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM'
+    ]
+  },
+  // Consultation: 30 mins gap starting from 8am up until 6:30pm. Break: 12pm to 1pm
+  consultation: {
+    label: 'Consultation',
+    gap: '30 mins',
+    gapMinutes: 30,
+    gapLabel: '30 mins gap',
+    timeSlots: [
+      '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+      '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM'
+    ]
+  },
+  // Deworming: 30 mins gap starting from 8am up until 6:30pm. Break: 12pm to 1pm
+  deworming: {
+    label: 'Deworming',
+    gap: '30 mins',
+    gapMinutes: 30,
+    gapLabel: '30 mins gap',
+    timeSlots: [
+      '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+      '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM'
+    ]
+  },
+  // Ultra sound: 45 mins gap starting from 8am up until 6:15pm. Break: 12pm to 1pm
+  ultra_sound: {
+    label: 'Ultra Sound',
+    gap: '45 mins',
+    gapMinutes: 45,
+    gapLabel: '45 mins gap',
+    timeSlots: [
+      '08:00 AM', '08:45 AM', '09:30 AM', '10:15 AM', '11:00 AM',
+      '01:00 PM', '01:45 PM', '02:30 PM', '03:15 PM', '04:00 PM', '04:45 PM', '05:30 PM', '06:15 PM'
+    ]
+  },
+  // Grooming: 1 hour gap starting from 8am up until 6:00pm. Break: 12pm to 1pm
+  grooming: {
+    label: 'Grooming',
+    gap: '1 hour',
+    gapMinutes: 60,
+    gapLabel: '1 hour gap',
+    timeSlots: [
+      '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
+      '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'
+    ]
+  },
+  // Dental care: 1 hour gap starting from 8am up until 6:00pm. Break: 12pm to 1pm
+  dental: {
+    label: 'Dental Care',
+    gap: '1 hour',
+    gapMinutes: 60,
+    gapLabel: '1 hour gap',
+    timeSlots: [
+      '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
+      '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM'
+    ]
+  },
+  // Surgery: 2 hours gap starting from 8am up until 5:00pm. Break: 12pm to 1pm
+  surgery: {
+    label: 'Surgery',
+    gap: '2 hours',
+    gapMinutes: 120,
+    gapLabel: '2 hours gap',
+    timeSlots: [
+      '08:00 AM', '10:00 AM',
+      '01:00 PM', '03:00 PM', '05:00 PM'
+    ]
+  },
+};
 
 const appointmentTypes = [
-  { value: 'checkup', label: 'General Checkup', icon: Stethoscope, color: 'bg-teal-100 text-teal-700' },
-  { value: 'vaccination', label: 'Vaccination', icon: Syringe, color: 'bg-purple-100 text-purple-700' },
-  { value: 'deworming', label: 'Deworming', icon: Pill, color: 'bg-amber-100 text-amber-700' },
-  { value: 'grooming', label: 'Grooming', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
-  { value: 'dental', label: 'Dental Care', icon: Heart, color: 'bg-blue-100 text-blue-700' },
-  { value: 'surgery', label: 'Surgery', icon: Activity, color: 'bg-red-100 text-red-700' },
-  { value: 'ultra_sound', label: 'Ultra Sound', icon: Waves, color: 'bg-cyan-100 text-cyan-700' },
-  { value: 'consultation', label: 'Consultation', icon: Stethoscope, color: 'bg-indigo-100 text-indigo-700' },
+  { value: 'checkup', label: 'General Checkup', gap: '45 mins', icon: Stethoscope, color: 'bg-teal-100 text-teal-700' },
+  { value: 'vaccination', label: 'Vaccination', gap: '30 mins', icon: Syringe, color: 'bg-purple-100 text-purple-700' },
+  { value: 'deworming', label: 'Deworming', gap: '30 mins', icon: Pill, color: 'bg-amber-100 text-amber-700' },
+  { value: 'grooming', label: 'Grooming', gap: '1 hour', icon: Scissors, color: 'bg-pink-100 text-pink-700' },
+  { value: 'dental', label: 'Dental Care', gap: '1 hour', icon: Heart, color: 'bg-blue-100 text-blue-700' },
+  { value: 'surgery', label: 'Surgery', gap: '2 hours', icon: Activity, color: 'bg-red-100 text-red-700' },
+  { value: 'ultra_sound', label: 'Ultra Sound', gap: '45 mins', icon: Waves, color: 'bg-cyan-100 text-cyan-700' },
+  { value: 'consultation', label: 'Consultation', gap: '30 mins', icon: Stethoscope, color: 'bg-indigo-100 text-indigo-700' },
 ];
 
-const timeSlots = [
-  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM'
-];
+function timeToMinutes(timeStr) {
+  if (!timeStr) return null;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+  let [ , hStr, mStr, period ] = match;
+  let hours = parseInt(hStr, 10);
+  const minutes = parseInt(mStr, 10);
+  if (period.toUpperCase() === 'PM' && hours < 12) hours += 12;
+  if (period.toUpperCase() === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
 
 const speciesIcons = {
   dog: Dog,
@@ -119,6 +218,14 @@ export default function BookAppointment() {
   // Block pending, confirmed, AND accepted — only completed/cancelled/expired free up a slot.
   // When a specific veterinarian is chosen, only their slots (or clinic capacity) block the time.
   // When "Any Available" is chosen, slots are blocked only if all veterinarians are occupied.
+  const activeTimeSlots = useMemo(() => {
+    if (formData.type && appointmentTypeConfigs[formData.type]) {
+      return appointmentTypeConfigs[formData.type].timeSlots;
+    }
+    return appointmentTypeConfigs.checkup.timeSlots;
+  }, [formData.type]);
+
+  // Set of time strings that are already taken or overlapping on this date
   const bookedTimes = useMemo(() => {
     const activeAppts = bookedAppointments.filter(
       (apt) => apt.status === 'pending' || apt.status === 'confirmed' || apt.status === 'accepted'
@@ -126,27 +233,44 @@ export default function BookAppointment() {
 
     const taken = new Set();
     const vetCount = veterinarians.length || 1;
+    const currentGap = (formData.type && appointmentTypeConfigs[formData.type])
+      ? appointmentTypeConfigs[formData.type].gapMinutes
+      : 30;
 
-    timeSlots.forEach((time) => {
-      const apptsAtTime = activeAppts.filter((apt) => apt.time === time);
+    activeTimeSlots.forEach((slotTime) => {
+      const slotStart = timeToMinutes(slotTime);
+      if (slotStart === null) return;
+      const slotEnd = slotStart + currentGap;
+
+      // Find active appointments that overlap with this time window: [slotStart, slotEnd)
+      const overlappingAppts = activeAppts.filter((apt) => {
+        if (apt.time === slotTime) return true;
+        const apptStart = timeToMinutes(apt.time);
+        if (apptStart === null) return false;
+        const apptGap = (apt.type && appointmentTypeConfigs[apt.type])
+          ? appointmentTypeConfigs[apt.type].gapMinutes
+          : 30;
+        const apptEnd = apptStart + apptGap;
+        return Math.max(slotStart, apptStart) < Math.min(slotEnd, apptEnd);
+      });
 
       if (formData.vet_email) {
         // Specific vet selected: blocked if that vet is booked OR all clinic capacity is booked
-        const vetIsBooked = apptsAtTime.some((apt) => apt.vet_email === formData.vet_email);
-        const clinicAtCapacity = apptsAtTime.length >= vetCount;
+        const vetIsBooked = overlappingAppts.some((apt) => apt.vet_email === formData.vet_email);
+        const clinicAtCapacity = overlappingAppts.length >= vetCount;
         if (vetIsBooked || clinicAtCapacity) {
-          taken.add(time);
+          taken.add(slotTime);
         }
       } else {
         // "Any Available" selected: blocked only if all vets are booked at this time
-        if (apptsAtTime.length >= vetCount) {
-          taken.add(time);
+        if (overlappingAppts.length >= vetCount) {
+          taken.add(slotTime);
         }
       }
     });
 
     return taken;
-  }, [bookedAppointments, formData.vet_email, veterinarians]);
+  }, [bookedAppointments, formData.vet_email, formData.type, veterinarians, activeTimeSlots]);
 
   /**
    * Returns true if a time slot should be disabled.
@@ -160,7 +284,10 @@ export default function BookAppointment() {
     if (!formData.date || !isToday(formData.date)) return false;
 
     // Parse the slot into today's datetime — date-fns format: hh=12h, mm=minutes, a=AM/PM
-    const slotDate = parse(timeStr, 'hh:mm a', new Date());
+    let slotDate = parse(timeStr, 'hh:mm a', new Date());
+    if (isNaN(slotDate.getTime())) {
+      slotDate = parse(timeStr, 'h:mm a', new Date());
+    }
     const now = new Date();
     // Disable if slot time is <= now + 30 minutes
     if (isNaN(slotDate.getTime())) return false; // safety guard
@@ -177,6 +304,7 @@ export default function BookAppointment() {
       date: format(data.date, 'yyyy-MM-dd'),
     }),
     onSuccess: () => {
+
       toast.success('Appointment booked successfully!');
       navigate(createPageUrl('Appointments'));
     },
@@ -207,14 +335,10 @@ export default function BookAppointment() {
 
   const content = (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <Button
-        variant="ghost"
+      <BackButton
         onClick={() => preselectedPetId ? navigate(createPageUrl(`PetProfile?id=${preselectedPetId}`)) : navigate(createPageUrl('Dashboard'))}
-        className="mb-6 gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+        className="mb-6"
+      />
 
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
@@ -301,20 +425,28 @@ export default function BookAppointment() {
                     <div
                       key={type.value}
                       onClick={() => {
-                        setFormData({ ...formData, type: type.value });
+                        const newSlots = appointmentTypeConfigs[type.value]?.timeSlots || [];
+                        setFormData(prev => ({
+                          ...prev,
+                          type: type.value,
+                          time: newSlots.includes(prev.time) ? prev.time : '',
+                        }));
                         setErrors(prev => ({ ...prev, type: false }));
                       }}
                       className={cn(
-                        "flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
+                        "flex items-center gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all",
                         isSelected
-                          ? "border-orange-500 bg-orange-50/60"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-orange-500 bg-orange-50/60 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
                       )}
                     >
-                      <div className={cn("p-2 rounded-lg", type.color)}>
+                      <div className={cn("p-2 rounded-lg shrink-0", type.color)}>
                         <type.icon className="w-5 h-5" />
                       </div>
-                      <span className="font-medium text-gray-900">{type.label}</span>
+                      <div className="min-w-0">
+                        <span className="font-medium text-gray-900 block truncate text-sm sm:text-base">{type.label}</span>
+                        <span className="text-xs text-gray-500 font-normal">{type.gap} gap</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -400,17 +532,32 @@ export default function BookAppointment() {
 
             {/* Time Selection */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">
-                Preferred Time <span className="text-red-500">*</span>
-              </Label>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3">
+                <Label className="text-sm font-medium">
+                  Preferred Time <span className="text-red-500">*</span>
+                </Label>
+                {formData.type && appointmentTypeConfigs[formData.type] && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 w-fit">
+                    {appointmentTypeConfigs[formData.type].gapLabel} • 12:00 PM – 1:00 PM Lunch Break
+                  </span>
+                )}
+              </div>
+
               {!formData.date && (
                 <p className="text-sm text-amber-600 mb-2 flex items-center gap-1">
                   <AlertTriangle className="w-4 h-4" />
                   Please select a date first to see available time slots.
                 </p>
               )}
-              <div className={cn("grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
-                {timeSlots.map((time) => {
+              {!formData.type && (
+                <p className="text-sm text-amber-600 mb-2 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  Please select an appointment type above to load procedure time slots.
+                </p>
+              )}
+
+              <div className={cn("grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
+                {activeTimeSlots.map((time) => {
                   const isSelected = formData.time === time;
                   const disabled = isSlotDisabled(time);
                   const isBooked = bookedTimes.has(time);
@@ -426,7 +573,7 @@ export default function BookAppointment() {
                           setErrors(prev => ({ ...prev, time: false }));
                         }}
                         className={cn(
-                          "h-9 sm:h-10 w-full text-[11px] sm:text-sm px-1 sm:px-3 transition-all",
+                          "h-9 sm:h-10 w-full text-[11px] sm:text-xs font-medium px-1 sm:px-2 transition-all",
                           isSelected && "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm",
                           disabled && isBooked && "opacity-40 line-through cursor-not-allowed bg-red-50 border-red-200 text-red-400",
                           disabled && !isBooked && "opacity-40 cursor-not-allowed bg-gray-50 text-gray-400"
@@ -446,10 +593,19 @@ export default function BookAppointment() {
               </div>
               {/* Legend */}
               {formData.date && (
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-orange-500 inline-block" /> Available</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 inline-block" /> Already booked</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200 inline-block" /> Too soon (30-min gap)</span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-xs text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-orange-500 inline-block" /> Available
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 inline-block" /> Already booked
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200 inline-block" /> Too soon (30-min buffer)
+                  </span>
+                  <span className="flex items-center gap-1.5 text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-medium">
+                    12:00 PM – 1:00 PM Break Excluded
+                  </span>
                 </div>
               )}
               {errors.time && (

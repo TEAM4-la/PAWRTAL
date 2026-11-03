@@ -66,7 +66,7 @@ export default function AdminSidebar({ children, currentUser }) {
             </p>
           </div>
         </div>
-        <AdminNotificationPanel alignPopover="left" />
+        <AdminNotificationPanel alignPopover="left" currentUser={currentUser} />
       </div>
 
       {/* Nav */}

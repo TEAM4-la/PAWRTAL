@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '@/components/ui/BackButton';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -350,6 +351,7 @@ export default function VetAddRecord() {
         const res = await api.entities.Vaccination.create({
           pet_id: vaccinationPatientId,
           vaccine_name: item.vaccine_name.trim(),
+          quantity: presQty,
           date_administered: item.date_administered,
           next_due_date: item.next_due_date,
           batch_number: item.batch_number?.trim() || null,
@@ -602,14 +604,7 @@ export default function VetAddRecord() {
   return (
     <VetSidebar user={user}>
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <Button
-        variant="ghost"
-        onClick={() => navigate(createPageUrl('VetDashboard'))}
-        className="mb-6 gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+      <BackButton to={createPageUrl('VetDashboard')} className="mb-6" />
 
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">

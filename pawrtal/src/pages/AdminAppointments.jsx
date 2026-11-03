@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Search, Calendar, Clock, Check, X, Stethoscope, ChevronLeft } from 'lucide-react';
+import BackButton from '@/components/ui/BackButton';
 import { format, parse } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
@@ -100,9 +101,7 @@ export default function AdminAppointments() {
   return (
     <AdminSidebar currentUser={user}>
       <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-        <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-4">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+        <BackButton to={createPageUrl('ClinicAdminDashboard')} />
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">All Appointments</h1>
           <p className="text-gray-500 mt-1">Manage clinic-wide appointments</p>
@@ -339,8 +338,8 @@ export default function AdminAppointments() {
                 onClick={() => {
                   if (!cancelTarget) return;
                   const newReason = cancelTarget.reason 
-                    ? `${cancelTarget.reason}\n\nCancellation Reason: ${cancelReason}`
-                    : `Cancellation Reason: ${cancelReason}`;
+                    ? `${cancelTarget.reason}\n\nCancellation Reason (by Clinic Administrator): ${cancelReason}`
+                    : `Cancellation Reason (by Clinic Administrator): ${cancelReason}`;
                   updateMutation.mutate({ id: cancelTarget.id, status: 'cancelled', reason: newReason });
                   setCancelTarget(null);
                   setCancelReason('');

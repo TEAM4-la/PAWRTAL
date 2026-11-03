@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EmptyState from "@/components/shared/EmptyState";
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import BackButton from '@/components/ui/BackButton';
 import { 
   Search, 
   PawPrint, 
@@ -103,9 +104,7 @@ export default function AdminPatients() {
 
   const content = (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
-      <button onClick={() => navigate(createPageUrl('ClinicAdminDashboard'))} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-teal-700 transition-colors mb-2">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </button>
+      <BackButton to={createPageUrl('ClinicAdminDashboard')} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">All Patients</h1>

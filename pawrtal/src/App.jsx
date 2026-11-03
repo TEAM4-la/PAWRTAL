@@ -1,4 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import Welcome from './pages/Welcome';
 import SignIn from './pages/SignIn';
 import CreateAccount from './pages/CreateAccount';
@@ -40,7 +42,10 @@ const NotFound = () => (
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <Toaster position="top-right" richColors closeButton />
+      <ErrorBoundary>
+        <Routes>
       <Route path="/" element={<Welcome />} />
       <Route path="/sign-in" element={<SignIn />} />
       <Route path="/create-account" element={<CreateAccount />} />
@@ -79,5 +84,7 @@ export default function App() {
       {/* Catch-all route for 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </ErrorBoundary>
+    </>
   );
 }

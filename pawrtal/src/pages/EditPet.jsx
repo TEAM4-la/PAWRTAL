@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 import BreedAutocomplete from '@/components/shared/BreedAutocomplete';
 import PetPhotoUpload from '@/components/shared/PetPhotoUpload';
+import BackButton from '@/components/ui/BackButton';
 
 const speciesOptions = [
   { value: 'dog', label: 'Dog', icon: Dog },
@@ -177,14 +178,10 @@ export default function EditPet() {
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <Button
-        variant="ghost"
+      <BackButton
         onClick={() => petId ? navigate(createPageUrl(`PetProfile?id=${petId}`)) : navigate(createPageUrl('Dashboard'))}
-        className="mb-6 gap-2 text-gray-600"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </Button>
+        className="mb-6"
+      />
 
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-amber-50 to-orange-50">
