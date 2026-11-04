@@ -145,13 +145,13 @@ export default function OwnerSidebar({ user, children }) {
   return (
     <div className="flex min-h-screen bg-amber-50/30">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-amber-100 fixed inset-y-0 left-0 z-30 shadow-sm">
+      <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-amber-100 fixed inset-y-0 left-0 z-30 shadow-sm print:hidden">
         <SidebarContent />
       </aside>
 
       {/* Mobile Overlay */}
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-40 lg:hidden print:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <aside className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl z-50">
             <SidebarContent />
@@ -162,7 +162,7 @@ export default function OwnerSidebar({ user, children }) {
       {/* Main content */}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-amber-100 sticky top-0 z-20">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-amber-100 sticky top-0 z-20 print:hidden">
           <button onClick={() => setOpen(true)} className="p-2 rounded-lg text-amber-700 hover:bg-amber-50">
             <Menu className="w-5 h-5" />
           </button>

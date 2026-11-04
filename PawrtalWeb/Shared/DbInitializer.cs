@@ -216,6 +216,64 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureAppointmentTypeCheckConstraintSql);
 
+        // Ensure CK_Appointments_Status check constraint exists
+        const string ensureAppointmentStatusCheckConstraintSql = @"
+IF OBJECT_ID(N'CK_Appointments_Status', 'C') IS NOT NULL
+BEGIN
+    ALTER TABLE [Appointments] DROP CONSTRAINT [CK_Appointments_Status];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments')
+BEGIN
+    ALTER TABLE [Appointments] WITH CHECK ADD CONSTRAINT [CK_Appointments_Status] 
+    CHECK ([Status] IN ('pending', 'confirmed', 'accepted', 'completed', 'cancelled', 'expired'));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureAppointmentStatusCheckConstraintSql);
+
+        // Ensure UQ_Appointments_Vet_Date_Slot unique filtered index exists
+        const string ensureAppointmentSlotIndexSql = @"
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_Appointments_Vet_Date_Slot')
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UQ_Appointments_Vet_Date_Slot]
+    ON [Appointments] ([VetEmail], [Date], [TimeSlot])
+    WHERE [IsDeleted] = 0 
+      AND [Status] IN ('pending', 'confirmed', 'accepted') 
+      AND [VetEmail] IS NOT NULL;
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureAppointmentSlotIndexSql);
+
+        // Ensure CK_Users_UserType check constraint exists
+        const string ensureUserTypeCheckConstraintSql = @"
+IF OBJECT_ID(N'CK_Users_UserType', 'C') IS NOT NULL
+BEGIN
+    ALTER TABLE [Users] DROP CONSTRAINT [CK_Users_UserType];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Users')
+BEGIN
+    ALTER TABLE [Users] WITH CHECK ADD CONSTRAINT [CK_Users_UserType] 
+    CHECK ([UserType] IS NULL OR [UserType] IN ('admin', 'clinic_admin', 'veterinarian', 'pet_owner'));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureUserTypeCheckConstraintSql);
+
+        // Ensure CK_Notifications_Type check constraint exists
+        const string ensureNotificationTypeCheckConstraintSql = @"
+IF OBJECT_ID(N'CK_Notifications_Type', 'C') IS NOT NULL
+BEGIN
+    ALTER TABLE [Notifications] DROP CONSTRAINT [CK_Notifications_Type];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Notifications')
+BEGIN
+    ALTER TABLE [Notifications] WITH CHECK ADD CONSTRAINT [CK_Notifications_Type] 
+    CHECK ([Type] IN ('appointment', 'grooming', 'health_record', 'medication', 'message', 'vaccination', 'general', 'system'));
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureNotificationTypeCheckConstraintSql);
+
         // 2. Seed starter vaccines & medications if table is empty
         var hasItems = await db.InventoryItems.AnyAsync();
         if (!hasItems)

@@ -9,7 +9,6 @@ import {
   PawPrint, 
   Phone, 
   Mail, 
-  MapPin, 
   Calendar,
   AlertTriangle,
   Dog,
@@ -185,8 +184,8 @@ export default function PublicPetProfile() {
         </Card>
 
 
-        {/* Owner Contact */}
-        {owner && (
+        {/* Owner Contact (Address permanently excluded for RA 10173 privacy) */}
+        {owner && (owner?.notification_preferences?.show_phone_on_public_qr !== false && owner?.phone || owner?.notification_preferences?.show_email_on_public_qr === true && owner?.email) ? (
           <Card className="border-0 shadow-lg bg-gradient-to-br from-teal-500 to-teal-600 text-white">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -199,26 +198,43 @@ export default function PublicPetProfile() {
                   <p className="font-medium text-lg">{owner.full_name}</p>
                 )}
                 
-                {owner.phone && (
+                {owner.notification_preferences?.show_phone_on_public_qr !== false && owner.phone && (
                   <a href={`tel:${owner.phone}`} className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
                     <Phone className="w-5 h-5" />
                     <span>{owner.phone}</span>
                   </a>
                 )}
                 
-                {owner.email && (
+                {owner.notification_preferences?.show_email_on_public_qr === true && owner.email && (
                   <a href={`mailto:${owner.email}`} className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
                     <Mail className="w-5 h-5" />
                     <span>{owner.email}</span>
                   </a>
                 )}
-                
-                {owner.address && (
-                  <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl">
-                    <MapPin className="w-5 h-5 flex-shrink-0" />
-                    <span>{owner.address}</span>
-                  </div>
-                )}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          /* Clinic Intermediary Emergency Card when owner hides direct contact */
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-5 h-5" />
+                <h2 className="font-semibold text-lg">Emergency Contact: Clinic Intermediary</h2>
+              </div>
+              <p className="text-amber-100 text-sm mb-4">
+                The owner has protected their direct contact details. If you have found {pet.name}, please contact VM Veterinary Clinic with the Pet ID below and the clinic will safely contact the owner:
+              </p>
+              
+              <div className="space-y-2.5">
+                <a href="tel:09123456789" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
+                  <Phone className="w-5 h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base">Clinic Hotline: 0912-345-6789</span>
+                </a>
+                <a href="mailto:Admin@pawrtal.com" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
+                  <Mail className="w-5 h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base">Admin@pawrtal.com</span>
+                </a>
               </div>
             </CardContent>
           </Card>

@@ -15,7 +15,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BackButton from '@/components/ui/BackButton';
@@ -73,7 +72,6 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [successPrompt, setSuccessPrompt] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,11 +87,9 @@ export default function SignIn() {
     if (typeof reg === 'string' && reg) setEmail(reg);
 
     if (location.state?.registeredSuccess) {
-      const msg = location.state?.successMessage || 'Account created successfully! Please enter your password to sign in.';
-      setSuccessPrompt(msg);
       setSelectedRole(location.state?.registeredRole || 'owner');
       setStep(STEP_CREDENTIALS);
-      toast.success('Account created successfully! Please sign in with your credentials.');
+      toast.success('Account created successfully! Please sign in with your credentials.', { id: 'account-created' });
       try {
         window.history.replaceState({}, document.title);
       } catch {
@@ -272,16 +268,6 @@ export default function SignIn() {
                   <p className="text-gray-500 text-sm">Select your role to get started</p>
                 </div>
 
-                {successPrompt && (
-                  <div className="p-3.5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2.5 text-sm text-green-800 animate-in fade-in">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-green-900">Account Created Successfully</p>
-                      <p className="text-green-700 text-xs sm:text-sm mt-0.5">{successPrompt}</p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-3.5">
                   {roles.map((role) => {
                     const Icon = role.icon;
@@ -368,16 +354,6 @@ export default function SignIn() {
                   Enter the email and password for your account.
                 </p>
 
-                {successPrompt && (
-                  <div className="mb-4 p-3.5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-2.5 text-sm text-green-800 animate-in fade-in">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-green-900">Account Created Successfully</p>
-                      <p className="text-green-700 text-xs sm:text-sm mt-0.5">{successPrompt}</p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="mb-3.5">
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
                   <div className="relative">
@@ -393,7 +369,15 @@ export default function SignIn() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700">Password</label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs text-amber-600 hover:text-amber-700 font-medium hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -402,6 +386,7 @@ export default function SignIn() {
                       onChange={e => { setPassword(e.target.value); setError(''); }}
                       placeholder="••••••••"
                       className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
+                      onKeyDown={e => e.key === 'Enter' && handleSignIn()}
                     />
                     <button
                       type="button"

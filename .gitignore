@@ -1,4 +1,4 @@
-﻿node_modules
+node_modules
 /.vs
 /PawtralWeb/bin/Debug/net9.0
 /PawtralWeb/obj
@@ -22,3 +22,10 @@ manuals/
 # Storyboards & Visual Specifications - local documentation only, strictly ignored by git
 *storyboard*
 *Storyboard*
+
+# Automated Testing & Test Reports - local testing and documentation only
+tests/
+test/
+*test_report*
+*TestReport*
+*test_results*

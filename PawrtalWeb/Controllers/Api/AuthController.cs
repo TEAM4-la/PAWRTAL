@@ -1,9 +1,11 @@
 using System.Text.Json;
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pawtral.Web.Controllers.Api.Dtos;
 using PawrtalWeb.Shared;
 using PawrtalWeb.Models;
+using PawtralWeb.Services;
 
 namespace Pawtral.Web.Controllers.Api;
 
@@ -13,10 +15,17 @@ public class AuthController : ControllerBase
 {
     private const int MinPasswordLength = 6;
     private readonly PawrtalDbContext _db;
+    private readonly ISmsService _sms;
 
-    public AuthController(PawrtalDbContext db)
+    // In-memory OTP store: email -> (otp, expiry, attempts)
+    private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry, int Attempts, string ResetToken)> _otpStore = new();
+    private const int OTP_EXPIRY_MINUTES = 5;
+    private const int MAX_OTP_ATTEMPTS = 5;
+
+    public AuthController(PawrtalDbContext db, ISmsService sms)
     {
         _db = db;
+        _sms = sms;
     }
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
@@ -404,6 +413,128 @@ public class AuthController : ControllerBase
         target.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return NoContent();
+    }
+
+    // ──────────────── Forgot Password via SMS OTP ────────────────
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { error = "Email is required." });
+
+        var user = await FindUserByEmailAsync(request.Email, ct);
+        if (user == null)
+        {
+            // Don't reveal whether the account exists
+            return Ok(new { message = "If an account with that email exists and has a phone number, an OTP has been sent.", phoneMask = (string?)null });
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Phone))
+        {
+            return Ok(new { message = "If an account with that email exists and has a phone number, an OTP has been sent.", phoneMask = (string?)null });
+        }
+
+        // Rate limit: don't resend if previous OTP was sent less than 60 seconds ago
+        var emailKey = NormalizeEmail(request.Email);
+        if (_otpStore.TryGetValue(emailKey, out var existing) && existing.Expiry > DateTime.UtcNow.AddMinutes(OTP_EXPIRY_MINUTES - 1))
+        {
+            var maskedPhone = MaskPhone(user.Phone);
+            return Ok(new { message = $"OTP already sent. Please check your phone ({maskedPhone}).", phoneMask = maskedPhone });
+        }
+
+        // Generate 6-digit OTP
+        var otp = new Random().Next(100000, 999999).ToString();
+        var resetToken = Guid.NewGuid().ToString("N");
+
+        _otpStore[emailKey] = (otp, DateTime.UtcNow.AddMinutes(OTP_EXPIRY_MINUTES), 0, resetToken);
+
+        // Send via UniSMS
+        var smsMessage = $"Pawrtal Password Reset: Your OTP is {otp}. It expires in {OTP_EXPIRY_MINUTES} minutes. Do not share this code.";
+        _ = Task.Run(async () =>
+        {
+            try { await _sms.SendSmsAsync(user.Phone, smsMessage); }
+            catch { /* logged inside service */ }
+        });
+
+        var masked = MaskPhone(user.Phone);
+        return Ok(new { message = $"A 6-digit OTP has been sent to {masked}.", phoneMask = masked });
+    }
+
+    [HttpPost("verify-otp")]
+    public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp))
+            return BadRequest(new { error = "Email and OTP are required." });
+
+        var emailKey = NormalizeEmail(request.Email);
+
+        if (!_otpStore.TryGetValue(emailKey, out var record))
+            return BadRequest(new { error = "No OTP was requested for this email. Please request a new one." });
+
+        if (record.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(emailKey, out _);
+            return BadRequest(new { error = "OTP has expired. Please request a new one." });
+        }
+
+        if (record.Attempts >= MAX_OTP_ATTEMPTS)
+        {
+            _otpStore.TryRemove(emailKey, out _);
+            return BadRequest(new { error = "Too many incorrect attempts. Please request a new OTP." });
+        }
+
+        if (record.Otp != request.Otp.Trim())
+        {
+            _otpStore[emailKey] = (record.Otp, record.Expiry, record.Attempts + 1, record.ResetToken);
+            var remaining = MAX_OTP_ATTEMPTS - record.Attempts - 1;
+            return BadRequest(new { error = $"Incorrect OTP. {remaining} attempt{(remaining == 1 ? "" : "s")} remaining." });
+        }
+
+        // OTP is correct – return the reset token
+        return Ok(new { token = record.ResetToken, message = "OTP verified successfully. You may now reset your password." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordWithTokenRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
+            return BadRequest(new { error = "Email and reset token are required." });
+        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < MinPasswordLength)
+            return BadRequest(new { error = $"New password must be at least {MinPasswordLength} characters." });
+
+        var emailKey = NormalizeEmail(request.Email);
+
+        if (!_otpStore.TryGetValue(emailKey, out var record))
+            return BadRequest(new { error = "Invalid or expired reset session. Please start over." });
+
+        if (record.ResetToken != request.Token.Trim())
+            return BadRequest(new { error = "Invalid reset token." });
+
+        if (record.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(emailKey, out _);
+            return BadRequest(new { error = "Reset session has expired. Please request a new OTP." });
+        }
+
+        var user = await FindUserByEmailAsync(request.Email, ct);
+        if (user == null)
+            return NotFound(new { error = "User not found." });
+
+        user.PasswordHash = Utilities.Encrypt(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        // Consume the token
+        _otpStore.TryRemove(emailKey, out _);
+
+        return Ok(new { message = "Password has been reset successfully. You can now sign in with your new password." });
+    }
+
+    private static string MaskPhone(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone) || phone.Length < 7) return "****";
+        return phone.Substring(0, 4) + "***" + phone.Substring(phone.Length - 3);
     }
 
     private static UserDto ToDto(User u)

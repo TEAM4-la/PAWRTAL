@@ -353,8 +353,8 @@ GO
 -- Password for Solangon@pawrtal.com: Solangon01
 INSERT INTO [Users] 
 (
-    [Id], [Email], [DisplayName], [FirstName], [LastName], [UserType], [Phone], [Address], 
-    [LicenseNumber], [Specialization], [PasswordHash], [CreatedAt], [UpdatedAt], [IsDeleted]
+    [Id], [Email], [DisplayName], [FirstName], [MiddleName], [LastName], [UserType], [Phone], [Address], 
+    [NotificationPrefsJson], [LicenseNumber], [Specialization], [PasswordHash], [CreatedAt], [UpdatedAt], [IsDeleted]
 )
 VALUES 
     (
@@ -362,10 +362,12 @@ VALUES
         N'Admin@pawrtal.com', 
         N'Admin', 
         N'Clinic',
-        N'Admin',
+        NULL,
+        N'Admin', 
         N'admin', 
         N'09123456789', 
         N'Clinic HQ', 
+        N'{"email":true,"sms":true,"appointments":true,"vaccinations":true,"medications":true,"display_name":"Admin","first_name":"Clinic","last_name":"Admin","phone":"09123456789","legal_name":"Clinic Admin"}',
         NULL, 
         NULL, 
         N'08AShwlBk5tdtilhqL67lw==', -- Encrypted Admin01
@@ -378,10 +380,12 @@ VALUES
         N'RebeccaGoyena@pawrtal.com', 
         N'Dr. Rebecca Goyena', 
         N'Rebecca',
-        N'Goyena',
+        NULL,
+        N'Goyena', 
         N'veterinarian', 
         N'09171234567', 
         N'VM Veterinary Clinic', 
+        N'{"email":true,"sms":true,"appointments":true,"vaccinations":true,"medications":true,"display_name":"Dr. Rebecca Goyena","first_name":"Rebecca","last_name":"Goyena","phone":"09171234567","legal_name":"Rebecca Goyena"}',
         N'PRC-0078901', 
         N'General Veterinary Medicine & Surgery', 
         N'+i3+Hhn8jdLZSrVlnrkpag==', -- Encrypted RebeccaGoyena01
@@ -394,10 +398,12 @@ VALUES
         N'Solangon@pawrtal.com', 
         N'Dr. Solangon', 
         N'Solangon',
-        N'Veterinarian',
+        NULL,
+        N'Veterinarian', 
         N'veterinarian', 
         N'09234567890', 
         N'VM Veterinary Clinic', 
+        N'{"email":true,"sms":true,"appointments":true,"vaccinations":true,"medications":true,"display_name":"Dr. Solangon","first_name":"Solangon","last_name":"Veterinarian","phone":"09234567890","legal_name":"Solangon Veterinarian"}',
         N'PRC-1234567', 
         N'General Veterinary Medicine & Surgery', 
         N'lQhOeJEAs0BqfgKRd8oNUg==', -- Encrypted Solangon01

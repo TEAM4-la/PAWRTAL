@@ -61,18 +61,36 @@ export default function PrintablePetId({ pet, user, qrCodeUrl }) {
   );
 
   return (
-    <div className="hidden print:block w-full">
+    <div>
       <style>
         {`
-          @media print {
-            @page { margin: 10mm; }
-            body * { visibility: hidden; }
-            #printable-pet-id, #printable-pet-id * { visibility: visible; }
+          @media screen {
             #printable-pet-id {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
+              display: none !important;
+            }
+          }
+          @media print {
+            @page {
+              margin: 10mm;
+              size: auto;
+            }
+            html, body {
+              background: #ffffff !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: visible !important;
+              height: auto !important;
+              min-height: auto !important;
+            }
+            .print\\:hidden, header, aside, nav, button, [role="navigation"] {
+              display: none !important;
+            }
+            #printable-pet-id {
+              display: block !important;
+              visibility: visible !important;
+              position: static !important;
+              width: 100% !important;
+              margin: 0 auto !important;
             }
           }
         `}
@@ -185,12 +203,12 @@ export default function PrintablePetId({ pet, user, qrCodeUrl }) {
                 </div>
               </div>
 
-              {/* QR Code */}
+              {/* QR Code (Standard 20mm x 20mm / 2cm x 2cm collar size) */}
               <div style={{ background: '#fff', padding: '1mm', borderRadius: '1.5mm', flexShrink: 0 }}>
                 {qrCodeUrl ? (
-                  <img src={qrCodeUrl} alt="QR Code" style={{ width: '19mm', height: '19mm', objectFit: 'contain', display: 'block' }} />
+                  <img src={qrCodeUrl} alt="QR Code" style={{ width: '20mm', height: '20mm', objectFit: 'contain', display: 'block' }} />
                 ) : (
-                  <div style={{ width: '19mm', height: '19mm', background: '#e5e7eb' }} />
+                  <div style={{ width: '20mm', height: '20mm', background: '#e5e7eb' }} />
                 )}
               </div>
             </div>

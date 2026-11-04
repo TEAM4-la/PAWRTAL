@@ -57,7 +57,7 @@ public class NotificationsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Phone))
             return BadRequest(new { error = "Phone number is required." });
 
-        var (success, providerMessage) = await smsService.SendSmsDetailedAsync(request.Phone, request.Message ?? "Pawrtal: Test SMS notification via Semaphore.");
+        var (success, providerMessage) = await smsService.SendSmsDetailedAsync(request.Phone, request.Message ?? "Pawrtal: Test SMS notification via UniSMS.");
         return Ok(new { success, message = providerMessage });
     }
 

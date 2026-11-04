@@ -186,6 +186,27 @@ export const api = {
         body: { targetEmail, newPassword },
       });
     },
+    async forgotPassword(email) {
+      return await http('/api/auth/forgot-password', {
+        method: 'POST',
+        body: { email },
+        skipAuthHeaders: true,
+      });
+    },
+    async verifyOtp({ email, otp }) {
+      return await http('/api/auth/verify-otp', {
+        method: 'POST',
+        body: { email, otp },
+        skipAuthHeaders: true,
+      });
+    },
+    async resetPassword({ email, token, newPassword }) {
+      return await http('/api/auth/reset-password', {
+        method: 'POST',
+        body: { email, token, newPassword },
+        skipAuthHeaders: true,
+      });
+    },
     async logout(redirectUrl) {
       if (typeof window !== 'undefined') {
         window.sessionStorage.removeItem('pawrtal_role');

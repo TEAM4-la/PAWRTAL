@@ -35,6 +35,13 @@ export default function EditPet() {
   const [errors, setErrors] = useState({});
   const [newAllergy, setNewAllergy] = useState('');
   const [newCondition, setNewCondition] = useState('');
+  const [showPhoneOnQr, setShowPhoneOnQr] = useState(true);
+  const [showEmailOnQr, setShowEmailOnQr] = useState(false);
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => api.auth.me(),
+  });
 
   const { data: pet, isLoading } = useQuery({
     queryKey: ['pet', petId],
@@ -42,6 +49,17 @@ export default function EditPet() {
     enabled: !!petId,
     select: (data) => data[0],
   });
+
+  useEffect(() => {
+    if (user?.notification_preferences) {
+      if (user.notification_preferences.show_phone_on_public_qr !== undefined) {
+        setShowPhoneOnQr(user.notification_preferences.show_phone_on_public_qr);
+      }
+      if (user.notification_preferences.show_email_on_public_qr !== undefined) {
+        setShowEmailOnQr(user.notification_preferences.show_email_on_public_qr);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (pet && !formData) {
@@ -63,12 +81,26 @@ export default function EditPet() {
   }, [pet, formData]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => api.entities.Pet.update(petId, {
-      ...data,
-      weight: data.weight ? parseFloat(data.weight) : null,
-    }),
+    mutationFn: async (data) => {
+      if (user) {
+        try {
+          await api.auth.updateMe({
+            notification_preferences: {
+              ...(user.notification_preferences || {}),
+              show_phone_on_public_qr: showPhoneOnQr,
+              show_email_on_public_qr: showEmailOnQr,
+            }
+          });
+        } catch {}
+      }
+      return api.entities.Pet.update(petId, {
+        ...data,
+        weight: data.weight ? parseFloat(data.weight) : null,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['pet', petId]);
+      queryClient.invalidateQueries(['currentUser']);
       toast.success('Pet updated successfully!');
       navigate(createPageUrl(`PetProfile?id=${petId}`));
     },
@@ -471,6 +503,38 @@ export default function EditPet() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Emergency Contact & Public QR Privacy (RA 10173) */}
+            <div className="pt-5 border-t space-y-3">
+              <div>
+                <Label className="text-base font-semibold text-gray-900">Emergency Contact & Collar Settings</Label>
+                <p className="text-xs text-gray-500 mt-0.5">Control what contact details appear when a rescuer scans your pet's public QR collar tag.</p>
+              </div>
+
+              <div className="p-4 bg-teal-50/60 border border-teal-200/80 rounded-xl space-y-3.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-800">Show Phone Number on Public Collar Scan</Label>
+                    <p className="text-xs text-gray-500">Allows rescuers to call you directly if your pet is found.</p>
+                  </div>
+                  <Switch
+                    checked={showPhoneOnQr}
+                    onCheckedChange={setShowPhoneOnQr}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-4 pt-3 border-t border-teal-100">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-800">Show Email Address on Public Collar Scan</Label>
+                    <p className="text-xs text-gray-500">Allows rescuers to send an email notification.</p>
+                  </div>
+                  <Switch
+                    checked={showEmailOnQr}
+                    onCheckedChange={setShowEmailOnQr}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Submit */}

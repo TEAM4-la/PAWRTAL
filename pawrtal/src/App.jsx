@@ -3,6 +3,7 @@ import { Toaster } from 'sonner';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import Welcome from './pages/Welcome';
 import SignIn from './pages/SignIn';
+import ForgotPassword from './pages/ForgotPassword';
 import CreateAccount from './pages/CreateAccount';
 import StaffCreateAccount from './pages/StaffCreateAccount';
 import Dashboard from './pages/Dashboard';
@@ -48,6 +49,7 @@ export default function App() {
         <Routes>
       <Route path="/" element={<Welcome />} />
       <Route path="/sign-in" element={<SignIn />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/create-account" element={<CreateAccount />} />
       <Route path="/staff/create-account" element={<StaffCreateAccount />} />
       <Route path="/dashboard" element={<Dashboard />} />

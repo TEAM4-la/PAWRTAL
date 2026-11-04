@@ -78,13 +78,11 @@ export default function CreateAccount() {
         middle_name: middleName.trim() || undefined,
         last_name: lastName.trim(),
       });
-      toast.success('Account created successfully! Please sign in to continue.');
       navigate('/sign-in', {
         state: {
           registeredEmail: email.trim(),
           registeredSuccess: true,
           registeredRole: 'owner',
-          successMessage: 'Account created successfully! Please enter your password to sign in.',
         },
       });
     } catch (err) {

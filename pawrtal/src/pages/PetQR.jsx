@@ -10,6 +10,7 @@ import { ArrowLeft, Download, Share2, QrCode, Dog, Cat, Bird, Rabbit, Fish, Prin
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import BackButton from '@/components/ui/BackButton';
 import PrintablePetId from '@/components/shared/PrintablePetId';
+import { toast } from 'sonner';
 
 const speciesIcons = {
   dog: Dog,
@@ -56,37 +57,125 @@ export default function PetQR() {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(getQRCodeImageServiceUrl('100x100'));
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      // 2 cm x 2 cm at 300 DPI is exactly 236 x 236 pixels
+      const qrUrl = getQRCodeImageServiceUrl('236x236');
+      const response = await fetch(qrUrl);
+      const rawBuffer = await response.arrayBuffer();
+
+      // Inject standard PNG pHYs chunk (11,811 pixels/meter = 300 DPI)
+      // When opened in Word, Docs, Photoshop, or Windows Print, this guarantees standard 2.0 cm x 2.0 cm print size
+      let finalBlob;
+      try {
+        const u8 = new Uint8Array(rawBuffer);
+        if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47) {
+          const ihdrDataLen = (u8[8] << 24) | (u8[9] << 16) | (u8[10] << 8) | u8[11];
+          const ihdrEndOffset = 8 + 4 + 4 + ihdrDataLen + 4;
+
+          const physChunk = new Uint8Array([
+            0x00, 0x00, 0x00, 0x09, // Length: 9 bytes
+            0x70, 0x48, 0x59, 0x73, // 'pHYs'
+            0x00, 0x00, 0x2E, 0x23, // X: 11,811 pixels/meter (300 DPI)
+            0x00, 0x00, 0x2E, 0x23, // Y: 11,811 pixels/meter (300 DPI)
+            0x01,                   // Unit: meter
+            0x78, 0xA5, 0x3F, 0x76  // CRC32
+          ]);
+
+          const combined = new Uint8Array(u8.length + physChunk.length);
+          combined.set(u8.subarray(0, ihdrEndOffset), 0);
+          combined.set(physChunk, ihdrEndOffset);
+          combined.set(u8.subarray(ihdrEndOffset), ihdrEndOffset + physChunk.length);
+
+          finalBlob = new Blob([combined], { type: 'image/png' });
+        } else {
+          finalBlob = new Blob([rawBuffer], { type: 'image/png' });
+        }
+      } catch {
+        finalBlob = new Blob([rawBuffer], { type: 'image/png' });
+      }
+
+      const url = window.URL.createObjectURL(finalBlob);
       const link = document.createElement('a');
-      link.download = `${pet?.name || 'pet'}-qr-code.png`;
+      link.download = `${pet?.name || 'pet'}-collar-qr.png`;
       link.href = url;
       link.click();
       window.URL.revokeObjectURL(url);
-
+      toast.success('QR Code downloaded successfully!');
     } catch (error) {
       console.error('Failed to download QR code', error);
+      toast.error('Failed to download QR code');
     }
   };
 
   const handleShare = async () => {
     const pageUrl = getPublicProfileUrl();
-    if (!pageUrl) return;
+    if (!pageUrl) {
+      toast.error('Pet profile link not found');
+      return;
+    }
 
-    if (navigator.share) {
+    // 1. If native share is supported (e.g. mobile with HTTPS)
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
-          title: `${pet?.name}'s public pet profile — PAWRTAL`,
-          text: `Open ${pet?.name}'s public pet profile on PAWRTAL`,
+          title: `${pet?.name}'s Digital Pet ID — PAWRTAL`,
+          text: `Check out ${pet?.name}'s public pet profile on PAWRTAL:`,
           url: pageUrl,
         });
-      } catch {
-        // User cancelled sharing
+        toast.success('Shared successfully!');
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // User dismissed the native share sheet
+          return;
+        }
+        console.warn('Native share failed, falling back to copy:', err);
       }
-    } else {
-      await navigator.clipboard.writeText(pageUrl);
+    }
 
+    // 2. Fallback to copy link to clipboard (works on HTTP and mobile)
+    try {
+      let copied = false;
+      if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(pageUrl);
+        copied = true;
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = pageUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        textArea.setAttribute('readonly', '');
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, 99999);
+        copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+
+      if (copied) {
+        toast.success('Pet profile link copied to clipboard!');
+      } else {
+        window.prompt('Copy this link to share:', pageUrl);
+      }
+    } catch {
+      window.prompt('Copy this link to share:', pageUrl);
+    }
+  };
+
+  const handlePrint = () => {
+    try {
+      toast.info('Preparing print preview...', { id: 'print-id', duration: 2500 });
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && typeof window.print === 'function') {
+          window.print();
+        } else {
+          toast.error('Printing is not supported on this browser/device.');
+        }
+      }, 150);
+    } catch (err) {
+      console.error('Print failed:', err);
+      toast.error('Unable to open print dialog on this device.');
     }
   };
 
@@ -172,24 +261,27 @@ export default function PetQR() {
         <div className="px-6 pb-6 flex flex-col sm:flex-row gap-3">
           <div className="flex gap-3 w-full sm:w-2/3">
             <Button
+              type="button"
               variant="outline"
               onClick={handleShare}
-              className="flex-1 h-12 gap-2 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+              className="flex-1 h-12 gap-2 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 active:bg-orange-100 cursor-pointer touch-manipulation"
             >
               <Share2 className="w-4 h-4" />
               Share
             </Button>
             <Button
+              type="button"
               onClick={handleDownload}
-              className="flex-1 h-12 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100"
+              className="flex-1 h-12 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100 active:opacity-90 cursor-pointer touch-manipulation"
             >
               <Download className="w-4 h-4" />
               Download QR
             </Button>
           </div>
           <Button
-            onClick={() => window.print()}
-            className="w-full sm:w-1/3 h-12 gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+            type="button"
+            onClick={handlePrint}
+            className="w-full sm:w-1/3 h-12 gap-2 bg-orange-500 hover:bg-orange-600 text-white active:bg-orange-700 cursor-pointer touch-manipulation"
           >
             <Printer className="w-4 h-4" />
             Print ID
@@ -211,7 +303,9 @@ export default function PetQR() {
 
   return (
     <OwnerSidebar user={user}>
-      {content}
+      <div className="print:hidden">
+        {content}
+      </div>
       <PrintablePetId pet={pet} user={user} qrCodeUrl={getQRCodeImageServiceUrl()} />
     </OwnerSidebar>
   );
