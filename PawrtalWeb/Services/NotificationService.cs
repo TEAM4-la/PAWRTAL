@@ -68,7 +68,8 @@ namespace PawtralWeb.Services
             if (!smsOptedOut && !string.IsNullOrWhiteSpace(user.Phone))
             {
                 var phone = user.Phone;
-                var smsText = $"Pawrtal: {title} - {message}";
+                var cleanTitle = (title ?? "").Trim().TrimEnd(':');
+                var smsText = $"Pawrtal: {cleanTitle}: {message}";
                 if (smsText.Length > 160)
                 {
                     smsText = smsText.Substring(0, 157) + "...";

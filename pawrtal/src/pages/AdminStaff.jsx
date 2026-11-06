@@ -118,7 +118,7 @@ function ResetPasswordModal({ targetUser, onClose }) {
                   type={showPassword ? 'text' : 'password'}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+                  placeholder="Repeat password"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 text-sm"
                 />
               </div>
@@ -216,20 +216,20 @@ function DeleteUserModal({ targetUser, onClose, onDeleted }) {
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
             onClick={handleDelete}
             disabled={loading}
             className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-sm hover:shadow transition-all disabled:opacity-50 flex items-center gap-2"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Confirm Delete
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors"
+          >
+            Cancel
           </button>
         </div>
       </div>
@@ -505,7 +505,7 @@ export default function AdminStaff() {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.email}</td>
-                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.phone || 'ΓÇö'}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{owner.phone || '—'}</td>
                         <td className="px-5 py-3 text-gray-700 font-medium whitespace-nowrap">{ownerAppts.length}</td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-2">

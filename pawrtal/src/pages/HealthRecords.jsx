@@ -28,6 +28,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
+import { cn } from "@/lib/utils";
 
 const speciesIcons = {
   dog: Dog,
@@ -97,14 +98,16 @@ export default function HealthRecords() {
   const { data: healthRecords = [] } = useQuery({
     queryKey: ['healthRecords', pets, selectedPet],
     queryFn: async () => {
+      let list = [];
       if (selectedPet === 'all') {
         const allRecords = await Promise.all(
-          pets.map(pet => api.entities.HealthRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }))
+          pets.map(pet => api.entities.HealthRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }, '-date'))
         );
-        return allRecords.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
+        list = allRecords.flat();
       } else {
-        return api.entities.HealthRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
+        list = await api.entities.HealthRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
       }
+      return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     },
     enabled: pets.length > 0,
   });
@@ -112,14 +115,22 @@ export default function HealthRecords() {
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['vaccinations', pets, selectedPet],
     queryFn: async () => {
+      let list = [];
       if (selectedPet === 'all') {
         const allVax = await Promise.all(
-          pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id }))
+          pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id }, '-date_administered'))
         );
-        return allVax.flat().sort((a, b) => new Date(b.date_administered) - new Date(a.date_administered));
+        list = allVax.flat();
       } else {
-        return api.entities.Vaccination.filter({ pet_id: selectedPet }, '-date_administered');
+        list = await api.entities.Vaccination.filter({ pet_id: selectedPet }, '-date_administered');
       }
+      return list.sort((a, b) => {
+        const diff = new Date(b.date_administered || 0) - new Date(a.date_administered || 0);
+        if (diff !== 0) return diff;
+        const nextDiff = (b.next_due_date || '').localeCompare(a.next_due_date || '');
+        if (nextDiff !== 0) return nextDiff;
+        return (b.id || '').localeCompare(a.id || '');
+      });
     },
     enabled: pets.length > 0,
   });
@@ -127,14 +138,16 @@ export default function HealthRecords() {
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', pets, selectedPet],
     queryFn: async () => {
+      let list = [];
       if (selectedPet === 'all') {
         const allMeds = await Promise.all(
-          pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id }))
+          pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id }, '-start_date'))
         );
-        return allMeds.flat().sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+        list = allMeds.flat();
       } else {
-        return api.entities.Medication.filter({ pet_id: selectedPet }, '-start_date');
+        list = await api.entities.Medication.filter({ pet_id: selectedPet }, '-start_date');
       }
+      return list.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
     },
     enabled: pets.length > 0,
   });
@@ -142,14 +155,16 @@ export default function HealthRecords() {
   const { data: groomingRecords = [] } = useQuery({
     queryKey: ['groomingRecords', pets, selectedPet],
     queryFn: async () => {
+      let list = [];
       if (selectedPet === 'all') {
         const allGroom = await Promise.all(
-          pets.map(pet => api.entities.GroomingRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }))
+          pets.map(pet => api.entities.GroomingRecord.filter({ pet_id: pet.id, is_visible_to_owner: true }, '-date'))
         );
-        return allGroom.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
+        list = allGroom.flat();
       } else {
-        return api.entities.GroomingRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
+        list = await api.entities.GroomingRecord.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date');
       }
+      return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     },
     enabled: pets.length > 0,
   });
@@ -179,17 +194,17 @@ export default function HealthRecords() {
   });
 
   const content = (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       <BackButton to={createPageUrl('Dashboard')} />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Health Records</h1>
-          <p className="text-gray-500 mt-1">View all health information for your pets</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Health Records</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">View all health information for your pets</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Filter className="w-5 h-5 text-gray-400" />
+          <Filter className="w-4 h-4 text-gray-400 shrink-0" />
           <Select value={selectedPet} onValueChange={setSelectedPet}>
-            <SelectTrigger className="w-full sm:w-40">
+            <SelectTrigger className="w-full sm:w-40 h-10 text-sm">
               <SelectValue placeholder="Filter by pet" />
             </SelectTrigger>
             <SelectContent>
@@ -205,12 +220,12 @@ export default function HealthRecords() {
       {/* Alerts */}
       {upcomingVaccinations.length > 0 && (
         <Card className="border-l-4 border-l-purple-500 bg-purple-50/50">
-          <CardContent className="p-4">
+          <CardContent className="p-3.5 sm:p-4">
             <div className="flex items-start gap-3">
-              <Syringe className="w-5 h-5 text-purple-600 mt-0.5" />
+              <Syringe className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
               <div>
-                <h4 className="font-semibold text-gray-900">Vaccinations Due Soon</h4>
-                <p className="text-sm text-gray-600 mt-1">
+                <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Vaccinations Due Soon</h4>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1">
                   {upcomingVaccinations.map(vax => (
                     <span key={vax.id} className="block">
                       {getPetName(vax.pet_id)}: {vax.vaccine_name} due {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
@@ -224,20 +239,20 @@ export default function HealthRecords() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
-          <TabsTrigger value="records" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
+        <TabsList className="w-full flex overflow-x-auto sm:inline-flex h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+          <TabsTrigger value="records" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
             <FileText className="w-4 h-4" />
             Medical Records
           </TabsTrigger>
-          <TabsTrigger value="vaccinations" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
+          <TabsTrigger value="vaccinations" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
             <Syringe className="w-4 h-4" />
             Vaccinations
           </TabsTrigger>
-          <TabsTrigger value="medications" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
+          <TabsTrigger value="medications" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
             <Pill className="w-4 h-4" />
             Medications
           </TabsTrigger>
-          <TabsTrigger value="grooming" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
+          <TabsTrigger value="grooming" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
             <Scissors className="w-4 h-4" />
             Grooming
           </TabsTrigger>
@@ -327,45 +342,59 @@ export default function HealthRecords() {
             <div className="space-y-4">
               {vaccinations.map((vax) => {
                 const isLatest = !vaccinations.some(v => 
-                  v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
-                  new Date(v.date_administered) > new Date(vax.date_administered + 'T00:00:00')
+                  v.id !== vax.id &&
+                  v.pet_id === vax.pet_id &&
+                  v.vaccine_name?.trim().toLowerCase() === vax.vaccine_name?.trim().toLowerCase() && 
+                  (
+                    v.date_administered > vax.date_administered || 
+                    (v.date_administered === vax.date_administered && (v.next_due_date || '') > (vax.next_due_date || '')) ||
+                    (v.date_administered === vax.date_administered && (v.next_due_date || '') === (vax.next_due_date || '') && v.id > vax.id)
+                  )
                 );
                 return (
                 <Card key={vax.id} className="border-0 shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                          <Syringe className="w-6 h-6 text-purple-600" />
+                  <CardContent className="p-3.5 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                          <Syringe className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{vax.vaccine_name}</h4>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{vax.vaccine_name}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {getPetName(vax.pet_id)} • Administered {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                           </p>
                           {vax.administered_by && (
-                            <p className="text-sm text-gray-400">By: {vax.administered_by}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">By: {vax.administered_by}</p>
                           )}
                         </div>
                       </div>
-                      {vax.next_due_date && isLatest && (
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
-                              ? 'bg-red-50 text-red-700 border-red-200'
-                              : 'bg-blue-50 text-blue-700 border-blue-200'
-                          }
-                        >
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
-                        </Badge>
-                      )}
-                      {vax.next_due_date && !isLatest && (
-                        <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
-                          Renewed
-                        </Badge>
-                      )}
+                      <div className="self-start sm:self-center shrink-0">
+                        {vax.next_due_date && isLatest && (
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "text-xs py-0.5 px-2",
+                              isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date())
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            )}
+                          >
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                          </Badge>
+                        )}
+                        {!vax.next_due_date && isLatest && (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs py-0.5 px-2">
+                            Up to date
+                          </Badge>
+                        )}
+                        {!isLatest && (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200 text-xs py-0.5 px-2">
+                            Renewed
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -390,29 +419,31 @@ export default function HealthRecords() {
                 const isStillActive = med.is_active && (!med.end_date || !isBefore(new Date(med.end_date + 'T00:00:00'), new Date()));
                 return (
                 <Card key={med.id} className="border-0 shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
-                          <Pill className={`w-6 h-6 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
+                  <CardContent className="p-3.5 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
+                          <Pill className={`w-5 h-5 sm:w-6 sm:h-6 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{med.name}</h4>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{med.name}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {getPetName(med.pet_id)} • {med.quantity ? `Qty: ${med.quantity} • ` : ''}{med.dosage} • {med.frequency}
                           </p>
-                          <p className="text-sm text-gray-400">
+                          <p className="text-xs text-gray-400 mt-0.5">
                             {format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}
                             {med.end_date && ` - ${format(new Date(med.end_date + 'T00:00:00'), 'MMM d, yyyy')}`}
                           </p>
                         </div>
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}
-                      >
-                        {isStillActive ? 'Active' : 'Completed'}
-                      </Badge>
+                      <div className="self-start sm:self-center shrink-0">
+                        <Badge 
+                          variant="outline" 
+                          className={cn("text-xs py-0.5 px-2", isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500')}
+                        >
+                          {isStillActive ? 'Active' : 'Completed'}
+                        </Badge>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -435,29 +466,31 @@ export default function HealthRecords() {
             <div className="space-y-4">
               {groomingRecords.map((record) => (
                 <Card key={record.id} className="border-0 shadow-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center">
-                          <Scissors className="w-6 h-6 text-pink-600" />
+                  <CardContent className="p-3.5 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
+                          <Scissors className="w-5 h-5 sm:w-6 sm:h-6 text-pink-600" />
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</h4>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 capitalize text-sm sm:text-base truncate">{record.grooming_type.replace(/_/g, ' ')}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {getPetName(record.pet_id)} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                           </p>
                           {record.groomer_name && (
-                            <p className="text-sm text-gray-400">By: {record.groomer_name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">By: {record.groomer_name}</p>
                           )}
                           {record.coat_style_notes && (
-                            <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">{record.coat_style_notes}</p>
                           )}
                         </div>
                       </div>
                       {record.coat_condition_before && (
-                        <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize">
-                          {record.coat_condition_before.replace(/_/g, ' ')}
-                        </Badge>
+                        <div className="self-start sm:self-center shrink-0">
+                          <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize text-xs py-0.5 px-2">
+                            {record.coat_condition_before.replace(/_/g, ' ')}
+                          </Badge>
+                        </div>
                       )}
                     </div>
                   </CardContent>

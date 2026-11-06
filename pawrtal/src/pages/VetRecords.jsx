@@ -32,9 +32,10 @@ import {
   Pill,
   Scissors,
   ChevronLeft,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isBefore } from 'date-fns';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -250,6 +251,17 @@ export default function VetRecords() {
     });
 
     vaccinations.forEach(v => {
+      const isLatest = !vaccinations.some(other => 
+        other.id !== v.id &&
+        other.pet_id === v.pet_id &&
+        other.vaccine_name?.trim().toLowerCase() === v.vaccine_name?.trim().toLowerCase() && 
+        (
+          other.date_administered > v.date_administered || 
+          (other.date_administered === v.date_administered && (other.next_due_date || '') > (v.next_due_date || '')) ||
+          (other.date_administered === v.date_administered && (other.next_due_date || '') === (v.next_due_date || '') && other.id > v.id)
+        )
+      );
+
       list.push({
         id: `vax-${v.id}`,
         pet_id: v.pet_id,
@@ -257,6 +269,8 @@ export default function VetRecords() {
         title: v.vaccine_name,
         description: [v.batch_number ? `Batch: ${v.batch_number}` : null, v.notes].filter(Boolean).join(' • '),
         date: v.date_administered,
+        next_due_date: v.next_due_date,
+        is_latest: isLatest,
         vet_name: v.administered_by,
         is_visible_to_owner: true,
       });
@@ -275,7 +289,14 @@ export default function VetRecords() {
       });
     });
 
-    return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    return list.sort((a, b) => {
+      const diff = new Date(b.date || 0) - new Date(a.date || 0);
+      if (diff !== 0) return diff;
+      if (b.is_latest !== a.is_latest) return (b.is_latest ? 1 : 0) - (a.is_latest ? 1 : 0);
+      const nextDiff = (b.next_due_date || '').localeCompare(a.next_due_date || '');
+      if (nextDiff !== 0) return nextDiff;
+      return (b.id || '').localeCompare(a.id || '');
+    });
   }, [records, medications, vaccinations, groomingRecords]);
 
   const connectedPetIdSet = React.useMemo(() => new Set(pets.map(p => p.id)), [pets]);
@@ -297,32 +318,32 @@ export default function VetRecords() {
   });
 
   const content = (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
       <BackButton to={createPageUrl('VetDashboard')} />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Health Records</h1>
-          <p className="text-gray-500 mt-1">Manage patient medical records</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Health Records</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Manage patient medical records</p>
         </div>
-        <Button onClick={() => navigate(createPageUrl('VetAddRecord'))} className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2">
-          <Plus className="w-5 h-5" />
+        <Button onClick={() => navigate(createPageUrl('VetAddRecord'))} className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white gap-2 w-full sm:w-auto h-9 sm:h-10 text-xs sm:text-sm">
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           Add Record
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2.5 sm:gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder="Search records..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-xs sm:text-sm"
           />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-40">
+          <SelectTrigger className="w-full sm:w-40 text-xs sm:text-sm">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -347,7 +368,7 @@ export default function VetRecords() {
           />
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredRecords.map((record) => {
             const pet = getPet(record.pet_id);
             const Icon = pet ? speciesIcons[pet.species] || Dog : Dog;
@@ -363,30 +384,54 @@ export default function VetRecords() {
 
             return (
               <Card key={record.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", iconColorClass)}>
-                        <RecordIcon className="w-6 h-6" />
+                <CardContent className="p-3.5 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0", iconColorClass)}>
+                        <RecordIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="font-semibold text-gray-900">{record.title}</h4>
-                          <Badge className={recordTypeColors[record.record_type] || 'bg-gray-100 text-gray-700'}>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{record.title}</h4>
+                          <Badge className={cn("text-xs", recordTypeColors[record.record_type] || 'bg-gray-100 text-gray-700')}>
                             {record.record_type.replace('_', ' ')}
                           </Badge>
+                          {record.record_type === 'vaccination' && record.next_due_date && record.is_latest && (
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                isBefore(new Date(record.next_due_date + 'T00:00:00'), new Date())
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                              )}
+                            >
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {isBefore(new Date(record.next_due_date + 'T00:00:00'), new Date()) ? 'Overdue:' : 'Next dose:'} {format(new Date(record.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
+                            </Badge>
+                          )}
+                          {record.record_type === 'vaccination' && !record.next_due_date && record.is_latest && (
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              Up to date
+                            </Badge>
+                          )}
+                          {record.record_type === 'vaccination' && !record.is_latest && (
+                            <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500 border-gray-200">
+                              Renewed
+                            </Badge>
+                          )}
                           {!record.is_visible_to_owner && (
                             <Badge variant="outline" className="bg-gray-50 text-xs">Hidden from owner</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500">
                           {pet?.name || 'Unknown pet'} • {formatDateSafe(record.date)}
                           {record.vet_name && (
                             <span className="text-gray-400"> • {record.vet_name}</span>
                           )}
                         </p>
                         {record.description && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{record.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2 line-clamp-2">{record.description}</p>
                         )}
                       </div>
                     </div>
@@ -395,16 +440,16 @@ export default function VetRecords() {
                       if (attachments.length === 0) return null;
                       if (attachments.length === 1) {
                         return (
-                          <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                            <Button variant="outline" size="sm" className="gap-2">
-                              <ExternalLink className="w-4 h-4" />
+                          <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="self-start sm:self-center shrink-0">
+                            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                              <ExternalLink className="w-3.5 h-3.5" />
                               View
                             </Button>
                           </a>
                         );
                       }
                       return (
-                        <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end max-w-xs">
+                        <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-center shrink-0 max-w-xs">
                           {attachments.map((url, i) => (
                             <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                               <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 px-2.5">

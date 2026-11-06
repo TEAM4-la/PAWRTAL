@@ -33,9 +33,9 @@ public class MedicationsController : ControllerBase
 
         q = order switch
         {
-            "-start_date" => q.OrderByDescending(m => m.StartDate),
-            "start_date" => q.OrderBy(m => m.StartDate),
-            _ => q
+            "-start_date" => q.OrderByDescending(m => m.StartDate).ThenByDescending(m => m.CreatedAt),
+            "start_date" => q.OrderBy(m => m.StartDate).ThenBy(m => m.CreatedAt),
+            _ => q.OrderByDescending(m => m.StartDate).ThenByDescending(m => m.CreatedAt)
         };
 
         if (limit is not null)
@@ -119,8 +119,8 @@ public class MedicationsController : ControllerBase
         // Notify Admin of medication prescribed and quantity deducted
         await _notifications.NotifyAdminsAsync(
             "medication",
-            $"Medication Prescribed: {med.Name}",
-            $"{doctorName} prescribed {med.Name}{dosageInfo} for {petName}. Quantity deducted: {qtyUsed} unit{(qtyUsed == 1 ? "" : "s")}.",
+            "Medication Prescribed",
+            $"{doctorName} prescribed {med.Name}{dosageInfo} for {petName}. Quantity {qtyUsed}",
             "medications"
         );
 

@@ -20,7 +20,8 @@ import {
   Syringe,
   LogIn,
   Shield,
-  Stethoscope
+  Stethoscope,
+  Facebook
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths } from 'date-fns';
 import logo from '../assets/LOGO.png';
@@ -227,13 +228,18 @@ export default function PublicPetProfile() {
               </p>
               
               <div className="space-y-2.5">
-                <a href="tel:09123456789" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
+                <a href="tel:09277578092" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
                   <Phone className="w-5 h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base">Clinic Hotline: 0912-345-6789</span>
+                  <span className="font-medium text-sm sm:text-base">Clinic Hotline: 0927 757 8092</span>
                 </a>
-                <a href="mailto:Admin@pawrtal.com" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors">
-                  <Mail className="w-5 h-5 shrink-0" />
-                  <span className="font-medium text-sm sm:text-base">Admin@pawrtal.com</span>
+                <a 
+                  href="https://www.facebook.com/vmvetclinic" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
+                >
+                  <Facebook className="w-5 h-5 shrink-0" />
+                  <span className="font-medium text-sm sm:text-base">facebook.com/vmvetclinic</span>
                 </a>
               </div>
             </CardContent>

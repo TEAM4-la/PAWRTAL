@@ -33,9 +33,9 @@ public class VaccinationsController : ControllerBase
 
         q = order switch
         {
-            "-date_administered" => q.OrderByDescending(v => v.DateAdministered),
-            "date_administered" => q.OrderBy(v => v.DateAdministered),
-            _ => q
+            "-date_administered" => q.OrderByDescending(v => v.DateAdministered).ThenByDescending(v => v.CreatedAt),
+            "date_administered" => q.OrderBy(v => v.DateAdministered).ThenBy(v => v.CreatedAt),
+            _ => q.OrderByDescending(v => v.DateAdministered).ThenByDescending(v => v.CreatedAt)
         };
 
         if (limit is not null)
@@ -109,8 +109,8 @@ public class VaccinationsController : ControllerBase
         // Notify Admin of vaccine used and quantity deducted
         await _notifications.NotifyAdminsAsync(
             "vaccination",
-            $"Vaccine Administered: {v.VaccineName}",
-            $"{doctorName} administered {v.VaccineName} for {petName}. Quantity deducted: {qtyUsed} unit{(qtyUsed == 1 ? "" : "s")}.",
+            "Vaccine Administered",
+            $"{doctorName} administered {v.VaccineName} for {petName}. Quantity {qtyUsed}",
             "vaccinations"
         );
 

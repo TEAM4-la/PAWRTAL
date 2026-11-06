@@ -97,86 +97,86 @@ export default function AppointmentCard({
           derivedStatus === 'expired' && "bg-gray-400",
         )} />
         
-        <div className="flex-1 p-4 sm:p-5">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
+        <div className="flex-1 p-3.5 sm:p-5 min-w-0">
+          <div className="flex items-start justify-between gap-2.5 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
               {showPetInfo && (pet || appointment.pet_name) && (
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center shrink-0">
                   {pet?.photo_url ? (
                     <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-lg font-bold text-orange-600">{(pet?.name || appointment.pet_name)?.[0]}</span>
+                    <span className="text-base sm:text-lg font-bold text-orange-600">{(pet?.name || appointment.pet_name)?.[0]}</span>
                   )}
                 </div>
               )}
-              <div>
+              <div className="min-w-0 flex-1">
                 {showPetInfo && (pet || appointment.pet_name) && (
-                  <h4 className="font-semibold text-gray-900">{pet?.name || appointment.pet_name}</h4>
+                  <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{pet?.name || appointment.pet_name}</h4>
                 )}
-                <Badge className={cn("mt-1 capitalize", typeColors[appointment.type] || "bg-gray-100 text-gray-700")}>
+                <Badge className={cn("mt-0.5 sm:mt-1 capitalize text-xs", typeColors[appointment.type] || "bg-gray-100 text-gray-700")}>
                   {appointment.type?.replace('_', ' ')}
                 </Badge>
               </div>
             </div>
             
-            <Badge className={cn("flex items-center gap-1", status.color)}>
+            <Badge className={cn("flex items-center gap-1 shrink-0 text-xs py-0.5 px-2", status.color)}>
               <StatusIcon className="w-3 h-3" />
               {status.label}
             </Badge>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
             <div className="flex items-center gap-2 text-gray-600">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">
+              <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-xs sm:text-sm">
                 {format(new Date(appointment.date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
               </span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
-              <Clock className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{appointment.time}</span>
+              <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-xs sm:text-sm">{appointment.time}</span>
             </div>
             {isVetView && appointment.owner_email && (
               <div className="flex items-center gap-2 text-gray-600">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-sm">{appointment.owner_email}</span>
+                <User className="w-4 h-4 text-gray-400 shrink-0" />
+                <span className="text-xs sm:text-sm truncate">{appointment.owner_email}</span>
               </div>
             )}
             {isVetView && !appointment.vet_email && (
               <div className="flex items-center gap-2 text-amber-700">
-                <Stethoscope className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                <Stethoscope className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                   Unassigned (Clinic Pool)
                 </span>
               </div>
             )}
             {isVetView && appointment.vet_email && (
               <div className="flex items-center gap-2 text-teal-700">
-                <Stethoscope className="w-4 h-4 text-teal-600" />
-                <span className="text-sm font-medium">Assigned to: {appointment.vet_email}</span>
+                <Stethoscope className="w-4 h-4 text-teal-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Assigned to: {appointment.vet_email}</span>
               </div>
             )}
             {!isVetView && appointment.vet_email && (
               <div className="flex items-center gap-2 text-orange-700">
-                <Stethoscope className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium">Assigned: {appointment.vet_email}</span>
+                <Stethoscope className="w-4 h-4 text-orange-600 shrink-0" />
+                <span className="text-xs sm:text-sm font-medium truncate">Assigned: {appointment.vet_email}</span>
               </div>
             )}
           </div>
 
           {appointment.reason && (
-            <p className="text-sm text-gray-500 mb-4 whitespace-pre-line break-words">
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 whitespace-pre-line break-words bg-gray-50 p-2.5 rounded-lg border border-gray-100">
               {appointment.reason}
             </p>
           )}
 
           {(onConfirm || onCancel || onComplete) && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
-            <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 pt-3 sm:pt-4 border-t border-gray-100">
               {onConfirm && derivedStatus === 'pending' && (
                 <Button 
                   size="sm" 
                   className={cn(
-                    "text-white transition-colors",
+                    "flex-1 sm:flex-initial text-white transition-colors h-9 text-xs sm:text-sm",
                     !appointment.vet_email ? "bg-amber-600 hover:bg-amber-700" : "bg-teal-600 hover:bg-teal-700"
                   )}
                   onClick={() => onConfirm(appointment)}
@@ -187,7 +187,7 @@ export default function AppointmentCard({
               {onComplete && derivedStatus === 'confirmed' && (
                 <Button 
                   size="sm" 
-                  className="bg-green-600 hover:bg-green-700"
+                  className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 h-9 text-xs sm:text-sm"
                   onClick={() => onComplete(appointment)}
                   disabled={!isTimeReached}
                 >
@@ -198,7 +198,7 @@ export default function AppointmentCard({
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="flex-1 sm:flex-initial text-red-600 border-red-200 hover:bg-red-50 h-9 text-xs sm:text-sm"
                   onClick={() => setIsCancelOpen(true)}
                 >
                   Cancel

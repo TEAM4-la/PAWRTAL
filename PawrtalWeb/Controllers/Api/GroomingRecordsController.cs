@@ -36,9 +36,9 @@ public class GroomingRecordsController : ControllerBase
 
         q = order switch
         {
-            "-date" => q.OrderByDescending(g => g.Date),
-            "date" => q.OrderBy(g => g.Date),
-            _ => q.OrderByDescending(g => g.Date)
+            "-date" => q.OrderByDescending(g => g.Date).ThenByDescending(g => g.CreatedAt),
+            "date" => q.OrderBy(g => g.Date).ThenBy(g => g.CreatedAt),
+            _ => q.OrderByDescending(g => g.Date).ThenByDescending(g => g.CreatedAt)
         };
 
         if (limit is not null)
@@ -57,9 +57,9 @@ public class GroomingRecordsController : ControllerBase
 
         q = order switch
         {
-            "-date" => q.OrderByDescending(g => g.Date),
-            "date" => q.OrderBy(g => g.Date),
-            _ => q.OrderByDescending(g => g.Date)
+            "-date" => q.OrderByDescending(g => g.Date).ThenByDescending(g => g.CreatedAt),
+            "date" => q.OrderBy(g => g.Date).ThenBy(g => g.CreatedAt),
+            _ => q.OrderByDescending(g => g.Date).ThenByDescending(g => g.CreatedAt)
         };
 
         q = q.Take(Math.Clamp(limit, 1, 1000));

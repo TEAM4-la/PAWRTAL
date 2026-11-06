@@ -267,11 +267,11 @@ export default function Journal() {
               Add Entry
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
+          <DialogContent className="max-w-lg w-[calc(100%-2rem)] max-h-[85vh] flex flex-col p-4 sm:p-6 overflow-hidden rounded-2xl">
+            <DialogHeader className="shrink-0 pb-1">
+              <DialogTitle className="text-lg sm:text-xl">{editingEntry ? 'Edit Journal Entry' : 'New Journal Entry'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-5 pt-4">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-4 pt-1 pr-1 -mr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label className="text-sm font-medium">Pet *</Label>
@@ -325,14 +325,14 @@ export default function Journal() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">Entry Type</Label>
-                <div className="flex flex-wrap gap-2">
+                <Label className="text-sm font-medium mb-1.5 block">Entry Type</Label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {entryTypes.map((type) => (
                     <Badge
                       key={type.value}
                       onClick={() => setFormData({...formData, entry_type: type.value})}
                       className={cn(
-                        "cursor-pointer transition-all",
+                        "cursor-pointer transition-all text-xs py-1 px-2.5",
                         formData.entry_type === type.value 
                           ? type.color 
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -356,7 +356,7 @@ export default function Journal() {
                       setErrors(prev => ({ ...prev, title: false }));
                     }}
                     placeholder="e.g., Morning walk"
-                    className={cn("pr-10", errors.title ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
+                    className={cn("pr-10 h-10 text-sm", errors.title ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500" : "")}
                   />
                   {errors.title && (
                     <AlertTriangle className="w-5 h-5 text-red-500 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -374,13 +374,13 @@ export default function Journal() {
                   value={formData.content}
                   onChange={(e) => setFormData({...formData, content: e.target.value})}
                   placeholder="Add details..."
-                  className="mt-1.5 min-h-[80px]"
+                  className="mt-1.5 min-h-[70px] text-sm"
                 />
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">Pet's Mood</Label>
-                <div className="flex flex-wrap gap-2">
+                <Label className="text-sm font-medium mb-1.5 block">Pet's Mood</Label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {moodOptions.map((mood) => (
                     <Button
                       key={mood.value}
@@ -389,25 +389,25 @@ export default function Journal() {
                       size="sm"
                       onClick={() => setFormData({...formData, mood: mood.value})}
                       className={cn(
-                        "gap-1",
+                        "gap-1 h-8 text-xs px-2.5",
                         formData.mood === mood.value && "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
                       )}
                     >
-                      <mood.icon className={cn("w-4 h-4", formData.mood !== mood.value && mood.color)} />
+                      <mood.icon className={cn("w-3.5 h-3.5", formData.mood !== mood.value && mood.color)} />
                       {mood.label}
                     </Button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
+              <div className="flex gap-2 sm:gap-3 pt-3 pb-1 mt-auto border-t border-gray-100 shrink-0">
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="flex-1 h-10 sm:h-11 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium shadow-sm shadow-orange-100 text-sm">
                   {createMutation.isPending || updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Entry'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => {
                   setIsDialogOpen(false);
                   resetForm();
-                }} className="flex-1">
+                }} className="flex-1 h-10 sm:h-11 text-sm">
                   Cancel
                 </Button>
               </div>

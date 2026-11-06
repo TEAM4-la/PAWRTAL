@@ -215,29 +215,29 @@ export default function VetAppointments() {
   };
 
   const content = (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       <BackButton to={createPageUrl('VetDashboard')} />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
-          <p className="text-gray-500 mt-1">Manage clinic appointments</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Manage clinic appointments</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 sm:gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder="Search by pet name or owner..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-10 text-sm"
           />
         </div>
 
         <Select value={scopeFilter} onValueChange={setScopeFilter}>
-          <SelectTrigger className="w-full sm:w-[190px] h-10 bg-white">
+          <SelectTrigger className="w-full sm:w-[190px] h-10 bg-white text-sm">
             <SelectValue placeholder="All visible" />
           </SelectTrigger>
           <SelectContent>
@@ -249,7 +249,7 @@ export default function VetAppointments() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2 w-full sm:w-auto">
+            <Button variant="outline" className="gap-2 w-full sm:w-auto h-10 text-sm">
               <CalendarIcon className="w-4 h-4" />
               {selectedDate ? format(selectedDate, 'MMM d, yyyy') : 'Filter by date'}
             </Button>
@@ -273,26 +273,26 @@ export default function VetAppointments() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto md:grid md:grid-cols-6 h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
-          <TabsTrigger value="today" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+        <TabsList className="w-full flex overflow-x-auto lg:grid lg:grid-cols-6 h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+          <TabsTrigger value="today" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             <CalendarIcon className="w-4 h-4" />
             Today ({todayAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="tomorrow" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+          <TabsTrigger value="tomorrow" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             Tomorrow ({tomorrowAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="pending" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+          <TabsTrigger value="pending" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             <Clock className="w-4 h-4" />
             Pending ({pendingAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+          <TabsTrigger value="upcoming" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             Upcoming ({upcomingAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="completed" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+          <TabsTrigger value="completed" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             <CheckCircle className="w-4 h-4" />
             Completed
           </TabsTrigger>
-          <TabsTrigger value="cancelled" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0 md:flex-shrink">
+          <TabsTrigger value="cancelled" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             <XCircle className="w-4 h-4" />
             Cancelled
           </TabsTrigger>

@@ -37,9 +37,9 @@ public class HealthRecordsController : ControllerBase
 
         q = order switch
         {
-            "-date" => q.OrderByDescending(r => r.Date),
-            "date" => q.OrderBy(r => r.Date),
-            _ => q
+            "-date" => q.OrderByDescending(r => r.Date).ThenByDescending(r => r.CreatedAt),
+            "date" => q.OrderBy(r => r.Date).ThenBy(r => r.CreatedAt),
+            _ => q.OrderByDescending(r => r.Date).ThenByDescending(r => r.CreatedAt)
         };
 
         if (limit is not null)

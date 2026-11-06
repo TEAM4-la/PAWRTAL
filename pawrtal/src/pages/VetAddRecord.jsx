@@ -353,7 +353,7 @@ export default function VetAddRecord() {
           vaccine_name: item.vaccine_name.trim(),
           quantity: presQty,
           date_administered: item.date_administered,
-          next_due_date: item.next_due_date,
+          next_due_date: item.next_due_date || null,
           batch_number: item.batch_number?.trim() || null,
           notes: item.notes?.trim() || null,
           administered_by: user?.full_name,
@@ -519,7 +519,6 @@ export default function VetAddRecord() {
     vaccinationItems.forEach((item) => {
       const itemErrors = {};
       if (!item.vaccine_name || !item.vaccine_name.trim()) itemErrors.vaccine_name = true;
-      if (!item.next_due_date) itemErrors.next_due_date = true;
 
       const qty = parseInt(item.quantity, 10);
       if (!qty || qty < 1) itemErrors.quantity = true;
@@ -603,20 +602,20 @@ export default function VetAddRecord() {
 
   return (
     <VetSidebar user={user}>
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-      <BackButton to={createPageUrl('VetDashboard')} className="mb-6" />
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full max-w-full min-w-0 overflow-x-hidden">
+      <BackButton to={preselectedPetId ? createPageUrl(`VetPatientDetail?id=${preselectedPetId}`) : createPageUrl('Patients')} className="mb-4 sm:mb-6" />
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50">
-          <CardTitle className="text-2xl">Add Medical Record</CardTitle>
-          <p className="text-gray-500">
+        <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50 p-4 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl">Add Medical Record</CardTitle>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
             {selectedPet ? `Recording for ${selectedPet.name}` : 'Select a patient to add records'}
           </p>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 h-auto p-1 gap-2 mb-6">
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 h-auto p-1 gap-1.5 sm:gap-2 mb-5 sm:mb-6">
               <TabsTrigger value="record" className="gap-2 py-2">
                 <FileText className="w-4 h-4" />
                 Health Record
@@ -945,10 +944,10 @@ export default function VetAddRecord() {
                     const isQtyExceeded = matched && matched.quantity > 0 && (parseInt(item.quantity, 10) || 1) > matched.quantity;
 
                     return (
-                      <div key={item.id} className="p-4 rounded-xl border border-gray-200 bg-white/70 shadow-xs space-y-4">
+                      <div key={item.id} className="p-3.5 sm:p-4 rounded-xl border border-gray-200 bg-white shadow-xs space-y-3.5 sm:space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                          <span className="font-semibold text-sm text-teal-800 flex items-center gap-2">
-                            <Syringe className="w-4 h-4 text-teal-600" />
+                          <span className="font-semibold text-sm text-teal-800 flex items-center gap-2 truncate">
+                            <Syringe className="w-4 h-4 text-teal-600 shrink-0" />
                             Vaccine #{idx + 1} {item.vaccine_name ? `— ${item.vaccine_name}` : ''}
                           </span>
                           {vaccinationItems.length > 1 && (
@@ -957,7 +956,7 @@ export default function VetAddRecord() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeVaccineItem(item.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 gap-1 text-xs"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 gap-1 text-xs shrink-0"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Remove
@@ -967,7 +966,7 @@ export default function VetAddRecord() {
 
                         {/* Vaccine Name */}
                         <div>
-                          <Label className="text-xs font-medium text-gray-700">Vaccine Name *</Label>
+                          <Label className="text-sm font-medium text-gray-700">Vaccine Name *</Label>
                           <div className="relative mt-1">
                             <Input
                               maxLength={200}
@@ -1077,49 +1076,40 @@ export default function VetAddRecord() {
                         </div>
 
                         {/* Dates & Quantity Stepper */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">Date Administered</Label>
+                            <Label className="text-sm font-medium text-gray-700">Date Administered</Label>
                             <Input
                               type="date"
                               min={minCurrentYear}
                               max={maxCurrentYear}
                               value={item.date_administered}
                               onChange={(e) => updateVaccineItem(item.id, 'date_administered', e.target.value)}
-                              className="mt-1 h-10"
+                              className="mt-1.5 h-10"
                             />
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">
-                              Next Due Date <span className="text-red-500">*</span>
+                            <Label className="text-sm font-medium text-gray-700">
+                              Next Due Date <span className="text-gray-400 font-normal">(Optional)</span>
                             </Label>
-                            <div className="relative mt-1">
+                            <div className="relative mt-1.5">
                               <Input
                                 type="date"
                                 min={minCurrentYear}
                                 max={maxNextYear}
                                 value={item.next_due_date}
                                 onChange={(e) => updateVaccineItem(item.id, 'next_due_date', e.target.value)}
-                                className={cn(
-                                  "h-10",
-                                  itemErrors.next_due_date ? "border-red-500 bg-red-50/10 focus-visible:ring-red-500 pr-14" : ""
-                                )}
+                                className="h-10"
                               />
-                              {itemErrors.next_due_date && (
-                                <AlertTriangle className="w-4 h-4 text-red-500 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
-                              )}
                             </div>
-                            {itemErrors.next_due_date && (
-                              <p className="text-xs text-red-600 mt-1">Please select next due date.</p>
-                            )}
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">
+                            <Label className="text-sm font-medium text-gray-700">
                               Administered Dose / Qty <span className="text-red-500">*</span>
                             </Label>
-                            <div className="flex items-center gap-1.5 mt-1">
+                            <div className="flex items-center gap-1.5 mt-1.5">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -1182,9 +1172,9 @@ export default function VetAddRecord() {
                         </div>
 
                         {/* Batch & Notes */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">Batch / Lot Number</Label>
+                            <Label className="text-sm font-medium text-gray-700">Batch / Lot Number</Label>
                             <Input
                               maxLength={100}
                               value={item.batch_number}
@@ -1193,17 +1183,17 @@ export default function VetAddRecord() {
                               }}
                               onChange={(e) => updateVaccineItem(item.id, 'batch_number', e.target.value.replace(/\s+/g, '').toUpperCase())}
                               placeholder="e.g., RB-2026-09A"
-                              className="mt-1 font-mono uppercase h-10"
+                              className="mt-1.5 font-mono uppercase h-10"
                             />
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">Notes / Reaction</Label>
+                            <Label className="text-sm font-medium text-gray-700">Notes / Reaction</Label>
                             <Input
                               value={item.notes}
                               onChange={(e) => updateVaccineItem(item.id, 'notes', e.target.value)}
                               placeholder="Any reaction or booster notes..."
-                              className="mt-1 h-10"
+                              className="mt-1.5 h-10"
                             />
                           </div>
                         </div>
@@ -1226,16 +1216,16 @@ export default function VetAddRecord() {
                   type="submit" 
                   disabled={createVaccinationMutation.isPending || isAnyVaccineBlocked} 
                   className={cn(
-                    "w-full h-12 font-medium shadow-sm transition-colors text-white",
+                    "w-full h-11 sm:h-12 font-medium shadow-sm transition-all text-white text-sm sm:text-base",
                     isAnyVaccineBlocked ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-80" : "bg-teal-600 hover:bg-teal-700"
                   )}
                 >
                   {createVaccinationMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : isAnyVaccineBlocked ? (
-                    'Cannot Save (Check Out of Stock / Expired / Quantity in Vaccines)'
+                    'Cannot Save (Check Inventory)'
                   ) : (
-                    `Record ${vaccinationItems.length === 1 ? 'Vaccination' : `All ${vaccinationItems.length} Vaccinations`} (Auto-deduct from Inventory)`
+                    vaccinationItems.length === 1 ? 'Record Vaccination' : `Record All ${vaccinationItems.length} Vaccinations`
                   )}
                 </Button>
               </form>
@@ -1290,10 +1280,10 @@ export default function VetAddRecord() {
                     const isQtyExceeded = matched && matched.quantity > 0 && (parseInt(item.quantity, 10) || 1) > matched.quantity;
 
                     return (
-                      <div key={item.id} className="p-4 rounded-xl border border-gray-200 bg-white/70 shadow-xs space-y-4">
+                      <div key={item.id} className="p-3.5 sm:p-4 rounded-xl border border-gray-200 bg-white shadow-xs space-y-3.5 sm:space-y-4">
                         <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                          <span className="font-semibold text-sm text-teal-800 flex items-center gap-2">
-                            <Pill className="w-4 h-4 text-teal-600" />
+                          <span className="font-semibold text-sm text-teal-800 flex items-center gap-2 truncate">
+                            <Pill className="w-4 h-4 text-teal-600 shrink-0" />
                             Medication #{idx + 1} {item.name ? `— ${item.name}` : ''}
                           </span>
                           {medicationItems.length > 1 && (
@@ -1302,7 +1292,7 @@ export default function VetAddRecord() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeMedicationItem(item.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 gap-1 text-xs"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 gap-1 text-xs shrink-0"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Remove
@@ -1312,7 +1302,7 @@ export default function VetAddRecord() {
 
                         {/* Medication Name */}
                         <div>
-                          <Label className="text-xs font-medium text-gray-700">Medication Name *</Label>
+                          <Label className="text-sm font-medium text-gray-700">Medication Name *</Label>
                           <div className="relative mt-1">
                             <Input
                               maxLength={200}
@@ -1419,12 +1409,12 @@ export default function VetAddRecord() {
                         </div>
 
                         {/* Dosage, Frequency & Quantity */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">
+                            <Label className="text-sm font-medium text-gray-700">
                               Dosage <span className="text-red-500">*</span>
                             </Label>
-                            <div className="relative mt-1">
+                            <div className="relative mt-1.5">
                               <Input
                                 maxLength={100}
                                 value={item.dosage}
@@ -1445,21 +1435,21 @@ export default function VetAddRecord() {
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">Frequency</Label>
+                            <Label className="text-sm font-medium text-gray-700">Frequency</Label>
                             <Input
                               maxLength={100}
                               value={item.frequency}
                               onChange={(e) => updateMedicationItem(item.id, 'frequency', e.target.value)}
                               placeholder="e.g., Twice daily"
-                              className="mt-1 h-10"
+                              className="mt-1.5 h-10"
                             />
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">
+                            <Label className="text-sm font-medium text-gray-700">
                               Prescribed Quantity <span className="text-red-500">*</span>
                             </Label>
-                            <div className="flex items-center gap-1.5 mt-1">
+                            <div className="flex items-center gap-1.5 mt-1.5">
                               <Button
                                 type="button"
                                 variant="outline"
@@ -1522,24 +1512,24 @@ export default function VetAddRecord() {
                         </div>
 
                         {/* Dates & Instructions */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">Start Date</Label>
+                            <Label className="text-sm font-medium text-gray-700">Start Date</Label>
                             <Input
                               type="date"
                               min={minCurrentYear}
                               max={maxCurrentYear}
                               value={item.start_date}
                               onChange={(e) => updateMedicationItem(item.id, 'start_date', e.target.value)}
-                              className="mt-1 h-10"
+                              className="mt-1.5 h-10"
                             />
                           </div>
 
                           <div>
-                            <Label className="text-xs font-medium text-gray-700">
+                            <Label className="text-sm font-medium text-gray-700">
                               End Date <span className="text-red-500">*</span>
                             </Label>
-                            <div className="relative mt-1">
+                            <div className="relative mt-1.5">
                               <Input
                                 type="date"
                                 min={item.start_date || minCurrentYear}
@@ -1562,12 +1552,12 @@ export default function VetAddRecord() {
                         </div>
 
                         <div>
-                          <Label className="text-xs font-medium text-gray-700">Instructions / Notes</Label>
+                          <Label className="text-sm font-medium text-gray-700">Instructions / Notes</Label>
                           <Input
                             value={item.notes}
                             onChange={(e) => updateMedicationItem(item.id, 'notes', e.target.value)}
                             placeholder="Special instructions (e.g., Take after food)..."
-                            className="mt-1 h-10"
+                            className="mt-1.5 h-10"
                           />
                         </div>
                       </div>
@@ -1589,16 +1579,16 @@ export default function VetAddRecord() {
                   type="submit" 
                   disabled={createMedicationMutation.isPending || isAnyMedicationBlocked} 
                   className={cn(
-                    "w-full h-12 font-medium shadow-sm transition-colors text-white",
+                    "w-full h-11 sm:h-12 font-medium shadow-sm transition-all text-white text-sm sm:text-base",
                     isAnyMedicationBlocked ? "bg-gray-400 hover:bg-gray-400 cursor-not-allowed opacity-80" : "bg-teal-600 hover:bg-teal-700"
                   )}
                 >
                   {createMedicationMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : isAnyMedicationBlocked ? (
-                    'Cannot Save (Check Out of Stock / Expired / Quantity in Medications)'
+                    'Cannot Save (Check Inventory)'
                   ) : (
-                    `Prescribe ${medicationItems.length === 1 ? 'Medication' : `All ${medicationItems.length} Medications`} (Auto-deduct from Inventory)`
+                    medicationItems.length === 1 ? 'Prescribe Medication' : `Prescribe All ${medicationItems.length} Medications`
                   )}
                 </Button>
               </form>

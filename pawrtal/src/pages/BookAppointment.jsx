@@ -155,6 +155,8 @@ const speciesIcons = {
   fish: Fish,
 };
 
+const DEFAULT_VET_EMAIL = 'RebeccaGoyena@pawrtal.com';
+
 export default function BookAppointment() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
@@ -162,7 +164,7 @@ export default function BookAppointment() {
 
   const [formData, setFormData] = useState({
     pet_id: preselectedPetId || '',
-    vet_email: '',
+    vet_email: DEFAULT_VET_EMAIL,
     type: '',
     date: null,
     time: '',
@@ -181,20 +183,40 @@ export default function BookAppointment() {
     queryFn: () => api.entities.User.veterinarians(),
   });
 
+  const rebeccaVet = useMemo(() => {
+    return veterinarians.find(
+      (v) =>
+        (v.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com' ||
+        (v.full_name || '').toLowerCase().includes('rebecca') ||
+        (v.display_name || '').toLowerCase().includes('rebecca')
+    ) || (veterinarians.length > 0 ? veterinarians[0] : null);
+  }, [veterinarians]);
+
+  const defaultVetEmail = rebeccaVet?.email || DEFAULT_VET_EMAIL;
+
+  // Compute the current value for the Select dropdown
+  const currentVetSelectValue = useMemo(() => {
+    if (vetManuallySelected) {
+      if (!formData.vet_email || formData.vet_email === 'any') return 'any';
+      const match = veterinarians.find(
+        (v) => (v.email || '').toLowerCase() === (formData.vet_email || '').toLowerCase()
+      );
+      return match ? match.email : formData.vet_email;
+    }
+    return defaultVetEmail;
+  }, [vetManuallySelected, formData.vet_email, defaultVetEmail, veterinarians]);
+
   // Default preferred veterinarian to Dr. Rebecca Goyena if not manually overridden
   React.useEffect(() => {
-    if (!vetManuallySelected && veterinarians.length > 0) {
-      const defaultVet = veterinarians.find(
-        (v) => (v.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com'
-      );
-      if (defaultVet) {
+    if (!vetManuallySelected && defaultVetEmail) {
+      if (formData.vet_email !== defaultVetEmail) {
         setFormData((prev) => ({
           ...prev,
-          vet_email: defaultVet.email,
+          vet_email: defaultVetEmail,
         }));
       }
     }
-  }, [veterinarians, vetManuallySelected]);
+  }, [veterinarians, defaultVetEmail, vetManuallySelected, formData.vet_email]);
 
   const { data: pets = [], isLoading: petsLoading } = useQuery({
     queryKey: ['pets', user?.email],
@@ -254,9 +276,14 @@ export default function BookAppointment() {
         return Math.max(slotStart, apptStart) < Math.min(slotEnd, apptEnd);
       });
 
-      if (formData.vet_email) {
+      const effectiveVetEmail = vetManuallySelected
+        ? (formData.vet_email === 'any' ? null : (formData.vet_email || defaultVetEmail))
+        : defaultVetEmail;
+
+      if (effectiveVetEmail) {
         // Specific vet selected: blocked if that vet is booked OR all clinic capacity is booked
-        const vetIsBooked = overlappingAppts.some((apt) => apt.vet_email === formData.vet_email);
+        const selectedVetEmailLower = effectiveVetEmail.toLowerCase();
+        const vetIsBooked = overlappingAppts.some((apt) => (apt.vet_email || '').toLowerCase() === selectedVetEmailLower);
         const clinicAtCapacity = overlappingAppts.length >= vetCount;
         if (vetIsBooked || clinicAtCapacity) {
           taken.add(slotTime);
@@ -270,7 +297,7 @@ export default function BookAppointment() {
     });
 
     return taken;
-  }, [bookedAppointments, formData.vet_email, formData.type, veterinarians, activeTimeSlots]);
+  }, [bookedAppointments, formData.vet_email, formData.type, veterinarians, activeTimeSlots, vetManuallySelected, defaultVetEmail]);
 
   /**
    * Returns true if a time slot should be disabled.
@@ -296,13 +323,22 @@ export default function BookAppointment() {
 
   const createMutation = useMutation({
     queryKey: ['createAppointment'],
-    mutationFn: (data) => api.entities.Appointment.create({
-      ...data,
-      owner_email: user?.email,
-      vet_email: data.vet_email || null,
-      status: 'pending',
-      date: format(data.date, 'yyyy-MM-dd'),
-    }),
+    mutationFn: (data) => {
+      let finalVetEmail = null;
+      if (vetManuallySelected) {
+        finalVetEmail = (!data.vet_email || data.vet_email === 'any') ? null : data.vet_email;
+      } else {
+        finalVetEmail = defaultVetEmail || DEFAULT_VET_EMAIL;
+      }
+
+      return api.entities.Appointment.create({
+        ...data,
+        owner_email: user?.email,
+        vet_email: finalVetEmail,
+        status: 'pending',
+        date: format(data.date, 'yyyy-MM-dd'),
+      });
+    },
     onSuccess: () => {
 
       toast.success('Appointment booked successfully!');
@@ -334,28 +370,28 @@ export default function BookAppointment() {
   const maxAppointmentDateStr = `${new Date().getFullYear()}-12-31`;
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
       <BackButton
         onClick={() => preselectedPetId ? navigate(createPageUrl(`PetProfile?id=${preselectedPetId}`)) : navigate(createPageUrl('Dashboard'))}
-        className="mb-6"
+        className="mb-4 sm:mb-6"
       />
 
       <Card className="border-0 shadow-lg">
-        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
-          <CardTitle className="text-2xl flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-100">
-              <CalendarIcon className="w-6 h-6 text-white" />
+        <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50 p-4 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-orange-100 shrink-0">
+              <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             Book Appointment
           </CardTitle>
-          <p className="text-gray-500">Schedule a visit with our veterinary team</p>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Schedule a visit with our veterinary team</p>
         </CardHeader>
 
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-8">
+        <CardContent className="p-4 sm:p-6">
+          <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
             {/* Select Pet */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">
+              <Label className="text-sm font-medium mb-2.5 sm:mb-3 block">
                 Select Pet <span className="text-red-500">*</span>
               </Label>
               {pets.length === 0 ? (
@@ -371,7 +407,7 @@ export default function BookAppointment() {
                   </Button>
                 </div>
               ) : (
-                <div className={cn("grid sm:grid-cols-2 gap-3 p-2 rounded-xl transition-all border", errors.pet_id ? "border-red-500 bg-red-50/5" : "border-transparent")}>
+                <div className={cn("grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 p-1 sm:p-2 rounded-xl transition-all border", errors.pet_id ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                   {pets.map((pet) => {
                     const Icon = speciesIcons[pet.species] || Dog;
                     const isSelected = formData.pet_id === pet.id;
@@ -383,25 +419,25 @@ export default function BookAppointment() {
                           setErrors(prev => ({ ...prev, pet_id: false }));
                         }}
                         className={cn(
-                          "flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all",
+                          "flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3.5 rounded-xl border-2 cursor-pointer transition-all min-w-0 overflow-hidden",
                           isSelected
-                            ? "border-orange-500 bg-orange-50/60"
-                            : "border-gray-200 hover:border-gray-300"
+                            ? "border-orange-500 bg-orange-50/60 shadow-xs"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
                         )}
                       >
                         <div className={cn(
-                          "w-12 h-12 rounded-full overflow-hidden flex items-center justify-center",
+                          "w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0",
                           isSelected ? "bg-orange-100" : "bg-gray-100"
                         )}>
                           {pet.photo_url ? (
                             <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Icon className={cn("w-6 h-6", isSelected ? "text-orange-600" : "text-gray-400")} />
+                            <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", isSelected ? "text-orange-600" : "text-gray-400")} />
                           )}
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{pet.name}</p>
-                          <p className="text-sm text-gray-500">{pet.breed || pet.species}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 truncate text-sm sm:text-base">{pet.name}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{pet.breed || pet.species}</p>
                         </div>
                       </div>
                     );
@@ -415,10 +451,10 @@ export default function BookAppointment() {
 
             {/* Appointment Type */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">
+              <Label className="text-sm font-medium mb-2.5 sm:mb-3 block">
                 Appointment Type <span className="text-red-500">*</span>
               </Label>
-              <div className={cn("grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 p-2 rounded-xl transition-all border", errors.type ? "border-red-500 bg-red-50/5" : "border-transparent")}>
+              <div className={cn("grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl transition-all border", errors.type ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {appointmentTypes.map((type) => {
                   const isSelected = formData.type === type.value;
                   return (
@@ -434,18 +470,18 @@ export default function BookAppointment() {
                         setErrors(prev => ({ ...prev, type: false }));
                       }}
                       className={cn(
-                        "flex items-center gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all",
+                        "flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-xl border-2 cursor-pointer transition-all min-w-0 overflow-hidden",
                         isSelected
                           ? "border-orange-500 bg-orange-50/60 shadow-sm"
                           : "border-gray-200 hover:border-gray-300 bg-white"
                       )}
                     >
-                      <div className={cn("p-2 rounded-lg shrink-0", type.color)}>
-                        <type.icon className="w-5 h-5" />
+                      <div className={cn("p-1.5 sm:p-2 rounded-lg shrink-0", type.color)}>
+                        <type.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div className="min-w-0">
-                        <span className="font-medium text-gray-900 block truncate text-sm sm:text-base">{type.label}</span>
-                        <span className="text-xs text-gray-500 font-normal">{type.gap} gap</span>
+                      <div className="min-w-0 flex-1 overflow-hidden">
+                        <span className="font-medium text-gray-900 block truncate text-xs sm:text-sm md:text-base leading-tight">{type.label}</span>
+                        <span className="text-[11px] sm:text-xs text-gray-500 font-normal block truncate mt-0.5">{type.gap} gap</span>
                       </div>
                     </div>
                   );
@@ -463,12 +499,12 @@ export default function BookAppointment() {
                 Select Preferred Veterinarian <span className="text-gray-400 font-normal text-xs">(Optional)</span>
               </Label>
               <Select
-                value={formData.vet_email || 'any'}
+                value={currentVetSelectValue}
                 onValueChange={(val) => {
                   setVetManuallySelected(true);
                   setFormData(prev => ({
                     ...prev,
-                    vet_email: val === 'any' ? '' : val,
+                    vet_email: val,
                     time: '', // reset selected time slot when vet changes to prevent booking a taken slot
                   }));
                 }}
@@ -480,16 +516,24 @@ export default function BookAppointment() {
                   <SelectItem value="any">
                     Any Available Veterinarian (Fastest)
                   </SelectItem>
-                  {veterinarians.map((vet) => {
-                    const isRebecca = (vet.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com';
-                    return (
-                      <SelectItem key={vet.email} value={vet.email}>
-                        {formatDoctorName(vet.full_name, vet.email)}
-                        {isRebecca ? ' (Preferred)' : ''}
-                        {vet.specialization ? ` (${vet.specialization})` : ''}
-                      </SelectItem>
-                    );
-                  })}
+                  {veterinarians.length === 0 ? (
+                    <SelectItem value={DEFAULT_VET_EMAIL}>
+                      Dr. Rebecca Goyena (Preferred)
+                    </SelectItem>
+                  ) : (
+                    veterinarians.map((vet) => {
+                      const isRebecca = (vet.email || '').toLowerCase() === 'rebeccagoyena@pawrtal.com' ||
+                                        (vet.full_name || '').toLowerCase().includes('rebecca') ||
+                                        (vet.display_name || '').toLowerCase().includes('rebecca');
+                      return (
+                        <SelectItem key={vet.email} value={vet.email}>
+                          {formatDoctorName(vet.full_name, vet.email)}
+                          {isRebecca ? ' (Preferred)' : ''}
+                          {vet.specialization ? ` (${vet.specialization})` : ''}
+                        </SelectItem>
+                      );
+                    })
+                  )}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-400 mt-1.5">
@@ -542,19 +586,6 @@ export default function BookAppointment() {
                   </span>
                 )}
               </div>
-
-              {!formData.date && (
-                <p className="text-sm text-amber-600 mb-2 flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  Please select a date first to see available time slots.
-                </p>
-              )}
-              {!formData.type && (
-                <p className="text-sm text-amber-600 mb-2 flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  Please select an appointment type above to load procedure time slots.
-                </p>
-              )}
 
               <div className={cn("grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl transition-all border", errors.time ? "border-red-500 bg-red-50/5" : "border-transparent")}>
                 {activeTimeSlots.map((time) => {

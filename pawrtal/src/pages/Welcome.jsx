@@ -64,7 +64,6 @@ export default function Welcome() {
     "Access records from anywhere",
     "Communicate with your vet directly",
     "Share pet info instantly via QR",
-    "Monitor health trends over time",
   ];
 
   return (

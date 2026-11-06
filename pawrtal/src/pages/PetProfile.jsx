@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fns';
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,31 +88,52 @@ export default function PetProfile() {
 
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['vaccinations', petId],
-    queryFn: () => api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered'),
+    queryFn: async () => {
+      const data = await api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered');
+      return (data || []).sort((a, b) => {
+        const diff = new Date(b.date_administered || 0) - new Date(a.date_administered || 0);
+        if (diff !== 0) return diff;
+        const nextDiff = (b.next_due_date || '').localeCompare(a.next_due_date || '');
+        if (nextDiff !== 0) return nextDiff;
+        return (b.id || '').localeCompare(a.id || '');
+      });
+    },
     enabled: !!petId,
   });
 
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', petId],
-    queryFn: () => api.entities.Medication.filter({ pet_id: petId }),
+    queryFn: async () => {
+      const data = await api.entities.Medication.filter({ pet_id: petId }, '-start_date');
+      return (data || []).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+    },
     enabled: !!petId,
   });
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['petAppointments', petId],
-    queryFn: () => api.entities.Appointment.filter({ pet_id: petId }, '-date'),
+    queryFn: async () => {
+      const data = await api.entities.Appointment.filter({ pet_id: petId }, '-date');
+      return (data || []).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    },
     enabled: !!petId,
   });
 
   const { data: healthRecords = [] } = useQuery({
     queryKey: ['healthRecords', petId],
-    queryFn: () => api.entities.HealthRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date'),
+    queryFn: async () => {
+      const data = await api.entities.HealthRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date');
+      return (data || []).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    },
     enabled: !!petId,
   });
 
   const { data: groomingRecords = [] } = useQuery({
     queryKey: ['groomingRecords', petId],
-    queryFn: () => api.entities.GroomingRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date'),
+    queryFn: async () => {
+      const data = await api.entities.GroomingRecord.filter({ pet_id: petId, is_visible_to_owner: true }, '-date');
+      return (data || []).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    },
     enabled: !!petId,
   });
 
@@ -194,13 +216,13 @@ export default function PetProfile() {
   const activeMeds = medications.filter(m => m.is_active);
 
   const content = (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
-      <BackButton to={createPageUrl('Dashboard')} className="mb-2" />
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
+      <BackButton to={createPageUrl('Dashboard')} className="mb-1 sm:mb-2" />
 
       {/* Header Card */}
       <Card className="overflow-hidden border border-gray-100 shadow-md bg-white">
         {/* Cover Banner: Solid Pawrtal light teal with subtle authentic pet doodle texture (No AI gradient) */}
-        <div className="relative h-44 sm:h-48 bg-gradient-to-r from-amber-500 to-orange-500 overflow-hidden">
+        <div className="relative h-36 sm:h-48 bg-gradient-to-r from-amber-500 to-orange-500 overflow-hidden">
           <img 
             src={backgroundImg} 
             alt="Pawrtal Pattern" 
@@ -208,55 +230,55 @@ export default function PetProfile() {
           />
         </div>
         
-        <div className="relative z-10 px-4 sm:px-6 pb-4 sm:pb-6 pt-3">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="relative z-10 px-3.5 sm:px-6 pb-4 sm:pb-6 pt-3">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
             {/* Avatar & Pet Info Group */}
-            <div className="flex flex-col sm:flex-row sm:items-end gap-5">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-5 min-w-0">
               {/* Pet Avatar - overlaps banner */}
-              <div className="relative z-20 -mt-14 sm:-mt-20 w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
+              <div className="relative z-20 -mt-12 sm:-mt-20 w-20 h-20 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-white border-4 border-white shadow-lg flex items-center justify-center shrink-0">
                 {pet.photo_url ? (
                   <img src={pet.photo_url} alt={pet.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Icon className="w-16 h-16 text-orange-400" />
+                  <Icon className="w-12 h-12 sm:w-16 sm:h-16 text-orange-400" />
                 )}
               </div>
               
-              {/* Pet Name, Species, Breed & Microchip: well below the banner edge with clear white breathing room */}
-              <div className="pb-1">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{pet.name}</h1>
-                  <Badge className="capitalize bg-orange-50 text-orange-700 border border-orange-200 font-medium px-2.5 py-0.5">
+              {/* Pet Name, Species, Breed & Microchip */}
+              <div className="pb-1 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight truncate">{pet.name}</h1>
+                  <Badge className="capitalize bg-orange-50 text-orange-700 border border-orange-200 font-medium px-2.5 py-0.5 text-xs">
                     {pet.species}
                   </Badge>
                 </div>
-                <p className="text-gray-500 font-medium text-sm">
+                <p className="text-gray-500 font-medium text-xs sm:text-sm">
                   {pet.breed || 'Mixed breed'} • {pet.gender}
                 </p>
                 {pet.microchip_id && (
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-800 border border-orange-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                    Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span>
+                  <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-800 border border-orange-200 max-w-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shrink-0" />
+                    <span className="truncate">Microchip ID: <span className="font-mono font-bold">{pet.microchip_id}</span></span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 pb-1">
-              <Link to={createPageUrl(`PetQr?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
+            <div className="flex flex-wrap items-center gap-2 pb-1 w-full sm:w-auto">
+              <Link to={createPageUrl(`PetQr?id=${pet.id}`)} className="flex-1 sm:flex-initial">
+                <Button variant="outline" className="w-full gap-1.5 text-xs sm:text-sm h-9 sm:h-10 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                   <QrCode className="w-4 h-4" />
                   QR Code
                 </Button>
               </Link>
-              <Link to={createPageUrl(`EditPet?id=${pet.id}`)}>
-                <Button variant="outline" className="gap-2 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
+              <Link to={createPageUrl(`EditPet?id=${pet.id}`)} className="flex-1 sm:flex-initial">
+                <Button variant="outline" className="w-full gap-1.5 text-xs sm:text-sm h-9 sm:h-10 border-gray-300 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                   <Edit className="w-4 h-4" />
                   Edit
                 </Button>
               </Link>
-              <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)}>
-                <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
+              <Link to={createPageUrl(`BookAppointment?petId=${pet.id}`)} className="flex-1 sm:flex-initial">
+                <Button className="w-full gap-1.5 text-xs sm:text-sm h-9 sm:h-10 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm shadow-orange-100">
                   <Calendar className="w-4 h-4" />
                   Book
                 </Button>
@@ -267,26 +289,26 @@ export default function PetProfile() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-4 text-center border-0 shadow-sm">
-          <Clock className="w-8 h-8 mx-auto text-orange-500 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{calculateAge(pet.date_of_birth)}</p>
-          <p className="text-sm text-gray-500">Age</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+        <Card className="p-3 sm:p-4 text-center border-0 shadow-sm min-w-0">
+          <Clock className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-orange-500 mb-1.5" />
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{calculateAge(pet.date_of_birth)}</p>
+          <p className="text-xs sm:text-sm text-gray-500">Age</p>
         </Card>
-        <Card className="p-4 text-center border-0 shadow-sm">
-          <Weight className="w-8 h-8 mx-auto text-blue-500 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{pet.weight || '-'} kg</p>
-          <p className="text-sm text-gray-500">Weight</p>
+        <Card className="p-3 sm:p-4 text-center border-0 shadow-sm min-w-0">
+          <Weight className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-blue-500 mb-1.5" />
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{pet.weight || '-'} kg</p>
+          <p className="text-xs sm:text-sm text-gray-500">Weight</p>
         </Card>
-        <Card className="p-4 text-center border-0 shadow-sm">
-          <Syringe className="w-8 h-8 mx-auto text-purple-500 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{vaccinations.length}</p>
-          <p className="text-sm text-gray-500">Vaccinations</p>
+        <Card className="p-3 sm:p-4 text-center border-0 shadow-sm min-w-0">
+          <Syringe className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-purple-500 mb-1.5" />
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{vaccinations.length}</p>
+          <p className="text-xs sm:text-sm text-gray-500">Vaccinations</p>
         </Card>
-        <Card className="p-4 text-center border-0 shadow-sm">
-          <Calendar className="w-8 h-8 mx-auto text-orange-500 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{appointments.length}</p>
-          <p className="text-sm text-gray-500">Appointments</p>
+        <Card className="p-3 sm:p-4 text-center border-0 shadow-sm min-w-0">
+          <Calendar className="w-6 h-6 sm:w-8 sm:h-8 mx-auto text-orange-500 mb-1.5" />
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{appointments.length}</p>
+          <p className="text-xs sm:text-sm text-gray-500">Appointments</p>
         </Card>
       </div>
 
@@ -333,25 +355,25 @@ export default function PetProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="vaccinations" className="space-y-4">
-        <TabsList className="w-full flex overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none">
-          <TabsTrigger value="vaccinations" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
-            <Syringe className="w-4 h-4" />
+        <TabsList className="w-full flex justify-start items-center overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+          <TabsTrigger value="vaccinations" className="gap-1.5 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm flex-shrink-0">
+            <Syringe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Vaccinations
           </TabsTrigger>
-          <TabsTrigger value="medications" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
-            <Pill className="w-4 h-4" />
+          <TabsTrigger value="medications" className="gap-1.5 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm flex-shrink-0">
+            <Pill className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Medications
           </TabsTrigger>
-          <TabsTrigger value="records" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
-            <FileText className="w-4 h-4" />
+          <TabsTrigger value="records" className="gap-1.5 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm flex-shrink-0">
+            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Records
           </TabsTrigger>
-          <TabsTrigger value="grooming" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
-            <Scissors className="w-4 h-4" />
+          <TabsTrigger value="grooming" className="gap-1.5 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm flex-shrink-0">
+            <Scissors className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             Grooming
           </TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-2 whitespace-nowrap px-4 py-2 flex-shrink-0">
-            <Calendar className="w-4 h-4" />
+          <TabsTrigger value="appointments" className="gap-1.5 whitespace-nowrap px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm flex-shrink-0">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             History
           </TabsTrigger>
         </TabsList>
@@ -368,19 +390,23 @@ export default function PetProfile() {
                 <div className="space-y-3">
                   {vaccinations.map((vax) => {
                     const isLatest = !vaccinations.some(v => 
-                      v.vaccine_name.toLowerCase() === vax.vaccine_name.toLowerCase() && 
-                      (v.date_administered > vax.date_administered || 
-                      (v.date_administered === vax.date_administered && v.id > vax.id))
+                      v.id !== vax.id &&
+                      v.vaccine_name?.trim().toLowerCase() === vax.vaccine_name?.trim().toLowerCase() && 
+                      (
+                        v.date_administered > vax.date_administered || 
+                        (v.date_administered === vax.date_administered && (v.next_due_date || '') > (vax.next_due_date || '')) ||
+                        (v.date_administered === vax.date_administered && (v.next_due_date || '') === (vax.next_due_date || '') && v.id > vax.id)
+                      )
                     );
                     return (
-                    <div key={vax.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <div key={vax.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
                           <Syringe className="w-5 h-5 text-purple-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{vax.vaccine_name}</p>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 break-words text-sm sm:text-base">{vax.vaccine_name}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {format(new Date(vax.date_administered + 'T00:00:00'), 'MMM d, yyyy')}
                             {formatDoctorName(vax.administered_by) && (
                               <span className="text-orange-700 font-medium ml-2">
@@ -391,17 +417,17 @@ export default function PetProfile() {
                         </div>
                       </div>
                       {vax.next_due_date && isLatest && (
-                        <Badge variant="outline" className={isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "bg-red-50 text-red-700 border-red-200" : "bg-blue-50 text-blue-700 border-blue-200"}>
+                        <Badge variant="outline" className={cn("w-fit self-start sm:self-center shrink-0 text-xs", isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "bg-red-50 text-red-700 border-red-200" : "bg-blue-50 text-blue-700 border-blue-200")}>
                           {isBefore(new Date(vax.next_due_date + 'T00:00:00'), new Date()) ? "Overdue:" : "Next dose:"} {format(new Date(vax.next_due_date + 'T00:00:00'), 'MMM d, yyyy')}
                         </Badge>
                       )}
                       {!vax.next_due_date && isLatest && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline" className="w-fit self-start sm:self-center shrink-0 text-xs bg-green-50 text-green-700 border-green-200">
                           Up to date
                         </Badge>
                       )}
                       {!isLatest && (
-                        <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
+                        <Badge variant="outline" className="w-fit self-start sm:self-center shrink-0 text-xs bg-gray-50 text-gray-500 border-gray-200">
                           Renewed
                         </Badge>
                       )}
@@ -426,14 +452,14 @@ export default function PetProfile() {
                   {medications.map((med) => {
                     const isStillActive = med.is_active && (!med.end_date || new Date(med.end_date + 'T00:00:00') >= new Date());
                     return (
-                    <div key={med.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    <div key={med.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${isStillActive ? 'bg-green-100' : 'bg-gray-100'}`}>
                           <Pill className={`w-5 h-5 ${isStillActive ? 'text-green-600' : 'text-gray-400'}`} />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{med.name}</p>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 break-words text-sm sm:text-base">{med.name}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {med.quantity ? `Qty: ${med.quantity} • ` : ''}{med.dosage} • {med.frequency}
                             {formatDoctorName(med.prescribed_by) && (
                               <span className="text-orange-700 font-medium ml-2">
@@ -442,7 +468,7 @@ export default function PetProfile() {
                             )}
                           </p>
                           {(med.start_date || med.end_date) && (
-                            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                            <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5 flex-wrap">
                               <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                               <span>
                                 {med.start_date ? `Start: ${format(new Date(med.start_date + 'T00:00:00'), 'MMM d, yyyy')}` : ''}
@@ -452,13 +478,13 @@ export default function PetProfile() {
                             </p>
                           )}
                           {med.notes && (
-                            <p className="text-xs text-gray-400 italic mt-0.5">
+                            <p className="text-xs text-gray-400 italic mt-0.5 break-words">
                               Note: {med.notes}
                             </p>
                           )}
                         </div>
                       </div>
-                      <Badge variant="outline" className={isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500'}>
+                      <Badge variant="outline" className={cn("w-fit self-start sm:self-center shrink-0 text-xs", isStillActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500')}>
                         {isStillActive ? 'Active' : 'Completed'}
                       </Badge>
                     </div>
@@ -481,14 +507,14 @@ export default function PetProfile() {
               ) : (
                 <div className="space-y-3">
                   {healthRecords.map((record) => (
-                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                           <FileText className="w-5 h-5 text-orange-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{record.title}</p>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 break-words text-sm sm:text-base">{record.title}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {record.record_type.replace('_', ' ')} • {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                             {formatDoctorName(record.vet_name, record.vet_email) && (
                               <span className="text-orange-700 font-medium ml-2">
@@ -503,8 +529,8 @@ export default function PetProfile() {
                         if (attachments.length === 0) return null;
                         if (attachments.length === 1) {
                           return (
-                            <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                              <Button variant="outline" size="sm" className="gap-1.5">
+                            <a href={attachments[0]} target="_blank" rel="noopener noreferrer" className="self-start sm:self-center shrink-0">
+                              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
                                 <ExternalLink className="w-3.5 h-3.5" />
                                 View
                               </Button>
@@ -512,7 +538,7 @@ export default function PetProfile() {
                           );
                         }
                         return (
-                          <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end max-w-xs">
+                          <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-center shrink-0 max-w-xs">
                             {attachments.map((url, i) => (
                               <a key={i} href={url} target="_blank" rel="noopener noreferrer">
                                 <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 px-2.5">
@@ -543,14 +569,14 @@ export default function PetProfile() {
               ) : (
                 <div className="space-y-3">
                   {groomingRecords.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center">
+                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center shrink-0">
                           <Scissors className="w-5 h-5 text-pink-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 capitalize">{record.grooming_type.replace(/_/g, ' ')}</p>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 capitalize text-sm sm:text-base truncate">{record.grooming_type.replace(/_/g, ' ')}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {format(new Date(record.date + 'T00:00:00'), 'MMM d, yyyy')}
                             {record.groomer_name && (
                               <span className="text-orange-700 font-medium ml-2">
@@ -559,14 +585,16 @@ export default function PetProfile() {
                             )}
                           </p>
                           {record.coat_style_notes && (
-                            <p className="text-sm text-gray-600 mt-1">{record.coat_style_notes}</p>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1 break-words">{record.coat_style_notes}</p>
                           )}
                         </div>
                       </div>
                       {record.coat_condition_before && (
-                        <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize">
-                          {record.coat_condition_before.replace(/_/g, ' ')}
-                        </Badge>
+                        <div className="self-start sm:self-center shrink-0">
+                          <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200 capitalize text-xs">
+                            {record.coat_condition_before.replace(/_/g, ' ')}
+                          </Badge>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -589,14 +617,14 @@ export default function PetProfile() {
                   {appointments.map((apt) => {
                     const status = getAppointmentStatus(apt);
                     return (
-                    <div key={apt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <div key={apt.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
                           <Calendar className="w-5 h-5 text-blue-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 capitalize">{apt.type.replace('_', ' ')}</p>
-                          <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 capitalize text-sm sm:text-base truncate">{apt.type.replace('_', ' ')}</p>
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {format(new Date(apt.date + 'T00:00:00'), 'MMM d, yyyy')} at {apt.time}
                             {formatDoctorName(apt.vet_name, apt.vet_email) && (
                               <span className="text-orange-700 font-medium ml-2">
@@ -606,18 +634,21 @@ export default function PetProfile() {
                           </p>
                         </div>
                       </div>
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                          status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
-                          status === 'confirmed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          status === 'expired' ? 'bg-gray-50 text-gray-700 border-gray-200' :
-                          'bg-amber-50 text-amber-700 border-amber-200'
-                        }
-                      >
-                        {status}
-                      </Badge>
+                      <div className="self-start sm:self-center shrink-0">
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs capitalize",
+                            status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                            status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                            status === 'confirmed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            status === 'expired' ? 'bg-gray-50 text-gray-700 border-gray-200' :
+                            'bg-amber-50 text-amber-700 border-amber-200'
+                          )}
+                        >
+                          {status}
+                        </Badge>
+                      </div>
                     </div>
                   )})}
                 </div>

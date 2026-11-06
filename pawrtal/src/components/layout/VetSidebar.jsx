@@ -187,7 +187,7 @@ export default function VetSidebar({ user, children }) {
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full max-w-full min-w-0 overflow-x-hidden">
         {/* Mobile topbar */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-teal-100 sticky top-0 z-20">
           <button onClick={() => setOpen(true)} className="p-2 rounded-lg text-teal-700 hover:bg-teal-50">
