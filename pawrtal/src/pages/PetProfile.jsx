@@ -89,8 +89,8 @@ export default function PetProfile() {
   const { data: vaccinations = [] } = useQuery({
     queryKey: ['vaccinations', petId],
     queryFn: async () => {
-      const data = await api.entities.Vaccination.filter({ pet_id: petId }, '-date_administered');
-      return (data || []).sort((a, b) => {
+      const data = await api.entities.Vaccination.filter({ pet_id: petId, is_visible_to_owner: true }, '-date_administered');
+      return (data || []).filter(v => v.is_visible_to_owner !== false).sort((a, b) => {
         const diff = new Date(b.date_administered || 0) - new Date(a.date_administered || 0);
         if (diff !== 0) return diff;
         const nextDiff = (b.next_due_date || '').localeCompare(a.next_due_date || '');
@@ -104,8 +104,8 @@ export default function PetProfile() {
   const { data: medications = [] } = useQuery({
     queryKey: ['medications', petId],
     queryFn: async () => {
-      const data = await api.entities.Medication.filter({ pet_id: petId }, '-start_date');
-      return (data || []).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
+      const data = await api.entities.Medication.filter({ pet_id: petId, is_visible_to_owner: true }, '-start_date');
+      return (data || []).filter(m => m.is_visible_to_owner !== false).sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
     },
     enabled: !!petId,
   });

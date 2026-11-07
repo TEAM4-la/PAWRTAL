@@ -27,5 +27,7 @@ public class VaccinationDto
 
     [JsonPropertyName("administered_by")]
     public string? AdministeredBy { get; set; }
-}
 
+    [JsonPropertyName("is_visible_to_owner")]
+    public bool IsVisibleToOwner { get; set; } = true;
+}

@@ -27,5 +27,7 @@ public class VaccinationCreateRequest
 
     [JsonPropertyName("quantity")]
     public int? Quantity { get; set; }
-}
 
+    [JsonPropertyName("is_visible_to_owner")]
+    public bool? IsVisibleToOwner { get; set; }
+}

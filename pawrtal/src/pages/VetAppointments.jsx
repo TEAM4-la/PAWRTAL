@@ -273,7 +273,7 @@ export default function VetAppointments() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto lg:grid lg:grid-cols-6 h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+        <TabsList className="w-full flex justify-start items-center overflow-x-auto lg:grid lg:grid-cols-6 h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
           <TabsTrigger value="today" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             <CalendarIcon className="w-4 h-4" />
             Today ({todayAppointments.length})

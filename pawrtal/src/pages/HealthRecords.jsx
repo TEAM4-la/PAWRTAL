@@ -118,12 +118,13 @@ export default function HealthRecords() {
       let list = [];
       if (selectedPet === 'all') {
         const allVax = await Promise.all(
-          pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id }, '-date_administered'))
+          pets.map(pet => api.entities.Vaccination.filter({ pet_id: pet.id, is_visible_to_owner: true }, '-date_administered'))
         );
         list = allVax.flat();
       } else {
-        list = await api.entities.Vaccination.filter({ pet_id: selectedPet }, '-date_administered');
+        list = await api.entities.Vaccination.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-date_administered');
       }
+      list = list.filter(v => v.is_visible_to_owner !== false);
       return list.sort((a, b) => {
         const diff = new Date(b.date_administered || 0) - new Date(a.date_administered || 0);
         if (diff !== 0) return diff;
@@ -141,12 +142,13 @@ export default function HealthRecords() {
       let list = [];
       if (selectedPet === 'all') {
         const allMeds = await Promise.all(
-          pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id }, '-start_date'))
+          pets.map(pet => api.entities.Medication.filter({ pet_id: pet.id, is_visible_to_owner: true }, '-start_date'))
         );
         list = allMeds.flat();
       } else {
-        list = await api.entities.Medication.filter({ pet_id: selectedPet }, '-start_date');
+        list = await api.entities.Medication.filter({ pet_id: selectedPet, is_visible_to_owner: true }, '-start_date');
       }
+      list = list.filter(m => m.is_visible_to_owner !== false);
       return list.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
     },
     enabled: pets.length > 0,
@@ -239,20 +241,20 @@ export default function HealthRecords() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto sm:inline-flex h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
-          <TabsTrigger value="records" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
+        <TabsList className="w-full flex justify-start items-center overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+          <TabsTrigger value="records" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <FileText className="w-4 h-4" />
             Medical Records
           </TabsTrigger>
-          <TabsTrigger value="vaccinations" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
+          <TabsTrigger value="vaccinations" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <Syringe className="w-4 h-4" />
             Vaccinations
           </TabsTrigger>
-          <TabsTrigger value="medications" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
+          <TabsTrigger value="medications" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <Pill className="w-4 h-4" />
             Medications
           </TabsTrigger>
-          <TabsTrigger value="grooming" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm flex-1 sm:flex-none">
+          <TabsTrigger value="grooming" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <Scissors className="w-4 h-4" />
             Grooming
           </TabsTrigger>

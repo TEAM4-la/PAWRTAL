@@ -124,9 +124,11 @@ export default function VetAddRecord() {
 
   const [vaccinationPatientId, setVaccinationPatientId] = useState(preselectedPetId || '');
   const [vaccinationItems, setVaccinationItems] = useState([createEmptyVaccineItem()]);
+  const [vaccinationIsVisibleToOwner, setVaccinationIsVisibleToOwner] = useState(true);
 
   const [medicationPatientId, setMedicationPatientId] = useState(preselectedPetId || '');
   const [medicationItems, setMedicationItems] = useState([createEmptyMedicationItem()]);
+  const [medicationIsVisibleToOwner, setMedicationIsVisibleToOwner] = useState(true);
 
   const [activeVaccineSuggestionIdx, setActiveVaccineSuggestionIdx] = useState(null);
   const [activeMedicationSuggestionIdx, setActiveMedicationSuggestionIdx] = useState(null);
@@ -357,6 +359,7 @@ export default function VetAddRecord() {
           batch_number: item.batch_number?.trim() || null,
           notes: item.notes?.trim() || null,
           administered_by: user?.full_name,
+          is_visible_to_owner: vaccinationIsVisibleToOwner,
         });
 
         const matched = getMatchedVaccine(item.vaccine_name);
@@ -407,6 +410,7 @@ export default function VetAddRecord() {
           end_date: item.end_date,
           notes: item.notes?.trim() || null,
           prescribed_by: user?.full_name,
+          is_visible_to_owner: medicationIsVisibleToOwner,
         });
 
         const matched = getMatchedMedication(item.name);
@@ -1212,6 +1216,17 @@ export default function VetAddRecord() {
                   </Button>
                 </div>
 
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="font-medium text-gray-900">Visible to Owner</p>
+                    <p className="text-sm text-gray-500">Owner can view this record</p>
+                  </div>
+                  <Switch
+                    checked={vaccinationIsVisibleToOwner}
+                    onCheckedChange={(checked) => setVaccinationIsVisibleToOwner(checked)}
+                  />
+                </div>
+
                 <Button 
                   type="submit" 
                   disabled={createVaccinationMutation.isPending || isAnyVaccineBlocked} 
@@ -1573,6 +1588,17 @@ export default function VetAddRecord() {
                     <Plus className="w-4 h-4" />
                     Add Another Medication
                   </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div>
+                    <p className="font-medium text-gray-900">Visible to Owner</p>
+                    <p className="text-sm text-gray-500">Owner can view this record</p>
+                  </div>
+                  <Switch
+                    checked={medicationIsVisibleToOwner}
+                    onCheckedChange={(checked) => setMedicationIsVisibleToOwner(checked)}
+                  />
                 </div>
 
                 <Button 

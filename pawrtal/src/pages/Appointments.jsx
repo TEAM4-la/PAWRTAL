@@ -115,36 +115,36 @@ export default function Appointments() {
     });
 
   const content = (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
       <BackButton to={createPageUrl('Dashboard')} />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Appointments</h1>
-          <p className="text-gray-500 mt-1">Manage your veterinary appointments</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Appointments</h1>
+          <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Manage your veterinary appointments</p>
         </div>
-        <Link to={createPageUrl('BookAppointment')}>
-          <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-sm shadow-orange-100">
-            <Plus className="w-5 h-5" />
+        <Link to={createPageUrl('BookAppointment')} className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white gap-2 shadow-sm shadow-orange-100 h-9 sm:h-10 text-xs sm:text-sm">
+            <Plus className="w-4 h-4" />
             Book Appointment
           </Button>
         </Link>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-gray-100 p-1 w-full sm:w-auto">
-          <TabsTrigger value="upcoming" className="gap-2 flex-1 sm:flex-none">
+        <TabsList className="w-full flex justify-start items-center overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">
+          <TabsTrigger value="upcoming" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <Clock className="w-4 h-4" />
             Upcoming ({upcomingAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="past" className="gap-2 flex-1 sm:flex-none">
+          <TabsTrigger value="past" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <CheckCircle className="w-4 h-4" />
             Past ({pastAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="confirmed" className="gap-2 flex-1 sm:flex-none">
+          <TabsTrigger value="confirmed" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             <CalendarCheck className="w-4 h-4" />
             Confirmed ({confirmedAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="cancelled" className="gap-2 flex-1 sm:flex-none">
+          <TabsTrigger value="cancelled" className="gap-1.5 whitespace-nowrap px-3.5 py-2 text-xs sm:text-sm shrink-0">
             Cancelled ({cancelledAppointments.length})
           </TabsTrigger>
         </TabsList>

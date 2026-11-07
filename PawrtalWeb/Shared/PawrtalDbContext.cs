@@ -119,6 +119,7 @@ public partial class PawrtalDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(200);
             entity.Property(e => e.PrescribedBy).HasMaxLength(200);
+            entity.Property(e => e.IsVisibleToOwner).HasDefaultValue(true);
 
             entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_Medications_Pets_PetId");
         });
@@ -216,6 +217,7 @@ public partial class PawrtalDbContext : DbContext
             entity.Property(e => e.VaccineName)
                 .IsRequired()
                 .HasMaxLength(200);
+            entity.Property(e => e.IsVisibleToOwner).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<InventoryItem>(entity =>

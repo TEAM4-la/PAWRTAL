@@ -182,6 +182,16 @@ IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Medications') AND NOT EXISTS (
 BEGIN
     ALTER TABLE [Medications] ADD [Quantity] INT NOT NULL DEFAULT 1;
 END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Vaccinations') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Vaccinations') AND name = 'IsVisibleToOwner')
+BEGIN
+    ALTER TABLE [Vaccinations] ADD [IsVisibleToOwner] BIT NOT NULL DEFAULT 1;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Medications') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Medications') AND name = 'IsVisibleToOwner')
+BEGIN
+    ALTER TABLE [Medications] ADD [IsVisibleToOwner] BIT NOT NULL DEFAULT 1;
+END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureMedicationColumnsSql);
 

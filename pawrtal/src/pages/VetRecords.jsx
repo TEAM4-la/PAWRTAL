@@ -246,7 +246,7 @@ export default function VetRecords() {
         description: [m.quantity ? `Qty: ${m.quantity}` : null, m.frequency, m.notes].filter(Boolean).join(' • '),
         date: m.start_date,
         vet_name: m.prescribed_by,
-        is_visible_to_owner: true,
+        is_visible_to_owner: m.is_visible_to_owner ?? true,
       });
     });
 
@@ -272,7 +272,7 @@ export default function VetRecords() {
         next_due_date: v.next_due_date,
         is_latest: isLatest,
         vet_name: v.administered_by,
-        is_visible_to_owner: true,
+        is_visible_to_owner: v.is_visible_to_owner ?? true,
       });
     });
 

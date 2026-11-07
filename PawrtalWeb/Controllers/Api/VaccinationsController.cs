@@ -23,6 +23,7 @@ public class VaccinationsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<VaccinationDto>>> Filter(
         [FromQuery(Name = "pet_id")] Guid? petId,
+        [FromQuery(Name = "is_visible_to_owner")] bool? isVisibleToOwner,
         [FromQuery] string? order,
         [FromQuery] int? limit)
     {
@@ -30,6 +31,9 @@ public class VaccinationsController : ControllerBase
 
         if (petId is not null)
             q = q.Where(v => v.PetId == petId.Value);
+
+        if (isVisibleToOwner is not null)
+            q = q.Where(v => v.IsVisibleToOwner == isVisibleToOwner.Value);
 
         q = order switch
         {
@@ -77,6 +81,7 @@ public class VaccinationsController : ControllerBase
             BatchNumber = request.BatchNumber,
             Notes = request.Notes,
             AdministeredBy = request.AdministeredBy,
+            IsVisibleToOwner = request.IsVisibleToOwner ?? true,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -84,7 +89,7 @@ public class VaccinationsController : ControllerBase
         await _db.SaveChangesAsync();
 
         var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == petId);
-        if (pet?.OwnerEmail is not null)
+        if (v.IsVisibleToOwner && pet?.OwnerEmail is not null)
         {
             await _notifications.CreateNotificationAsync(
                 pet.OwnerEmail,
@@ -126,7 +131,8 @@ public class VaccinationsController : ControllerBase
         NextDueDate = v.NextDueDate?.ToString("yyyy-MM-dd"),
         BatchNumber = v.BatchNumber,
         Notes = v.Notes,
-        AdministeredBy = v.AdministeredBy
+        AdministeredBy = v.AdministeredBy,
+        IsVisibleToOwner = v.IsVisibleToOwner
     };
 }
 

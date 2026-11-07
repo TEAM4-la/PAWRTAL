@@ -29,6 +29,8 @@ public partial class Medication
 
     public string PrescribedBy { get; set; }
 
+    public bool IsVisibleToOwner { get; set; } = true;
+
     public DateTime CreatedAt { get; set; }
 
     public bool IsDeleted { get; set; }

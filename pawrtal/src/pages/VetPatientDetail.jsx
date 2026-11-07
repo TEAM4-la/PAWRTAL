@@ -329,7 +329,7 @@ export default function VetPatientDetail() {
                               {vax.batch_number && <p className="break-all mt-0.5 text-gray-400 text-xs">Batch: {vax.batch_number}</p>}
                             </div>
                           </div>
-                          <div className="self-start sm:self-center shrink-0 w-fit">
+                          <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0 flex-wrap">
                             {vax.next_due_date && isLatest && (
                               <Badge 
                                 variant="outline"
@@ -353,6 +353,9 @@ export default function VetPatientDetail() {
                                 Renewed
                               </Badge>
                             )}
+                            <Badge className={cn("text-xs", vax.is_visible_to_owner !== false ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                              {vax.is_visible_to_owner !== false ? 'Visible' : 'Hidden'}
+                            </Badge>
                           </div>
                         </div>
                       </CardContent>
@@ -402,9 +405,14 @@ export default function VetPatientDetail() {
                               </p>
                             )}
                           </div>
-                          <Badge className={cn("w-fit self-start sm:self-center shrink-0 text-xs", isStillActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                            {isStillActive ? 'Active' : 'Completed'}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 self-start sm:self-center shrink-0 flex-wrap">
+                            <Badge className={cn("w-fit text-xs", isStillActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                              {isStillActive ? 'Active' : 'Completed'}
+                            </Badge>
+                            <Badge className={cn("text-xs", med.is_visible_to_owner !== false ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500')}>
+                              {med.is_visible_to_owner !== false ? 'Visible' : 'Hidden'}
+                            </Badge>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

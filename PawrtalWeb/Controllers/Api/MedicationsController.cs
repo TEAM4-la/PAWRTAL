@@ -23,6 +23,7 @@ public class MedicationsController : ControllerBase
     public async Task<ActionResult<List<MedicationDto>>> Filter(
         [FromQuery(Name = "pet_id")] Guid? petId,
         [FromQuery(Name = "is_active")] bool? isActive,
+        [FromQuery(Name = "is_visible_to_owner")] bool? isVisibleToOwner,
         [FromQuery] string? order,
         [FromQuery] int? limit)
     {
@@ -30,6 +31,9 @@ public class MedicationsController : ControllerBase
 
         if (petId is not null)
             q = q.Where(m => m.PetId == petId.Value);
+
+        if (isVisibleToOwner is not null)
+            q = q.Where(m => m.IsVisibleToOwner == isVisibleToOwner.Value);
 
         q = order switch
         {
@@ -86,6 +90,7 @@ public class MedicationsController : ControllerBase
             Notes = request.Notes,
             IsActive = request.IsActive ?? true,
             PrescribedBy = request.PrescribedBy,
+            IsVisibleToOwner = request.IsVisibleToOwner ?? true,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -93,7 +98,7 @@ public class MedicationsController : ControllerBase
         await _db.SaveChangesAsync();
 
         var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == petId);
-        if (pet?.OwnerEmail is not null)
+        if (med.IsVisibleToOwner && pet?.OwnerEmail is not null)
         {
             await _notifications.CreateNotificationAsync(
                 pet.OwnerEmail,
@@ -140,6 +145,7 @@ public class MedicationsController : ControllerBase
         Notes = m.Notes,
         // Compute active status dynamically: if end_date is in the past, medication is completed
         IsActive = m.IsActive && (m.EndDate == null || m.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)),
-        PrescribedBy = m.PrescribedBy
+        PrescribedBy = m.PrescribedBy,
+        IsVisibleToOwner = m.IsVisibleToOwner
     };
 }
