@@ -1,0 +1,3 @@
+run cmd
+change directory to "PawrtalReact"'s folder (like cd PawrtalReact)
+npm run build
