@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppointmentCard from "@/components/shared/AppointmentCard";
 import EmptyState from "@/components/shared/EmptyState";
+import OwnerPocketQueue from "@/components/shared/OwnerPocketQueue";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import BackButton from '@/components/ui/BackButton';
 import { Plus, Calendar, Clock, CheckCircle, ChevronLeft, CalendarCheck } from 'lucide-react';
@@ -63,6 +64,31 @@ export default function Appointments() {
     queryKey: ['pets', user?.email],
     queryFn: () => api.entities.Pet.filter({ owner_email: user?.email }),
     enabled: !!user?.email,
+  });
+
+  const todayDateStr = new Date().toISOString().split('T')[0];
+  const activeTodayAppointment = appointments.find(
+    (a) => a.date === todayDateStr &&
+           a.status !== 'cancelled' &&
+           a.status !== 'expired' &&
+           a.status !== 'completed' &&
+           a.queue_status !== 'completed'
+  );
+
+  const completedTodayAppointment = !activeTodayAppointment
+    ? appointments.find(
+        (a) => a.date === todayDateStr &&
+               (a.status === 'completed' || a.queue_status === 'completed')
+      )
+    : null;
+
+  const todayAppointment = activeTodayAppointment || completedTodayAppointment;
+
+  const { data: clinicQueue = [] } = useQuery({
+    queryKey: ['todayClinicQueue', todayDateStr],
+    queryFn: () => api.entities.Appointment.filter({ date: todayDateStr }, 'date'),
+    refetchInterval: 10000,
+    enabled: !!activeTodayAppointment,
   });
 
   const cancelMutation = useMutation({
@@ -129,6 +155,14 @@ export default function Appointments() {
           </Button>
         </Link>
       </div>
+
+      {todayAppointment && (
+        <OwnerPocketQueue
+          todayAppointment={todayAppointment}
+          pet={pets.find((p) => p.id === todayAppointment.pet_id)}
+          clinicQueue={clinicQueue}
+        />
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full flex justify-start items-center overflow-x-auto h-auto p-1 bg-gray-100 gap-1 scrollbar-none rounded-xl">

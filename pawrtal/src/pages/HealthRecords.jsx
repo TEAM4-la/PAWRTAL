@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EmptyState from "@/components/shared/EmptyState";
+import ClinicalNotesDisplay from "@/components/shared/ClinicalNotesDisplay";
 import OwnerSidebar from '@/components/layout/OwnerSidebar';
 import BackButton from '@/components/ui/BackButton';
 import {
@@ -289,9 +290,7 @@ export default function HealthRecords() {
                           <p className="text-sm text-gray-500">
                             {getPetName(record.pet_id)} • {format(new Date(record.date + 'T00:00:00'), 'MMMM d, yyyy')}
                           </p>
-                          {record.description && (
-                            <p className="text-sm text-gray-600 mt-2">{record.description}</p>
-                          )}
+                          <ClinicalNotesDisplay description={record.description} />
                           {record.vet_name && (
                             <p className="text-sm text-gray-400 mt-1">{formatDoctorName(record.vet_name)}</p>
                           )}

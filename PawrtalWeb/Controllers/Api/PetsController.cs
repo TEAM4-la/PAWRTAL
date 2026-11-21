@@ -38,7 +38,8 @@ public class PetsController : ControllerBase
         }
 
         var pets = await q.ToListAsync();
-        return Ok(pets.Select(ToDto).ToList());
+        var dtos = await EnrichPetsAsync(pets);
+        return Ok(dtos);
     }
 
     // Matches frontend usage: api.entities.Pet.list('-created_date', 100)
@@ -123,7 +124,8 @@ public class PetsController : ControllerBase
         };
 
         var pets = await q.Take(Math.Clamp(limit, 1, 500)).ToListAsync();
-        return Ok(pets.Select(ToDto).ToList());
+        var dtos = await EnrichPetsAsync(pets);
+        return Ok(dtos);
     }
 
     [HttpPost]
@@ -159,7 +161,8 @@ public class PetsController : ControllerBase
         _db.Pets.Add(pet);
         await _db.SaveChangesAsync();
 
-        return Ok(ToDto(pet));
+        var dtos = await EnrichPetsAsync([pet]);
+        return Ok(dtos.First());
     }
 
     [HttpPut("{id:guid}")]
@@ -196,7 +199,8 @@ public class PetsController : ControllerBase
         pet.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        return Ok(ToDto(pet));
+        var dtos = await EnrichPetsAsync([pet]);
+        return Ok(dtos.First());
     }
 
     [HttpDelete("{id:guid}")]
@@ -277,7 +281,36 @@ public class PetsController : ControllerBase
         }
     }
 
-    private static PetDto ToDto(Pet p) => new()
+    private async Task<List<PetDto>> EnrichPetsAsync(List<Pet> pets)
+    {
+        if (pets.Count == 0) return [];
+
+        var petIds = pets.Select(p => p.Id).ToList();
+        var ownerEmails = pets.Where(p => !string.IsNullOrEmpty(p.OwnerEmail)).Select(p => p.OwnerEmail!.Trim()).Distinct().ToList();
+        var owners = await _db.Users.AsNoTracking().Where(u => ownerEmails.Contains(u.Email)).ToListAsync();
+        var ownerDict = owners.ToDictionary(u => u.Email.Trim(), StringComparer.OrdinalIgnoreCase);
+
+        var walkInAppts = await _db.Appointments.AsNoTracking()
+            .Where(a => petIds.Contains(a.PetId) && !a.IsDeleted && (a.IsWalkIn || a.GuestOwnerName != null || a.GuestOwnerPhone != null))
+            .OrderByDescending(a => a.Date)
+            .ToListAsync();
+        var walkInDict = walkInAppts.GroupBy(a => a.PetId).ToDictionary(g => g.Key, g => g.First());
+
+        return pets.Select(p =>
+        {
+            User? u = null;
+            if (!string.IsNullOrEmpty(p.OwnerEmail)) ownerDict.TryGetValue(p.OwnerEmail.Trim(), out u);
+            walkInDict.TryGetValue(p.Id, out var wa);
+
+            string? finalOwnerName = u?.FullName ?? wa?.GuestOwnerName ?? (string.IsNullOrEmpty(p.OwnerEmail) ? "Walk-In Client" : null);
+            string? finalOwnerPhone = u?.Phone ?? wa?.GuestOwnerPhone;
+            bool isWalkIn = string.IsNullOrEmpty(p.OwnerEmail) || (wa?.IsWalkIn ?? false);
+
+            return ToDto(p, finalOwnerName, finalOwnerPhone, isWalkIn);
+        }).ToList();
+    }
+
+    private static PetDto ToDto(Pet p, string? ownerName = null, string? ownerPhone = null, bool isWalkIn = false) => new()
     {
         Id = p.Id.ToString(),
         OwnerEmail = p.OwnerEmail,
@@ -293,7 +326,10 @@ public class PetsController : ControllerBase
         IsNeutered = p.IsNeutered,
         Allergies = p.PetAllergies.Select(a => a.Value).ToList(),
         MedicalConditions = p.PetMedicalConditions.Select(c => c.Value).ToList(),
-        CreatedDate = DateTime.SpecifyKind(p.CreatedAt, DateTimeKind.Utc).ToString("O")
+        CreatedDate = DateTime.SpecifyKind(p.CreatedAt, DateTimeKind.Utc).ToString("O"),
+        OwnerName = ownerName,
+        OwnerPhone = ownerPhone,
+        IsWalkIn = isWalkIn || string.IsNullOrEmpty(p.OwnerEmail)
     };
 }
 

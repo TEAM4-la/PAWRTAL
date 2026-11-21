@@ -9,6 +9,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppointmentCard from "@/components/shared/AppointmentCard";
+import CompleteAppointmentModal from "@/components/shared/CompleteAppointmentModal";
+import QuickWalkInModal from "@/components/shared/QuickWalkInModal";
+import ClinicQueueTracker from "@/components/shared/ClinicQueueTracker";
 import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
 import BackButton from '@/components/ui/BackButton';
@@ -28,6 +31,34 @@ export default function VetAppointments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
   const [scopeFilter, setScopeFilter] = useState('all'); // 'all' | 'mine' | 'unassigned'
+  const [completingApt, setCompletingApt] = useState(null);
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+
+  const checkInMutation = useMutation({
+    mutationFn: ({ apt, isStandby }) => api.entities.Appointment.checkIn(apt.id, isStandby),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['vetAppointments']);
+      queryClient.invalidateQueries(['allAppts']);
+      toast.success(
+        `Checked in! Ticket #${data.queue_number || 'A-01'} issued${data.queue_status === 'priority_standby' ? ' (Priority Standby)' : ''}.`
+      );
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to check in appointment');
+    }
+  });
+
+  const callPatientMutation = useMutation({
+    mutationFn: (apt) => api.entities.Appointment.callNext(apt.id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['vetAppointments']);
+      queryClient.invalidateQueries(['allAppts']);
+      toast.success(`Calling Ticket #${data.queue_number || ''} (${data.pet_name || 'Patient'}) into room!`);
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to call patient');
+    }
+  });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -205,7 +236,9 @@ export default function VetAppointments() {
               pet={pet}
               isVetView
               onConfirm={confirmMutation.mutate}
-              onComplete={completeMutation.mutate}
+              onComplete={(apt) => setCompletingApt(apt)}
+              onCheckIn={(apt, isStandby) => checkInMutation.mutate({ apt, isStandby })}
+              onCallPatient={(apt) => callPatientMutation.mutate(apt)}
               onCancel={cancelMutation.mutate}
             />
           );
@@ -223,6 +256,14 @@ export default function VetAppointments() {
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Manage clinic appointments</p>
         </div>
       </div>
+
+      <ClinicQueueTracker
+        appointments={appointments}
+        currentUser={user}
+        isVetView
+        onOpenWalkInModal={() => setIsWalkInOpen(true)}
+        onCompleteAppointment={(apt) => setCompletingApt(apt)}
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 sm:gap-3">
@@ -322,6 +363,25 @@ export default function VetAppointments() {
           {renderAppointmentList(cancelledAppointments)}
         </TabsContent>
       </Tabs>
+
+      {completingApt && (
+        <CompleteAppointmentModal
+          isOpen={!!completingApt}
+          appointment={completingApt}
+          pet={pets.find(p => p.id === completingApt.pet_id)}
+          currentUser={user}
+          onClose={() => setCompletingApt(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries(['vetAppointments']);
+          }}
+        />
+      )}
+
+      <QuickWalkInModal
+        isOpen={isWalkInOpen}
+        onClose={() => setIsWalkInOpen(false)}
+        defaultVetEmail={user?.email}
+      />
     </div>
   );
 

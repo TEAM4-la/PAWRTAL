@@ -251,6 +251,15 @@ export const api = {
       async update(id, data) {
         return await http(`/api/appointments/${id}`, { method: 'PUT', body: data });
       },
+      async createWalkIn(data) {
+        return await http('/api/appointments/walk-in', { method: 'POST', body: data });
+      },
+      async checkIn(id, isStandby = false) {
+        return await http(`/api/appointments/${id}/check-in${isStandby ? '?isStandby=true' : ''}`, { method: 'POST' });
+      },
+      async callNext(id) {
+        return await http(`/api/appointments/${id}/call-next`, { method: 'POST' });
+      },
     },
     Vaccination: {
       async filter(opts = {}, order, limit) {

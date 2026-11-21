@@ -56,6 +56,11 @@ public partial class PawrtalDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50);
             entity.Property(e => e.VetEmail).HasMaxLength(320);
+            entity.Property(e => e.IsWalkIn).HasDefaultValue(false);
+            entity.Property(e => e.QueueNumber).HasMaxLength(20);
+            entity.Property(e => e.QueueStatus).HasMaxLength(30).HasDefaultValue("scheduled");
+            entity.Property(e => e.GuestOwnerName).HasMaxLength(150);
+            entity.Property(e => e.GuestOwnerPhone).HasMaxLength(30);
 
             entity.HasOne<Pet>().WithMany().HasForeignKey(d => d.PetId).OnDelete(DeleteBehavior.Cascade).HasConstraintName("FK_Appointments_Pets_PetId");
         });

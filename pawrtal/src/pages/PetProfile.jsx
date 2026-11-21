@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ClinicalNotesDisplay from "@/components/shared/ClinicalNotesDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
@@ -507,9 +508,9 @@ export default function PetProfile() {
               ) : (
                 <div className="space-y-3">
                   {healthRecords.map((record) => (
-                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                    <div key={record.id} className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 p-3 sm:p-4 bg-gray-50 rounded-xl min-w-0">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
                           <FileText className="w-5 h-5 text-orange-600" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -522,6 +523,7 @@ export default function PetProfile() {
                               </span>
                             )}
                           </p>
+                          <ClinicalNotesDisplay description={record.description} />
                         </div>
                       </div>
                       {(() => {

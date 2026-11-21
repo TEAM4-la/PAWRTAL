@@ -294,7 +294,17 @@ public class AppointmentsController : ControllerBase
         if (request.Status is not null) 
         {
             appt.Status = request.Status;
+            if (request.Status == "completed")
+            {
+                appt.QueueStatus = "completed";
+            }
         }
+        if (request.QueueStatus is not null) appt.QueueStatus = request.QueueStatus;
+        if (request.QueueNumber is not null) appt.QueueNumber = request.QueueNumber;
+        if (request.CheckInTime is not null) appt.CheckInTime = request.CheckInTime;
+        if (request.IsWalkIn is not null) appt.IsWalkIn = request.IsWalkIn.Value;
+        if (request.GuestOwnerName is not null) appt.GuestOwnerName = request.GuestOwnerName;
+        if (request.GuestOwnerPhone is not null) appt.GuestOwnerPhone = request.GuestOwnerPhone;
 
         if (string.Equals(appt.Status, "cancelled", StringComparison.OrdinalIgnoreCase))
         {
@@ -481,6 +491,169 @@ public class AppointmentsController : ControllerBase
         return Ok(ToDto(appt, updatedVetName, updatedPet?.Name, updatedOwner?.FullName));
     }
 
+    [HttpPost("walk-in")]
+    public async Task<ActionResult<AppointmentDto>> CreateWalkIn([FromBody] WalkInCreateRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.OwnerName)) return BadRequest(new { error = "Owner name is required." });
+        if (string.IsNullOrWhiteSpace(request.OwnerPhone)) return BadRequest(new { error = "Owner phone number is required." });
+        if (string.IsNullOrWhiteSpace(request.PetName)) return BadRequest(new { error = "Pet name is required." });
+        if (string.IsNullOrWhiteSpace(request.Species)) return BadRequest(new { error = "Pet species is required." });
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var cleanSpecies = request.Species.Trim().ToLowerInvariant();
+        var cleanPhone = new string(request.OwnerPhone.Where(char.IsDigit).ToArray());
+
+        // Create a guest pet
+        var pet = new Pet
+        {
+            Id = Guid.NewGuid(),
+            Name = request.PetName.Trim(),
+            Species = cleanSpecies,
+            Breed = string.IsNullOrWhiteSpace(request.Breed) ? null : request.Breed.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+        _db.Pets.Add(pet);
+        await _db.SaveChangesAsync(ct);
+
+        // Generate next daily W-XX ticket
+        var todayWalkIns = await _db.Appointments.AsNoTracking()
+            .Where(a => a.Date == today && !a.IsDeleted && a.IsWalkIn && a.QueueNumber != null && a.QueueNumber.StartsWith("W-"))
+            .Select(a => a.QueueNumber)
+            .ToListAsync(ct);
+
+        int maxSeq = 0;
+        foreach (var qn in todayWalkIns)
+        {
+            if (qn != null && qn.Length > 2 && int.TryParse(qn[2..], out var num))
+            {
+                if (num > maxSeq) maxSeq = num;
+            }
+        }
+        string nextTicket = $"W-{(maxSeq + 1):D2}";
+
+        var appt = new Appointment
+        {
+            Id = Guid.NewGuid(),
+            PetId = pet.Id,
+            OwnerEmail = null,
+            VetEmail = string.IsNullOrWhiteSpace(request.VetEmail) ? null : request.VetEmail.Trim(),
+            Type = string.IsNullOrWhiteSpace(request.Type) ? "general_checkup" : request.Type.Trim().ToLowerInvariant(),
+            Date = today,
+            TimeSlot = DateTime.Now.ToString("h:mm tt"),
+            Reason = string.IsNullOrWhiteSpace(request.Reason) ? "Walk-In Consultation" : request.Reason.Trim(),
+            Status = "confirmed",
+            IsWalkIn = true,
+            QueueNumber = nextTicket,
+            QueueStatus = "waiting",
+            CheckInTime = DateTime.UtcNow,
+            GuestOwnerName = request.OwnerName.Trim(),
+            GuestOwnerPhone = cleanPhone,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsDeleted = false
+        };
+
+        _db.Appointments.Add(appt);
+        await _db.SaveChangesAsync(ct);
+
+        string? vetName = null;
+        if (!string.IsNullOrWhiteSpace(appt.VetEmail))
+        {
+            var vUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.VetEmail, ct);
+            vetName = vUser?.FullName;
+        }
+
+        return Ok(ToDto(appt, vetName, pet.Name, request.OwnerName));
+    }
+
+    [HttpPost("{id:guid}/check-in")]
+    public async Task<ActionResult<AppointmentDto>> CheckIn(Guid id, [FromQuery] bool isStandby = false, CancellationToken ct = default)
+    {
+        var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted, ct);
+        if (appt is null) return NotFound();
+
+        // Generate next daily ticket if not already assigned
+        if (string.IsNullOrWhiteSpace(appt.QueueNumber))
+        {
+            var prefix = appt.IsWalkIn ? "W-" : "A-";
+            var todayAppointments = await _db.Appointments.AsNoTracking()
+                .Where(a => a.Date == appt.Date && !a.IsDeleted && a.QueueNumber != null && a.QueueNumber.StartsWith(prefix))
+                .Select(a => a.QueueNumber)
+                .ToListAsync(ct);
+
+            int maxSeq = 0;
+            foreach (var qn in todayAppointments)
+            {
+                if (qn != null && qn.Length > 2 && int.TryParse(qn[2..], out var num))
+                {
+                    if (num > maxSeq) maxSeq = num;
+                }
+            }
+            appt.QueueNumber = $"{prefix}{(maxSeq + 1):D2}";
+        }
+
+        appt.CheckInTime = DateTime.UtcNow;
+        appt.QueueStatus = isStandby ? "priority_standby" : "waiting";
+        if (appt.Status == "pending")
+        {
+            appt.Status = "confirmed";
+        }
+        appt.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        var pet = await _db.Pets.AsNoTracking().FirstOrDefaultAsync(p => p.Id == appt.PetId, ct);
+        string? vetName = null;
+        if (!string.IsNullOrWhiteSpace(appt.VetEmail))
+        {
+            var vUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.VetEmail, ct);
+            vetName = vUser?.FullName;
+        }
+        string? ownerName = null;
+        if (!string.IsNullOrWhiteSpace(appt.OwnerEmail))
+        {
+            var oUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail, ct);
+            ownerName = oUser?.FullName;
+        }
+
+        return Ok(ToDto(appt, vetName, pet?.Name, ownerName));
+    }
+
+    [HttpPost("{id:guid}/call-next")]
+    public async Task<ActionResult<AppointmentDto>> CallNext(Guid id, CancellationToken ct = default)
+    {
+        var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted, ct);
+        if (appt is null) return NotFound();
+
+        var callerEmail = ApiUserContext.GetUserEmail(Request);
+        if (string.IsNullOrWhiteSpace(appt.VetEmail) && !string.IsNullOrWhiteSpace(callerEmail))
+        {
+            appt.VetEmail = callerEmail;
+        }
+
+        appt.QueueStatus = "in_consultation";
+        appt.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        var pet = await _db.Pets.AsNoTracking().FirstOrDefaultAsync(p => p.Id == appt.PetId, ct);
+        string? vetName = null;
+        if (!string.IsNullOrWhiteSpace(appt.VetEmail))
+        {
+            var vUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.VetEmail, ct);
+            vetName = vUser?.FullName;
+        }
+        string? ownerName = null;
+        if (!string.IsNullOrWhiteSpace(appt.OwnerEmail))
+        {
+            var oUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail, ct);
+            ownerName = oUser?.FullName;
+        }
+
+        return Ok(ToDto(appt, vetName, pet?.Name, ownerName));
+    }
+
     private static AppointmentDto ToDto(Appointment a, string? vetName = null, string? petName = null, string? ownerName = null) 
     {
         var status = a.Status;
@@ -538,7 +711,7 @@ public class AppointmentsController : ControllerBase
             PetId = a.PetId.ToString(),
             PetName = petName,
             OwnerEmail = a.OwnerEmail,
-            OwnerName = ownerName,
+            OwnerName = ownerName ?? a.GuestOwnerName ?? (a.IsWalkIn ? "Walk-In Client" : null),
             VetEmail = a.VetEmail,
             VetName = vetName,
             Type = a.Type,
@@ -546,6 +719,12 @@ public class AppointmentsController : ControllerBase
             Time = a.TimeSlot,
             Reason = a.Reason,
             Status = status,
+            IsWalkIn = a.IsWalkIn,
+            QueueNumber = a.QueueNumber,
+            QueueStatus = a.QueueStatus ?? "scheduled",
+            CheckInTime = a.CheckInTime,
+            GuestOwnerName = a.GuestOwnerName,
+            GuestOwnerPhone = a.GuestOwnerPhone,
             CancelledBy = cancelledBy,
             CancelledByName = cancelledByName,
             CreatedAt = a.CreatedAt,

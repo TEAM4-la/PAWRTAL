@@ -1,72 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import backgroundImg from '../assets/background.png';
 import logo2 from '../assets/logo2.png';
 import { api, userTypeToRole } from '@/api/apiClient';
 import {
-  PawPrint,
-  Stethoscope,
-  ShieldCheck,
   ArrowRight,
-  ChevronLeft,
   Mail,
   RefreshCw,
   Lock,
   Eye,
   EyeOff,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BackButton from '@/components/ui/BackButton';
 
-const roles = [
-  {
-    id: 'owner',
-    icon: PawPrint,
-    title: 'Pet Owner',
-    description: 'Manage your pets, track health records, and communicate with your vet.',
-    border: 'border-amber-400',
-    ring: 'ring-amber-400/60',
-    bg: 'bg-amber-50',
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
-    dot: 'bg-amber-500',
-    accent: 'text-amber-700',
-  },
-  {
-    id: 'vet',
-    icon: Stethoscope,
-    title: 'Veterinarian',
-    description: 'Access patient records, manage appointments, and provide expert care.',
-    border: 'border-teal-400',
-    ring: 'ring-teal-400/60',
-    bg: 'bg-teal-50',
-    iconBg: 'bg-teal-100',
-    iconColor: 'text-teal-600',
-    dot: 'bg-teal-500',
-    accent: 'text-teal-700',
-  },
-  {
-    id: 'admin',
-    icon: ShieldCheck,
-    title: 'Clinic Admin',
-    description: 'Oversee clinic operations, manage staff, and access full system controls.',
-    border: 'border-violet-400',
-    ring: 'ring-violet-400/60',
-    bg: 'bg-violet-50',
-    iconBg: 'bg-violet-100',
-    iconColor: 'text-violet-600',
-    dot: 'bg-violet-500',
-    accent: 'text-violet-700',
-  },
-];
-
-const STEP_ROLE = 'role';
-const STEP_CREDENTIALS = 'credentials';
-
 export default function SignIn() {
-  const [step, setStep] = useState(STEP_ROLE);
-  const [selectedRole, setSelectedRole] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -76,19 +26,14 @@ export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If arriving from a QR-scanned public pet profile, the URL will contain
-  // ?role=owner|vet&redirect=/pet-profile?id=xxx — auto-select role and skip to creds.
   const searchParams = new URLSearchParams(location.search);
   const redirectAfterLogin = searchParams.get('redirect');
-  const preselectedRole = searchParams.get('role');
 
   useEffect(() => {
     const reg = location.state?.registeredEmail;
     if (typeof reg === 'string' && reg) setEmail(reg);
 
     if (location.state?.registeredSuccess) {
-      setSelectedRole(location.state?.registeredRole || 'owner');
-      setStep(STEP_CREDENTIALS);
       toast.success('Account created successfully! Please sign in with your credentials.', { id: 'account-created' });
       try {
         window.history.replaceState({}, document.title);
@@ -98,16 +43,15 @@ export default function SignIn() {
     }
   }, [location.state]);
 
-  useEffect(() => {
-    if (redirectAfterLogin && preselectedRole) {
-      setSelectedRole(preselectedRole);
-      setStep(STEP_CREDENTIALS);
-    }
-  }, [redirectAfterLogin, preselectedRole]);
+  const handleSignIn = async (e) => {
+    if (e) e.preventDefault();
 
-  const handleSignIn = async () => {
-    if (!/@pawrtal\.com$/i.test(email.trim())) {
-      setError('Only @pawrtal.com email addresses are allowed.');
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Please enter a valid email address.');
       return;
     }
     if (!password || password.length < 6) {
@@ -120,49 +64,40 @@ export default function SignIn() {
 
     try {
       const profile = await api.auth.login({ email: email.trim(), password });
-      const serverRole = userTypeToRole(profile.user_type);
-      if (serverRole !== selectedRole) {
-        const labels = { owner: 'a pet owner account', vet: 'a veterinarian account', admin: 'a clinic admin account' };
-        setError(
-          `This email is ${labels[serverRole] || 'registered with a different role'}. Go back and pick the role that matches, or use another email.`
-        );
-        setLoading(false);
-        return;
-      }
+      const detectedRole = userTypeToRole(profile.user_type) || 'owner';
 
       if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('pawrtal_role', selectedRole || 'owner');
+        window.sessionStorage.setItem('pawrtal_role', detectedRole);
         window.sessionStorage.setItem('pawrtal_email', profile.email || email.trim());
       }
 
-      // If we came from a QR scan, go straight to the pet profile; otherwise default dashboard.
+      toast.success(`Welcome back, ${profile.first_name || profile.display_name || 'User'}!`);
+
+      // If we came from a QR scan or link redirect, go straight there; otherwise route by role.
       if (redirectAfterLogin) {
         navigate(redirectAfterLogin);
       } else {
-        let dashboardPath = '/dashboard';
-        switch (selectedRole) {
-          case 'owner':
-            dashboardPath = '/petowner-dashboard';
+        let dashboardPath = '/petowner-dashboard';
+        switch (detectedRole) {
+          case 'admin':
+            dashboardPath = '/clinic-admin-dashboard';
             break;
           case 'vet':
             dashboardPath = '/vet-dashboard';
             break;
-          case 'admin':
-            dashboardPath = '/clinic-admin-dashboard';
-            break;
+          case 'owner':
           default:
+            dashboardPath = '/petowner-dashboard';
             break;
         }
         navigate(dashboardPath);
       }
     } catch (e) {
-      setError(e.message || 'Sign in failed.');
+      setError(e.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
   };
-
-  const currentRole = roles.find(r => r.id === selectedRole);
 
   return (
     <div className="min-h-screen flex relative overflow-hidden">
@@ -188,10 +123,10 @@ export default function SignIn() {
               key={i}
               className="absolute"
               style={{
-                top: `${Math.random() * 90}%`,
-                left: `${Math.random() * 90}%`,
-                fontSize: `${24 + Math.random() * 32}px`,
-                transform: `rotate(${Math.random() * 40 - 20}deg)`,
+                top: `${(i * 19 + 7) % 90}%`,
+                left: `${(i * 29 + 13) % 90}%`,
+                fontSize: `${24 + (i % 4) * 8}px`,
+                transform: `rotate(${((i * 15) % 40) - 20}deg)`,
                 opacity: 0.4,
               }}
             >
@@ -232,178 +167,94 @@ export default function SignIn() {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-4 lg:py-6 relative z-20 bg-transparent backdrop-blur-[2px]">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-6 lg:py-8 relative z-20 bg-transparent backdrop-blur-[2px]">
         {/* Mobile logo */}
         <div className="flex lg:hidden items-center gap-2 mb-6">
           <img
             src={logo2}
             alt="PAWRTAL"
-            className="w-12 h-12 object-contain"
+            className="w-14 h-14 object-contain"
           />
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-md bg-white/85 backdrop-blur-md rounded-2xl p-6 sm:p-7 shadow-xl border border-white/30 lg:-translate-y-2">
-          {/* Back navigation */}
-          {step === STEP_ROLE && (
-            <BackButton to="/" label="Back to home" className="mb-4" />
-          )}
+        <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-white/40">
+          <BackButton to="/" label="Back to home" className="mb-5" />
 
-          {step === STEP_CREDENTIALS && (
-            <BackButton onClick={() => { setStep(STEP_ROLE); setError(''); }} className="mb-4" />
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in to PAWRTAL</h2>
+              <p className="text-gray-500 text-sm">
+                Enter your credentials to access your account.
+              </p>
+            </div>
 
-          <AnimatePresence mode="wait">
-            {/* Role Selection */}
-            {step === STEP_ROLE && (
-              <motion.div
-                key="role"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
-              >
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in to PAWRTAL</h2>
-                  <p className="text-gray-500 text-sm">Select your role to get started</p>
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm bg-white"
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-3.5">
-                  {roles.map((role) => {
-                    const Icon = role.icon;
-                    const isSelected = selectedRole === role.id;
-
-                    return (
-                      <motion.button
-                        key={role.id}
-                        onClick={() => setSelectedRole(role.id)}
-                        whileTap={{ scale: 0.98 }}
-                        animate={isSelected ? { scale: 1.02, y: -2 } : { scale: 1, y: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className={`
-                          group relative w-full flex items-center gap-5 p-4 sm:p-5 rounded-2xl 
-                          border-2 transition-all duration-300 text-left bg-white
-                          ${isSelected 
-                            ? `${role.border} ring-2 ${role.ring} shadow-lg` 
-                            : `${role.border} hover:shadow-md hover:-translate-y-0.5`}
-                        `}
-                      >
-                        <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${role.iconBg} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
-                          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${role.iconColor}`} />
-                        </div>
-
-                        <div className="flex-1 pr-8">
-                          <p className="font-bold text-gray-900 text-base leading-tight">
-                            {role.title}
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                            {role.description}
-                          </p>
-                        </div>
-
-                        {isSelected && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 25, delay: 0.1 }}
-                            className={`absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full ${role.dot} ring-2 ring-white shadow-sm`}
-                          />
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => selectedRole && setStep(STEP_CREDENTIALS)}
-                  disabled={!selectedRole}
-                  className={`w-full py-3.5 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all mt-4
-                    ${selectedRole 
-                      ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-200/50' 
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-                >
-                  Continue <ArrowRight className="w-5 h-5" />
-                </button>
-
-                <p className="text-center text-sm text-gray-500 mt-3.5">
-                  New pet owner?{' '}
-                  <Link to="/create-account" className="text-amber-600 font-medium hover:underline">
-                    Create a Pet Owner account
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-amber-600 hover:text-amber-700 font-medium hover:underline"
+                  >
+                    Forgot password?
                   </Link>
-                </p>
-              </motion.div>
-            )}
-
-            {/* Email + Password */}
-            {step === STEP_CREDENTIALS && (
-              <motion.div key="credentials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                {currentRole && (
-                  <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl ${currentRole.bg} border-2 ${currentRole.border} mb-4 shadow-sm`}>
-                    <div className={`w-7 h-7 rounded-lg ${currentRole.iconBg} flex items-center justify-center`}>
-                      <currentRole.icon className={`w-4 h-4 ${currentRole.iconColor}`} />
-                    </div>
-                    <span className={`font-medium text-sm ${currentRole.accent}`}>
-                      {currentRole.title}
-                    </span>
-                  </div>
-                )}
-
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h2>
-                <p className="text-gray-500 text-sm mb-4">
-                  Enter the email and password for your account.
-                </p>
-
-                <div className="mb-3.5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => { setEmail(e.target.value); setError(''); }}
-                      placeholder="name@pawrtal.com"
-                      className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
-                    />
-                  </div>
                 </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-sm font-medium text-gray-700">Password</label>
-                    <Link
-                      to="/forgot-password"
-                      className="text-xs text-amber-600 hover:text-amber-700 font-medium hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => { setPassword(e.target.value); setError(''); }}
-                      placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm"
-                      onKeyDown={e => e.key === 'Enter' && handleSignIn()}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 text-sm bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+                {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+              </div>
 
+              <div className="pt-2">
                 <button
-                  type="button"
-                  onClick={handleSignIn}
+                  type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-lg disabled:opacity-60"
+                  className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-200/50 transition-colors disabled:opacity-60"
                 >
                   {loading ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -413,17 +264,22 @@ export default function SignIn() {
                     </>
                   )}
                 </button>
+              </div>
+            </form>
 
-                <p className="text-center text-sm text-gray-500 mt-3.5">
-                  Pet owners can{' '}
-                  <Link to="/create-account" className="text-amber-600 font-medium hover:underline">
-                    create an account here
-                  </Link>
-                  . Staff accounts are created in the clinic portal.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center space-y-2">
+              <p className="text-sm text-gray-600">
+                New pet owner?{' '}
+                <Link to="/create-account" className="text-amber-600 font-semibold hover:underline">
+                  Create an account
+                </Link>
+              </p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/60 rounded-full text-xs text-amber-800">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Pet owners, Veterinarians, and Admins can sign in directly</span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

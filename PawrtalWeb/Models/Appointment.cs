@@ -25,6 +25,18 @@ public partial class Appointment
 
     public string Status { get; set; }
 
+    public bool IsWalkIn { get; set; } = false;
+
+    public string QueueNumber { get; set; }
+
+    public string QueueStatus { get; set; } = "scheduled";
+
+    public DateTime? CheckInTime { get; set; }
+
+    public string GuestOwnerName { get; set; }
+
+    public string GuestOwnerPhone { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

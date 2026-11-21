@@ -48,5 +48,14 @@ public class PetDto
 
     [JsonPropertyName("created_date")]
     public string CreatedDate { get; set; } = null!; // ISO
+
+    [JsonPropertyName("owner_name")]
+    public string? OwnerName { get; set; }
+
+    [JsonPropertyName("owner_phone")]
+    public string? OwnerPhone { get; set; }
+
+    [JsonPropertyName("is_walk_in")]
+    public bool IsWalkIn { get; set; }
 }
 

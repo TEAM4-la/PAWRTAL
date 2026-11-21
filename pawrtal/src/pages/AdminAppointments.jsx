@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import ClinicQueueTracker from "@/components/shared/ClinicQueueTracker";
+import QuickWalkInModal from "@/components/shared/QuickWalkInModal";
 import { Search, Calendar, Clock, Check, X, Stethoscope, ChevronLeft } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
 import { format, parse } from 'date-fns';
@@ -56,6 +58,7 @@ export default function AdminAppointments() {
   }, [searchParams]);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
@@ -77,6 +80,21 @@ export default function AdminAppointments() {
     onError: (err) => {
       toast.error(err.message || 'Failed to update appointment');
     },
+  });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const checkInMutation = useMutation({
+    mutationFn: ({ id, isStandby }) => api.entities.Appointment.checkIn(id, isStandby),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['allAppts'] });
+      toast.success(
+        `Checked in! Ticket #${data.queue_number || 'A-01'} issued${data.queue_status === 'priority_standby' ? ' (Priority Standby)' : ''}.`
+      );
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Failed to check in appointment');
+    }
   });
 
   const filtered = appointments.filter(a => {
@@ -106,6 +124,13 @@ export default function AdminAppointments() {
           <h1 className="text-2xl font-bold text-gray-900">All Appointments</h1>
           <p className="text-gray-500 mt-1">Manage clinic-wide appointments</p>
         </div>
+
+        <ClinicQueueTracker
+          appointments={appointments}
+          currentUser={user}
+          isAdminView
+          onOpenWalkInModal={() => setIsWalkInOpen(true)}
+        />
 
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
@@ -185,6 +210,15 @@ export default function AdminAppointments() {
                         {currentStatus === 'pending' && (
                           <Button size="sm" className="h-8 text-xs bg-blue-500 hover:bg-blue-600 flex-1" onClick={() => updateMutation.mutate({ id: appt.id, status: 'confirmed' })}>
                             <Check className="w-3.5 h-3.5 mr-1" /> Confirm
+                          </Button>
+                        )}
+                        {currentStatus === 'confirmed' && !appt.queue_number && appt.date === todayStr && (
+                          <Button
+                            size="sm"
+                            className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                            onClick={() => checkInMutation.mutate({ id: appt.id, isStandby: false })}
+                          >
+                            Check In
                           </Button>
                         )}
                         {currentStatus === 'confirmed' && (
@@ -269,13 +303,29 @@ export default function AdminAppointments() {
                         </div>
                       </td>
                       <td className="px-5 py-3 whitespace-nowrap">
-                        <Badge className={statusConfig[getAppointmentStatus(appt)]}>{getAppointmentStatus(appt)}</Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className={statusConfig[getAppointmentStatus(appt)]}>{getAppointmentStatus(appt)}</Badge>
+                          {appt.queue_number && (
+                            <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-bold">
+                              #{appt.queue_number}
+                            </Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3 whitespace-nowrap">
                         <div className="flex gap-1">
                           {getAppointmentStatus(appt) === 'pending' && (
                             <Button size="sm" className="h-7 text-xs bg-blue-500 hover:bg-blue-600" onClick={() => updateMutation.mutate({ id: appt.id, status: 'confirmed' })}>
                               <Check className="w-3 h-3 mr-1" /> Confirm
+                            </Button>
+                          )}
+                          {getAppointmentStatus(appt) === 'confirmed' && !appt.queue_number && appt.date === todayStr && (
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                              onClick={() => checkInMutation.mutate({ id: appt.id, isStandby: false })}
+                            >
+                              Check In
                             </Button>
                           )}
                           {getAppointmentStatus(appt) === 'confirmed' && (
@@ -351,6 +401,10 @@ export default function AdminAppointments() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <QuickWalkInModal
+          isOpen={isWalkInOpen}
+          onClose={() => setIsWalkInOpen(false)}
+        />
       </div>
     </AdminSidebar>
   );

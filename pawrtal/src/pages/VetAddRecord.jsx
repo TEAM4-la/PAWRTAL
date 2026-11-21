@@ -66,6 +66,21 @@ export default function VetAddRecord() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const preselectedPetId = urlParams.get('petId');
+  const linkedAppointmentId = urlParams.get('appointmentId');
+
+  const handleLinkedAppointmentCompletion = async () => {
+    if (!linkedAppointmentId) return;
+    try {
+      await api.entities.Appointment.update(linkedAppointmentId, {
+        status: 'completed',
+        vet_email: user?.email,
+      });
+      queryClient.invalidateQueries({ queryKey: ['vetAppointments'] });
+      queryClient.invalidateQueries({ queryKey: ['allAppts'] });
+    } catch (err) {
+      console.error('Failed to complete linked appointment:', err);
+    }
+  };
 
   // Date range limits — restrict all dates to current year to prevent trolling
   const currentYear = new Date().getFullYear();
@@ -333,9 +348,15 @@ export default function VetAddRecord() {
       vet_email: user?.email,
       vet_name: user?.full_name,
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['allHealthRecords'] });
       queryClient.invalidateQueries({ queryKey: ['healthRecords'] });
+      if (linkedAppointmentId) {
+        await handleLinkedAppointmentCompletion();
+        toast.success('Clinical record added and appointment completed!');
+        navigate('/vet-appointments?tab=completed');
+        return;
+      }
       toast.success('Health record added!');
       navigate(createPageUrl('VetRecords'));
     },
@@ -378,10 +399,16 @@ export default function VetAddRecord() {
       }
       return { count: results.length, totalDeducted };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['vaccinations'] });
       queryClient.invalidateQueries({ queryKey: ['clinicalInventory'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      if (linkedAppointmentId) {
+        await handleLinkedAppointmentCompletion();
+        toast.success('Vaccination recorded and appointment completed!');
+        navigate('/vet-appointments?tab=completed');
+        return;
+      }
       toast.success(
         data.count === 1
           ? 'Vaccination recorded and inventory updated!'
@@ -429,10 +456,16 @@ export default function VetAddRecord() {
       }
       return { count: results.length, totalDeducted };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['medications'] });
       queryClient.invalidateQueries({ queryKey: ['clinicalInventory'] });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      if (linkedAppointmentId) {
+        await handleLinkedAppointmentCompletion();
+        toast.success('Medication prescribed and appointment completed!');
+        navigate('/vet-appointments?tab=completed');
+        return;
+      }
       toast.success(
         data.count === 1
           ? 'Medication prescribed and inventory updated!'
@@ -447,8 +480,14 @@ export default function VetAddRecord() {
 
   const createGroomingMutation = useMutation({
     mutationFn: (data) => api.entities.GroomingRecord.create({ ...data, groomer_name: data.groomer_name?.trim() || user?.full_name }),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['groomingRecords'] });
+      if (linkedAppointmentId) {
+        await handleLinkedAppointmentCompletion();
+        toast.success('Grooming record added and appointment completed!');
+        navigate('/vet-appointments?tab=completed');
+        return;
+      }
       toast.success('Grooming record added!');
       navigate(createPageUrl('VetRecords'));
     },
@@ -607,7 +646,7 @@ export default function VetAddRecord() {
   return (
     <VetSidebar user={user}>
     <div className="p-3.5 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full max-w-full min-w-0 overflow-x-hidden">
-      <BackButton to={preselectedPetId ? createPageUrl(`VetPatientDetail?id=${preselectedPetId}`) : createPageUrl('Patients')} className="mb-4 sm:mb-6" />
+      <BackButton to={linkedAppointmentId ? '/vet-appointments' : (preselectedPetId ? createPageUrl(`VetPatientDetail?id=${preselectedPetId}`) : createPageUrl('Patients'))} className="mb-4 sm:mb-6" />
 
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50 p-4 sm:p-6">
@@ -615,6 +654,16 @@ export default function VetAddRecord() {
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
             {selectedPet ? `Recording for ${selectedPet.name}` : 'Select a patient to add records'}
           </p>
+          {linkedAppointmentId && (
+            <div className="mt-3 p-3 rounded-xl bg-teal-100/70 border border-teal-300 text-teal-900 text-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-teal-700 flex-shrink-0" />
+                <span>
+                  <strong>Clinical Documentation Trigger:</strong> Saving this record will satisfy clinical requirements and automatically complete the linked appointment.
+                </span>
+              </div>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="p-4 sm:p-6">

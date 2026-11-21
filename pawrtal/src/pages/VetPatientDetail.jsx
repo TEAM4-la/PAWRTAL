@@ -33,6 +33,7 @@ import { format, differenceInYears, differenceInMonths, isBefore } from 'date-fn
 import { cn } from "@/lib/utils";
 import VetSidebar from '@/components/layout/VetSidebar';
 import AdminSidebar from '@/components/layout/AdminSidebar';
+import ClinicalNotesDisplay from '@/components/shared/ClinicalNotesDisplay';
 
 const speciesIcons = {
   dog: Dog,
@@ -107,6 +108,21 @@ export default function VetPatientDetail() {
     },
     enabled: !!petId,
   });
+
+  const walkInInfo = appointments.find(
+    (a) => a.guest_owner_name || a.guest_owner_phone || a.is_walk_in
+  );
+  const isWalkIn = !pet?.owner_email || !!walkInInfo || pet?.is_walk_in;
+  const ownerName =
+    owner?.full_name ||
+    walkInInfo?.guest_owner_name ||
+    pet?.owner_name ||
+    (isWalkIn ? 'Walk-In Client' : 'Not available');
+  const ownerPhone =
+    owner?.phone ||
+    walkInInfo?.guest_owner_phone ||
+    pet?.owner_phone;
+  const ownerEmail = owner?.email || pet?.owner_email;
 
   const { data: groomingRecords = [] } = useQuery({
     queryKey: ['groomingRecords', petId],
@@ -283,6 +299,7 @@ export default function VetPatientDetail() {
                                 </span>
                               )}
                             </p>
+                            <ClinicalNotesDisplay description={record.description} />
                           </div>
                           <Badge variant="outline" className="w-fit self-start sm:self-center shrink-0 text-xs">{record.is_visible_to_owner ? 'Visible' : 'Hidden'}</Badge>
                         </div>
@@ -516,38 +533,52 @@ export default function VetPatientDetail() {
         <div className="min-w-0">
           <Card className="border-0 shadow-sm sticky top-6">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                <User className="w-5 h-5 text-teal-600 shrink-0" />
-                Owner Information
-              </CardTitle>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                  <User className="w-5 h-5 text-teal-600 shrink-0" />
+                  Owner Information
+                </CardTitle>
+                {isWalkIn && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold">
+                    Walk-In Patient
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-3 sm:space-y-4">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Name</p>
-                <p className="font-medium text-sm sm:text-base">{owner?.full_name || 'Not available'}</p>
+                <p className="font-semibold text-sm sm:text-base text-gray-900">{ownerName}</p>
               </div>
-              {owner?.email && (
+              {ownerPhone && (
                 <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <a href={`mailto:${owner.email}`} className="font-medium text-teal-600 flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    {owner.email}
+                  <p className="text-xs sm:text-sm text-gray-500">Phone</p>
+                  <a href={`tel:${ownerPhone}`} className="font-medium text-teal-600 flex items-center gap-2 text-sm sm:text-base hover:underline">
+                    <Phone className="w-4 h-4 shrink-0" />
+                    {ownerPhone}
                   </a>
                 </div>
               )}
-              {owner?.phone && (
+              {ownerEmail ? (
                 <div>
-                  <p className="text-sm text-gray-500">Phone</p>
-                  <a href={`tel:${owner.phone}`} className="font-medium text-teal-600 flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    {owner.phone}
+                  <p className="text-xs sm:text-sm text-gray-500">Email</p>
+                  <a href={`mailto:${ownerEmail}`} className="font-medium text-teal-600 flex items-center gap-2 text-sm sm:text-base hover:underline break-all">
+                    <Mail className="w-4 h-4 shrink-0" />
+                    {ownerEmail}
                   </a>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500">Account Status</p>
+                  <span className="inline-flex items-center text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200/80 font-medium mt-0.5">
+                    No account (Walk-In Non-Account User)
+                  </span>
                 </div>
               )}
               {owner?.address && (
                 <div>
-                  <p className="text-sm text-gray-500">Address</p>
-                  <p className="font-medium">{owner.address}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">Address</p>
+                  <p className="font-medium text-sm sm:text-base text-gray-800">{owner.address}</p>
                 </div>
               )}
             </CardContent>

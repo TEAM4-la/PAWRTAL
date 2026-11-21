@@ -195,6 +195,40 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureMedicationColumnsSql);
 
+        // Ensure Appointments queueing and walk-in columns exist
+        const string ensureAppointmentQueueColumnsSql = @"
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'IsWalkIn')
+BEGIN
+    ALTER TABLE [Appointments] ADD [IsWalkIn] BIT NOT NULL DEFAULT 0;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'QueueNumber')
+BEGIN
+    ALTER TABLE [Appointments] ADD [QueueNumber] NVARCHAR(20) NULL;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'QueueStatus')
+BEGIN
+    ALTER TABLE [Appointments] ADD [QueueStatus] NVARCHAR(30) NOT NULL DEFAULT 'scheduled';
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'CheckInTime')
+BEGIN
+    ALTER TABLE [Appointments] ADD [CheckInTime] DATETIME2 NULL;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'GuestOwnerName')
+BEGIN
+    ALTER TABLE [Appointments] ADD [GuestOwnerName] NVARCHAR(150) NULL;
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'GuestOwnerPhone')
+BEGIN
+    ALTER TABLE [Appointments] ADD [GuestOwnerPhone] NVARCHAR(30) NULL;
+END
+";
+        await db.Database.ExecuteSqlRawAsync(ensureAppointmentQueueColumnsSql);
+
         // Ensure HealthRecords FileUrl column is NVARCHAR(MAX) to support multiple attachments
         const string ensureHealthRecordFileUrlSql = @"
 IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('HealthRecords') AND name = 'FileUrl')

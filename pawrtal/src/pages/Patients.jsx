@@ -97,7 +97,9 @@ export default function Patients() {
     const matchesSearch = 
       pet.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pet.breed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pet.owner_email?.toLowerCase().includes(searchTerm.toLowerCase());
+      pet.owner_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pet.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pet.owner_phone?.includes(searchTerm);
     const matchesSpecies = speciesFilter === 'all' || 
       (pet.species?.trim().toLowerCase() === speciesFilter.toLowerCase());
     return matchesSearch && matchesSpecies;
@@ -175,9 +177,19 @@ export default function Patients() {
                         </div>
                         <p className="text-gray-600 text-sm">{pet.breed || 'Mixed breed'} • {pet.gender} • {calculateAge(pet.date_of_birth)}</p>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500">
-                          <span className="flex items-center gap-1 truncate">
-                            <User className="w-4 h-4 flex-shrink-0" />
-                            <span className="truncate">{pet.owner_email}</span>
+                          <span className="flex items-center gap-1.5 truncate">
+                            <User className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <span className="truncate font-medium text-gray-700">
+                              {pet.owner_name || pet.owner_email || 'Walk-In Client'}
+                            </span>
+                            {pet.owner_phone && (
+                              <span className="text-gray-400 text-xs">({pet.owner_phone})</span>
+                            )}
+                            {pet.is_walk_in && (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 px-1.5 font-semibold">
+                                Walk-In
+                              </Badge>
+                            )}
                           </span>
                           {lastVisit && (
                             <span className="flex items-center gap-1 flex-shrink-0">

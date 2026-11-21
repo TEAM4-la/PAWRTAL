@@ -51,8 +51,8 @@ function StaffForm({ isAdminOnly }) {
     }
     if (!email.trim()) {
       newErrors.email = 'Email address is required.';
-    } else if (!/@pawrtal\.com$/i.test(email.trim())) {
-      newErrors.email = 'Only @pawrtal.com email addresses are allowed.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = 'Please enter a valid email address.';
     }
     if (!password) {
       newErrors.password = 'Password is required.';
@@ -279,7 +279,7 @@ function StaffForm({ isAdminOnly }) {
                   ? 'border-red-500 bg-red-50/20 focus:ring-red-400 focus:border-red-500'
                   : `border-gray-200 ${ring}`
               }`}
-              placeholder="name@pawrtal.com"
+              placeholder="name@example.com"
             />
           </div>
           {errors.email && (

@@ -66,6 +66,8 @@ export default function AppointmentCard({
   onConfirm,
   onCancel,
   onComplete,
+  onCheckIn,
+  onCallPatient,
   isVetView = false 
 }) {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
@@ -76,11 +78,24 @@ export default function AppointmentCard({
   const status = statusConfig[derivedStatus] || statusConfig.pending;
   const StatusIcon = status.icon;
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isToday = appointment.date === todayStr;
+
+  let isInGracePeriod = false;
+  let isPastGracePeriod = false;
+
   // The Complete Appointment button should only be clickable when the booked date and time have been reached.
   let isTimeReached = true;
   try {
     const appointmentDateTime = parse(`${appointment.date} ${appointment.time}`, 'yyyy-MM-dd hh:mm a', new Date());
-    isTimeReached = new Date() >= appointmentDateTime;
+    const now = new Date();
+    isTimeReached = now >= appointmentDateTime;
+
+    if (isToday) {
+      const diffMinutes = (now - appointmentDateTime) / (1000 * 60);
+      isInGracePeriod = diffMinutes >= 0 && diffMinutes <= 10;
+      isPastGracePeriod = diffMinutes > 10;
+    }
   } catch (e) {
     console.error('Error parsing appointment datetime in AppointmentCard:', e);
   }
@@ -113,9 +128,53 @@ export default function AppointmentCard({
                 {showPetInfo && (pet || appointment.pet_name) && (
                   <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{pet?.name || appointment.pet_name}</h4>
                 )}
-                <Badge className={cn("mt-0.5 sm:mt-1 capitalize text-xs", typeColors[appointment.type] || "bg-gray-100 text-gray-700")}>
-                  {appointment.type?.replace('_', ' ')}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-1.5 mt-0.5 sm:mt-1">
+                  <Badge className={cn("capitalize text-xs", typeColors[appointment.type] || "bg-gray-100 text-gray-700")}>
+                    {appointment.type?.replace('_', ' ')}
+                  </Badge>
+
+                  {appointment.queue_number && (
+                    <Badge className="bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-bold px-2 py-0">
+                      Ticket #{appointment.queue_number}
+                    </Badge>
+                  )}
+
+                  {appointment.is_walk_in && (
+                    <Badge className="bg-blue-100 text-blue-800 text-xs py-0">
+                      Walk-In
+                    </Badge>
+                  )}
+
+                  {appointment.queue_status === 'in_consultation' && (
+                    <Badge className="bg-teal-600 text-white font-bold text-xs py-0 animate-pulse">
+                      In Consultation
+                    </Badge>
+                  )}
+
+                  {appointment.queue_status === 'priority_standby' && (
+                    <Badge className="bg-amber-500 text-white font-bold text-xs py-0">
+                      Priority Standby
+                    </Badge>
+                  )}
+
+                  {appointment.queue_status === 'waiting' && (
+                    <Badge className="bg-purple-100 text-purple-800 text-xs py-0">
+                      In Waiting Lobby
+                    </Badge>
+                  )}
+
+                  {isToday && !appointment.queue_number && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
+                    isPastGracePeriod ? (
+                      <Badge className="bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-medium py-0">
+                        Late (&gt;10m past slot)
+                      </Badge>
+                    ) : isInGracePeriod ? (
+                      <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-medium py-0">
+                        Grace Period Active
+                      </Badge>
+                    ) : null
+                  )}
+                </div>
               </div>
             </div>
             
@@ -136,6 +195,14 @@ export default function AppointmentCard({
               <Clock className="w-4 h-4 text-gray-400 shrink-0" />
               <span className="text-xs sm:text-sm">{appointment.time}</span>
             </div>
+            {appointment.is_walk_in && (
+              <div className="flex items-center gap-2 text-blue-800 bg-blue-50/70 p-2 rounded-lg border border-blue-100 text-xs sm:text-sm">
+                <User className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="font-medium">
+                  Walk-In Client: {appointment.guest_owner_name || 'Guest'} {appointment.guest_owner_phone ? `• ${appointment.guest_owner_phone}` : ''}
+                </span>
+              </div>
+            )}
             {isVetView && appointment.owner_email && (
               <div className="flex items-center gap-2 text-gray-600">
                 <User className="w-4 h-4 text-gray-400 shrink-0" />
@@ -170,8 +237,30 @@ export default function AppointmentCard({
             </p>
           )}
 
-          {(onConfirm || onCancel || onComplete) && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
+          {(onConfirm || onCancel || onComplete || onCheckIn || onCallPatient) && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (
             <div className="flex flex-wrap sm:flex-nowrap gap-2 pt-3 sm:pt-4 border-t border-gray-100">
+              {onCheckIn && isToday && derivedStatus !== 'completed' && derivedStatus !== 'cancelled' && derivedStatus !== 'expired' && (!appointment.queue_number || appointment.queue_status === 'scheduled') && (
+                <Button 
+                  size="sm" 
+                  className={cn(
+                    "flex-1 sm:flex-initial text-white font-semibold h-9 text-xs sm:text-sm",
+                    isPastGracePeriod ? "bg-amber-600 hover:bg-amber-700" : "bg-blue-600 hover:bg-blue-700"
+                  )}
+                  onClick={() => onCheckIn(appointment, isPastGracePeriod)}
+                >
+                  {isPastGracePeriod ? "Check In as Standby" : "Check In Client"}
+                </Button>
+              )}
+
+              {onCallPatient && (appointment.queue_status === 'waiting' || appointment.queue_status === 'priority_standby') && (
+                <Button 
+                  size="sm" 
+                  className="flex-1 sm:flex-initial bg-teal-600 hover:bg-teal-700 text-white font-semibold h-9 text-xs sm:text-sm"
+                  onClick={() => onCallPatient(appointment)}
+                >
+                  Call to Room
+                </Button>
+              )}
               {onConfirm && derivedStatus === 'pending' && (
                 <Button 
                   size="sm" 

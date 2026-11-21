@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import EmptyState from "@/components/shared/EmptyState";
+import ClinicalNotesDisplay from "@/components/shared/ClinicalNotesDisplay";
 import VetSidebar from '@/components/layout/VetSidebar';
 import BackButton from '@/components/ui/BackButton';
 import { 
@@ -430,9 +431,7 @@ export default function VetRecords() {
                             <span className="text-gray-400"> • {record.vet_name}</span>
                           )}
                         </p>
-                        {record.description && (
-                          <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2 line-clamp-2">{record.description}</p>
-                        )}
+                        <ClinicalNotesDisplay description={record.description} />
                       </div>
                     </div>
                     {(() => {

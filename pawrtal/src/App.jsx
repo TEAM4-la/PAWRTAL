@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import Welcome from './pages/Welcome';
+import AboutUs from './pages/AboutUs';
 import SignIn from './pages/SignIn';
 import ForgotPassword from './pages/ForgotPassword';
 import CreateAccount from './pages/CreateAccount';
@@ -48,6 +49,7 @@ export default function App() {
       <ErrorBoundary>
         <Routes>
       <Route path="/" element={<Welcome />} />
+      <Route path="/about" element={<AboutUs />} />
       <Route path="/sign-in" element={<SignIn />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/create-account" element={<CreateAccount />} />

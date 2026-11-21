@@ -27,5 +27,23 @@ public class AppointmentUpsertRequest
 
     [JsonPropertyName("status")]
     public string? Status { get; set; }
+
+    [JsonPropertyName("is_walk_in")]
+    public bool? IsWalkIn { get; set; }
+
+    [JsonPropertyName("queue_number")]
+    public string? QueueNumber { get; set; }
+
+    [JsonPropertyName("queue_status")]
+    public string? QueueStatus { get; set; }
+
+    [JsonPropertyName("check_in_time")]
+    public DateTime? CheckInTime { get; set; }
+
+    [JsonPropertyName("guest_owner_name")]
+    public string? GuestOwnerName { get; set; }
+
+    [JsonPropertyName("guest_owner_phone")]
+    public string? GuestOwnerPhone { get; set; }
 }
 

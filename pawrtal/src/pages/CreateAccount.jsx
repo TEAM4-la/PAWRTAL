@@ -45,8 +45,8 @@ export default function CreateAccount() {
     }
     if (!email.trim()) {
       newErrors.email = 'Email address is required.';
-    } else if (!/@pawrtal\.com$/i.test(email.trim())) {
-      newErrors.email = 'Only @pawrtal.com email addresses are allowed.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = 'Please enter a valid email address.';
     }
     if (!password) {
       newErrors.password = 'Password is required.';
@@ -280,7 +280,7 @@ export default function CreateAccount() {
                     setEmail(e.target.value);
                     setErrors((prev) => ({ ...prev, email: undefined }));
                   }}
-                  placeholder="name@pawrtal.com"
+                  placeholder="name@example.com"
                   autoComplete="email"
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 text-sm transition-colors ${
                     errors.email

@@ -124,12 +124,17 @@ export default function Welcome() {
               />
             </div>
 
-            {/* Sign In button with routing */}
-            <Link to="/sign-in">
-              <button className="btn-primary px-6 py-2.5 rounded-full font-medium shadow-md shadow-amber-200/50">
-                Sign In
-              </button>
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link to="/about" className="text-amber-900 font-medium hover:text-amber-700 text-sm px-3 py-2">
+                About Us
+              </Link>
+              {/* Sign In button with routing */}
+              <Link to="/sign-in">
+                <button className="btn-primary px-6 py-2.5 rounded-full font-medium shadow-md shadow-amber-200/50">
+                  Sign In
+                </button>
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -160,11 +165,11 @@ export default function Welcome() {
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   </Link>
-                  <a href="https://www.facebook.com/vmvetclinic/" target="_blank" rel="noopener noreferrer">
+                  <Link to="/about">
                     <button className="btn-outline px-8 h-14 text-lg rounded-full">
                       Learn More
                     </button>
-                  </a>
+                  </Link>
                 </div>
               </motion.div>
 
@@ -318,9 +323,13 @@ export default function Welcome() {
                 className="w-32 h-10 object-contain object-left"
               />
             </div>
-            <p className="text-amber-600 text-sm">
-              © {new Date().getFullYear()} PAWRTAL by VM Veterinary Clinic. All rights reserved.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-sm text-amber-700">
+              <Link to="/about" className="hover:underline font-medium">About Us</Link>
+              <span className="hidden sm:inline">•</span>
+              <p className="text-amber-600">
+                © {new Date().getFullYear()} PAWRTAL by VM Veterinary Clinic. All rights reserved.
+              </p>
+            </div>
           </div>
         </footer>
       </div>

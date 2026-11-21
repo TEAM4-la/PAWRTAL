@@ -41,8 +41,9 @@ public class AuthController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Email))
             return ApiUserContext.BadRequestMissing("email");
-        if (!request.Email.Trim().EndsWith("@pawrtal.com", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Only @pawrtal.com email addresses are allowed." });
+        var trimmedEmail = request.Email.Trim();
+        if (!System.Net.Mail.MailAddress.TryCreate(trimmedEmail, out var parsedMail) || !trimmedEmail.Contains('.'))
+            return BadRequest(new { error = "Please enter a valid email address." });
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < MinPasswordLength)
             return BadRequest(new { error = $"Password must be at least {MinPasswordLength} characters." });
 
@@ -134,8 +135,9 @@ public class AuthController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.Email))
             return ApiUserContext.BadRequestMissing("email");
-        if (!request.Email.Trim().EndsWith("@pawrtal.com", StringComparison.OrdinalIgnoreCase))
-            return BadRequest(new { error = "Only @pawrtal.com email addresses are allowed." });
+        var trimmedEmail = request.Email.Trim();
+        if (!System.Net.Mail.MailAddress.TryCreate(trimmedEmail, out var parsedMail) || !trimmedEmail.Contains('.'))
+            return BadRequest(new { error = "Please enter a valid email address." });
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < MinPasswordLength)
             return BadRequest(new { error = $"Password must be at least {MinPasswordLength} characters." });
 
@@ -229,18 +231,10 @@ public class AuthController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Email))
             return ApiUserContext.BadRequestMissing("email");
-        if (!request.Email.Trim().EndsWith("@pawrtal.com", StringComparison.OrdinalIgnoreCase))
-            return Unauthorized(new { error = "Only @pawrtal.com email addresses are allowed." });
         if (string.IsNullOrWhiteSpace(request.Password))
             return ApiUserContext.BadRequestMissing("password");
 
         var user = await FindUserByEmailAsync(request.Email, ct);
-        
-        // Enforce exact case match for security
-        if (user != null && user.Email != request.Email.Trim())
-        {
-            user = null;
-        }
 
         if (user == null)
             return Unauthorized(new { error = "Invalid email or password." });
