@@ -292,7 +292,7 @@ public class PetsController : ControllerBase
 
         var walkInAppts = await _db.Appointments.AsNoTracking()
             .Where(a => petIds.Contains(a.PetId) && !a.IsDeleted && (a.IsWalkIn || a.GuestOwnerName != null || a.GuestOwnerPhone != null))
-            .OrderByDescending(a => a.Date)
+            .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
         var walkInDict = walkInAppts.GroupBy(a => a.PetId).ToDictionary(g => g.Key, g => g.First());
 

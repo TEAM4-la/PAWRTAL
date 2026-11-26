@@ -157,10 +157,6 @@ export default function OwnerPocketQueue({ todayAppointment, pet, clinicQueue = 
                 </span>
               </div>
             </div>
-
-            <p className="text-[11px] text-gray-500 italic">
-              💡 You can wait comfortably outside or in your car with your pet. Your phone will alert you when your ticket is called!
-            </p>
           </div>
         ) : (
           /* Scheduled for today but not checked in yet */

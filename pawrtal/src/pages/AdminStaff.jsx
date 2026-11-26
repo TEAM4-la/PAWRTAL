@@ -257,8 +257,8 @@ export default function AdminStaff() {
         <BackButton to={createPageUrl('ClinicAdminDashboard')} />
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Staff &amp; Users</h1>
-            <p className="text-gray-500 mt-1">Manage veterinarians and pet owners</p>
+            <h1 className="text-2xl font-bold text-gray-900">Accounts &amp; Users</h1>
+            <p className="text-gray-500 mt-1">Manage veterinarians, clinic staff, and pet owner accounts</p>
           </div>
           <button
             onClick={() => navigate('/staff/create-account')}
@@ -269,216 +269,193 @@ export default function AdminStaff() {
           </button>
         </div>
 
-        {/* Vets Section */}
+        {/* 1. Veterinarians Section */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Stethoscope className="w-5 h-5 text-teal-600" />
             <h2 className="text-lg font-semibold text-gray-900">Veterinarians</h2>
             <Badge className="bg-teal-100 text-teal-700">{vets.length}</Badge>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {vets.length === 0 ? (
-              <p className="text-gray-400 text-sm col-span-3">No veterinarians registered yet.</p>
-            ) : vets.map(vet => {
-              const vetAppts = allAppointments.filter(a => a.vet_email === vet.email);
-              const completed = vetAppts.filter(a => a.status === 'completed').length;
-              return (
-                <Card key={vet.id} className="border-0 shadow-sm p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
-                      {vet.full_name?.[0] || 'V'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{vet.full_name}</p>
-                      <Badge className="bg-teal-50 text-teal-600 text-xs mt-0.5">Veterinarian</Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <Mail className="w-4 h-4 text-gray-300" />
-                      <span className="truncate">{vet.email}</span>
-                    </div>
-                    {vet.phone && (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Phone className="w-4 h-4 text-gray-300" />
-                        <span>{vet.phone}</span>
+          <Card className="border-0 shadow-sm overflow-hidden">
+            {/* Mobile Vet Cards (< md) */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {vets.length === 0 ? (
+                <div className="py-8 text-center text-gray-400 text-sm">No veterinarians registered yet.</div>
+              ) : (
+                vets.map(vet => {
+                  const vetAppts = allAppointments.filter(a => a.vet_email === vet.email);
+                  const completed = vetAppts.filter(a => a.status === 'completed').length;
+                  return (
+                    <div key={vet.id} className="p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
+                            {vet.full_name?.[0] || 'V'}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{vet.full_name}</p>
+                            <p className="text-xs text-gray-500 break-all">{vet.email}</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-teal-50 text-teal-800 border-teal-200 text-xs shrink-0">
+                          {completed}/{vetAppts.length} appts
+                        </Badge>
                       </div>
-                    )}
-                    {vet.specialization && (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Briefcase className="w-4 h-4 text-gray-300" />
-                        <span>{vet.specialization}</span>
-                      </div>
-                    )}
-                    {vet.license_number && (
-                      <div className="flex items-center gap-2 text-teal-700 bg-teal-50/70 px-2.5 py-1 rounded-lg text-xs font-medium">
-                        <Award className="w-3.5 h-3.5 text-teal-600 flex-shrink-0" />
-                        <span className="truncate">PRC Lic: {vet.license_number}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex gap-4 text-sm text-center">
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{vetAppts.length}</p>
-                      <p className="text-gray-500 text-xs">Total Appts</p>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-green-600">{completed}</p>
-                      <p className="text-gray-500 text-xs">Completed</p>
-                    </div>
-                  </div>
-                  {/* Actions Row */}
-                  <div className="mt-4 pt-2 flex items-center gap-2">
-                    <button
-                      onClick={() => setResetTarget(vet)}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-semibold"
-                    >
-                      <KeyRound className="w-3.5 h-3.5" />
-                      Reset Password
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(vet)}
-                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-semibold"
-                      title="Delete Profile"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Delete
-                    </button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Clinic Staff & Admin Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Clinic Staff &amp; Administrators</h2>
-            <Badge className="bg-indigo-100 text-indigo-700">{clinicStaff.length}</Badge>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {clinicStaff.length === 0 ? (
-              <p className="text-gray-400 text-sm col-span-3">No staff members found.</p>
-            ) : clinicStaff.map(staff => {
-              const isSelf = user?.email?.toLowerCase() === staff.email?.toLowerCase();
-              return (
-                <Card key={staff.id} className="border-0 shadow-sm p-5 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-                        {staff.full_name?.[0] || 'S'}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-semibold text-gray-900 truncate">{staff.full_name}</p>
-                          {isSelf && (
-                            <Badge className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0 font-normal">You</Badge>
-                          )}
-                        </div>
-                        <Badge className="bg-indigo-50 text-indigo-600 text-xs mt-0.5">Clinic Staff</Badge>
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Mail className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                        <span className="truncate">{staff.email}</span>
-                      </div>
-                      {staff.phone && (
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <Phone className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                          <span>{staff.phone}</span>
-                        </div>
+                      {vet.phone && (
+                        <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <span>{vet.phone}</span>
+                        </p>
                       )}
+
+                      <div className="pt-1 flex items-center gap-2">
+                        <button
+                          onClick={() => setResetTarget(vet)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Reset Password
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(vet)}
+                          className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                          title="Delete Profile"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  {!isSelf ? (
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-end">
-                      <button
-                        onClick={() => setDeleteTarget(staff)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-semibold"
-                        title="Delete Profile"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete Profile
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-4 pt-4 border-t border-gray-100 text-center">
-                      <span className="text-xs text-gray-400 italic">Current Active Session</span>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full text-sm min-w-[650px]">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Name</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Email</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Phone</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Appointments</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {vets.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-10 text-gray-400 whitespace-nowrap">No veterinarians registered yet.</td></tr>
+                  ) : vets.map(vet => {
+                    const vetAppts = allAppointments.filter(a => a.vet_email === vet.email);
+                    const completed = vetAppts.filter(a => a.status === 'completed').length;
+                    return (
+                      <tr key={vet.id} className="hover:bg-gray-50/50">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm flex-shrink-0">
+                              {vet.full_name?.[0] || 'V'}
+                            </div>
+                            <span className="font-medium text-gray-900">{vet.full_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{vet.email}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{vet.phone || '—'}</td>
+                        <td className="px-5 py-3 text-gray-700 font-medium whitespace-nowrap">
+                          <span className="text-green-600 font-semibold">{completed}</span>
+                          <span className="text-gray-400 text-xs"> / {vetAppts.length}</span>
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setResetTarget(vet)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              Reset Password
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(vet)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                              title="Delete Profile"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
 
-        {/* Owners Section */}
-        <div>
+        {/* 2. Pet Owners Section */}
+        <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5 text-amber-600" />
             <h2 className="text-lg font-semibold text-gray-900">Pet Owners</h2>
             <Badge className="bg-amber-100 text-amber-700">{owners.length}</Badge>
           </div>
           <Card className="border-0 shadow-sm overflow-hidden">
-            
-          {/* Mobile Owner Cards (< md) */}
-          <div className="md:hidden divide-y divide-gray-100">
-            {owners.length === 0 ? (
-              <div className="py-8 text-center text-gray-400 text-sm">No pet owners registered yet.</div>
-            ) : (
-              owners.map(owner => {
-                const ownerAppts = allAppointments.filter(a => a.owner_email === owner.email);
-                return (
-                  <div key={owner.id} className="p-4 space-y-3 bg-white">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0">
-                          {owner.full_name?.[0] || '?'}
+            {/* Mobile Owner Cards (< md) */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {owners.length === 0 ? (
+                <div className="py-8 text-center text-gray-400 text-sm">No pet owners registered yet.</div>
+              ) : (
+                owners.map(owner => {
+                  const ownerAppts = allAppointments.filter(a => a.owner_email === owner.email);
+                  return (
+                    <div key={owner.id} className="p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0">
+                            {owner.full_name?.[0] || '?'}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 text-sm">{owner.full_name}</p>
+                            <p className="text-xs text-gray-500 break-all">{owner.email}</p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm">{owner.full_name}</p>
-                          <p className="text-xs text-gray-500 break-all">{owner.email}</p>
-                        </div>
+                        <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-xs shrink-0">
+                          {ownerAppts.length} appts
+                        </Badge>
                       </div>
-                      <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-xs shrink-0">
-                        {ownerAppts.length} appts
-                      </Badge>
+
+                      {owner.phone && (
+                        <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <span>{owner.phone}</span>
+                        </p>
+                      )}
+
+                      <div className="pt-1 flex items-center gap-2">
+                        <button
+                          onClick={() => setResetTarget(owner)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Reset Password
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(owner)}
+                          className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                          title="Delete Profile"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
+                  );
+                })
+              )}
+            </div>
 
-                    {owner.phone && (
-                      <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                        <span>{owner.phone}</span>
-                      </p>
-                    )}
-
-                    <div className="pt-1 flex items-center gap-2">
-                      <button
-                        onClick={() => setResetTarget(owner)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
-                      >
-                        <KeyRound className="w-3.5 h-3.5" />
-                        Reset Password
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(owner)}
-                        className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
-                        title="Delete Profile"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Desktop Table (>= md) */}
-          <div className="overflow-x-auto hidden md:block">
+            {/* Desktop Table (>= md) */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-sm min-w-[650px]">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
@@ -524,6 +501,138 @@ export default function AdminStaff() {
                               <Trash2 className="w-3.5 h-3.5" />
                               Delete
                             </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+
+        {/* 3. Clinic Staff & Admin Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Clinic Staff &amp; Administrators</h2>
+            <Badge className="bg-indigo-100 text-indigo-700">{clinicStaff.length}</Badge>
+          </div>
+          <Card className="border-0 shadow-sm overflow-hidden">
+            {/* Mobile Staff Cards (< md) */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {clinicStaff.length === 0 ? (
+                <div className="py-8 text-center text-gray-400 text-sm">No staff members found.</div>
+              ) : (
+                clinicStaff.map(staff => {
+                  const isSelf = user?.email?.toLowerCase() === staff.email?.toLowerCase();
+                  return (
+                    <div key={staff.id} className="p-4 space-y-3 bg-white">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm shrink-0">
+                            {staff.full_name?.[0] || 'S'}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-semibold text-gray-900 text-sm">{staff.full_name}</p>
+                              {isSelf && (
+                                <Badge className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0 font-normal">You</Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 break-all">{staff.email}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {staff.phone && (
+                        <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <span>{staff.phone}</span>
+                        </p>
+                      )}
+
+                      <div className="pt-1 flex items-center gap-2">
+                        <button
+                          onClick={() => setResetTarget(staff)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Reset Password
+                        </button>
+                        {!isSelf ? (
+                          <button
+                            onClick={() => setDeleteTarget(staff)}
+                            className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                            title="Delete Profile"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-gray-400 italic px-2">Active Session</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="overflow-x-auto hidden md:block">
+              <table className="w-full text-sm min-w-[650px]">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Name</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Email</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Phone</th>
+                    <th className="text-left px-5 py-3 font-medium text-gray-500 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {clinicStaff.length === 0 ? (
+                    <tr><td colSpan={4} className="text-center py-10 text-gray-400 whitespace-nowrap">No staff members found.</td></tr>
+                  ) : clinicStaff.map(staff => {
+                    const isSelf = user?.email?.toLowerCase() === staff.email?.toLowerCase();
+                    return (
+                      <tr key={staff.id} className="hover:bg-gray-50/50">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
+                              {staff.full_name?.[0] || 'S'}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-gray-900">{staff.full_name}</span>
+                              {isSelf && (
+                                <Badge className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0 font-normal">You</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{staff.email}</td>
+                        <td className="px-5 py-3 text-gray-500 whitespace-nowrap">{staff.phone || '—'}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setResetTarget(staff)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors text-xs font-medium"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              Reset Password
+                            </button>
+                            {!isSelf ? (
+                              <button
+                                onClick={() => setDeleteTarget(staff)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-xs font-medium"
+                                title="Delete Profile"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic px-2">Active Session</span>
+                            )}
                           </div>
                         </td>
                       </tr>

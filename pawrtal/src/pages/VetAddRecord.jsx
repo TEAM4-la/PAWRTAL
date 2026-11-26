@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BackButton from '@/components/ui/BackButton';
 import { createPageUrl } from "@/utils";
 import { api } from '@/api/apiClient';
@@ -63,10 +63,17 @@ const speciesIcons = {
 
 export default function VetAddRecord() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const preselectedPetId = urlParams.get('petId');
   const linkedAppointmentId = urlParams.get('appointmentId');
+
+  const prefilledDiagnosis = location.state?.prefilledDiagnosis || '';
+  const prefilledTitle = location.state?.prefilledTitle || '';
+  const prefilledVisibleToOwner = location.state?.prefilledVisibleToOwner !== undefined
+    ? location.state.prefilledVisibleToOwner
+    : true;
 
   const handleLinkedAppointmentCompletion = async () => {
     if (!linkedAppointmentId) return;
@@ -108,12 +115,12 @@ export default function VetAddRecord() {
   const [recordForm, setRecordForm] = useState({
     pet_id: preselectedPetId || '',
     record_type: 'diagnosis',
-    title: '',
-    description: '',
+    title: prefilledTitle || '',
+    description: prefilledDiagnosis || '',
     date: format(new Date(), 'yyyy-MM-dd'),
     file_url: '',
     file_urls: [],
-    is_visible_to_owner: true,
+    is_visible_to_owner: prefilledVisibleToOwner,
   });
 
   const createEmptyVaccineItem = () => ({
@@ -329,16 +336,22 @@ export default function VetAddRecord() {
     return list;
   }, [pets, emergencyPetList]);
 
-  const getOwnerName = (ownerEmail) => {
-    if (!ownerEmail) return 'Unknown Owner';
-    const owner = users.find(u => u.email?.toLowerCase() === ownerEmail.toLowerCase());
-    return owner?.full_name || ownerEmail;
+  const getOwnerName = (pet) => {
+    if (!pet) return 'Walk-In Client';
+    if (pet.owner_name && pet.owner_name.trim()) return pet.owner_name.trim();
+    if (pet.guest_owner_name && pet.guest_owner_name.trim()) return pet.guest_owner_name.trim();
+    if (pet.owner_email) {
+      const owner = users.find(u => u.email?.toLowerCase() === pet.owner_email.toLowerCase());
+      if (owner?.full_name?.trim()) return owner.full_name.trim();
+      return pet.owner_email;
+    }
+    return pet.is_walk_in ? 'Walk-In Client' : 'Walk-In Client';
   };
 
   const getPetDisplayLabel = (pet) => {
     const speciesCap = pet.species ? pet.species.charAt(0).toUpperCase() + pet.species.slice(1) : 'Pet';
     const breedPart = pet.breed ? ` • ${pet.breed}` : '';
-    const ownerName = getOwnerName(pet.owner_email);
+    const ownerName = getOwnerName(pet);
     return `${pet.name} (${speciesCap}${breedPart}) — Owner: ${ownerName}`;
   };
 
@@ -652,7 +665,7 @@ export default function VetAddRecord() {
         <CardHeader className="border-b bg-gradient-to-r from-teal-50 to-orange-50 p-4 sm:p-6">
           <CardTitle className="text-xl sm:text-2xl">Add Medical Record</CardTitle>
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">
-            {selectedPet ? `Recording for ${selectedPet.name}` : 'Select a patient to add records'}
+            {selectedPet ? `Recording for ${selectedPet.name} • Owner: ${getOwnerName(selectedPet)}` : 'Select a patient to add records'}
           </p>
           {linkedAppointmentId && (
             <div className="mt-3 p-3 rounded-xl bg-teal-100/70 border border-teal-300 text-teal-900 text-xs flex items-center justify-between gap-2">
@@ -723,7 +736,25 @@ export default function VetAddRecord() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Record Type</Label>
-                    <Select value={recordForm.record_type} onValueChange={(v) => setRecordForm({...recordForm, record_type: v})}>
+                    <Select
+                      value={recordForm.record_type}
+                      onValueChange={(v) => {
+                        setRecordForm(prev => {
+                          let newDescription = prev.description;
+                          // Only keep/carry over the quick consultation notes on diagnosis
+                          if (v !== 'diagnosis' && prev.description === prefilledDiagnosis) {
+                            newDescription = '';
+                          } else if (v === 'diagnosis' && !prev.description && prefilledDiagnosis) {
+                            newDescription = prefilledDiagnosis;
+                          }
+                          return {
+                            ...prev,
+                            record_type: v,
+                            description: newDescription,
+                          };
+                        });
+                      }}
+                    >
                       <SelectTrigger className="mt-1.5">
                         <SelectValue />
                       </SelectTrigger>

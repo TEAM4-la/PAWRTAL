@@ -226,6 +226,11 @@ IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments') AND NOT EXISTS 
 BEGIN
     ALTER TABLE [Appointments] ADD [GuestOwnerPhone] NVARCHAR(30) NULL;
 END
+
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Appointments') AND name = 'OwnerEmail' AND is_nullable = 0)
+BEGIN
+    ALTER TABLE [Appointments] ALTER COLUMN [OwnerEmail] NVARCHAR(320) NULL;
+END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureAppointmentQueueColumnsSql);
 
@@ -275,15 +280,21 @@ END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureAppointmentStatusCheckConstraintSql);
 
-        // Ensure UQ_Appointments_Vet_Date_Slot unique filtered index exists
+        // Ensure UQ_Appointments_Vet_Date_Slot unique filtered index exists (excludes walk-in patients)
         const string ensureAppointmentSlotIndexSql = @"
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_Appointments_Vet_Date_Slot')
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_Appointments_Vet_Date_Slot' AND object_id = OBJECT_ID('Appointments'))
+BEGIN
+    DROP INDEX [UQ_Appointments_Vet_Date_Slot] ON [Appointments];
+END
+
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Appointments')
 BEGIN
     CREATE UNIQUE NONCLUSTERED INDEX [UQ_Appointments_Vet_Date_Slot]
     ON [Appointments] ([VetEmail], [Date], [TimeSlot])
     WHERE [IsDeleted] = 0 
       AND [Status] IN ('pending', 'confirmed', 'accepted') 
-      AND [VetEmail] IS NOT NULL;
+      AND [VetEmail] IS NOT NULL
+      AND [IsWalkIn] = 0;
 END
 ";
         await db.Database.ExecuteSqlRawAsync(ensureAppointmentSlotIndexSql);

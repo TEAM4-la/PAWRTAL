@@ -2,13 +2,13 @@ import React from 'react';
 import { api } from '@/api/apiClient';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl, getAppointmentStatus } from '@/utils';
-import { Users, Calendar, PawPrint, Stethoscope, ClipboardList, Clock, CheckCircle, AlertCircle, TrendingUp, ChevronRight, Package, AlertTriangle, PackageX, CalendarX } from 'lucide-react';
+import { Users, Calendar, PawPrint, Stethoscope, ChevronRight, Package, AlertTriangle, PackageX, CalendarX } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import AdminSidebar from '@/components/layout/AdminSidebar';
-import { format, isToday, isTomorrow } from 'date-fns';
+import { format, isToday } from 'date-fns';
 
 export default function ClinicAdminDashboard() {
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => api.auth.me() });
@@ -23,9 +23,6 @@ export default function ClinicAdminDashboard() {
   const vets = allUsers.filter(u => u.user_type === 'veterinarian');
   const owners = allUsers.filter(u => u.user_type === 'pet_owner');
   const todayAppts = allAppointments.filter(a => isToday(new Date(a.date)));
-  const pendingAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'pending');
-  const confirmedAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'confirmed');
-  const completedAppts = allAppointments.filter(a => getAppointmentStatus(a) === 'completed');
 
   const totalInventory = allInventory.length;
   const outOfStockItems = allInventory.filter(i => i.is_out_of_stock || i.quantity <= 0);
@@ -54,9 +51,9 @@ export default function ClinicAdminDashboard() {
 
   return (
     <AdminSidebar currentUser={user}>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <p className="text-sm text-violet-500 font-medium mb-1">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
           <h1 className="text-2xl font-bold text-violet-900">
             Welcome back, {user?.display_name?.trim() || user?.first_name?.trim() || 'Admin'}!
@@ -64,75 +61,12 @@ export default function ClinicAdminDashboard() {
           <p className="text-violet-500/70 mt-1">Here's what's happening at VM Veterinary Clinic today.</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="border-0 shadow-sm overflow-hidden">
-              <div className="p-5">
-                <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
-                  <stat.icon className={`w-6 h-6 ${stat.text}`} />
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
-              </div>
-              <div className={`h-1 bg-gradient-to-r ${stat.color}`} />
-            </Card>
-          ))}
-        </div>
-
-        {/* Appointment Status Overview */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-violet-600" />
-              Appointment Status Overview
-            </h2>
-            <Link to={createPageUrl('AdminAppointments')}>
-              <Button variant="ghost" size="sm" className="text-violet-600 hover:text-violet-700 gap-1 text-xs font-medium">
-                View Appointments <ChevronRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-0 shadow-sm p-4 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 flex-shrink-0">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{pendingAppts.length}</p>
-                <p className="text-sm text-gray-500">Pending</p>
-              </div>
-            </Card>
-
-            <Card className="border-0 shadow-sm p-4 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 flex-shrink-0">
-                <AlertCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{confirmedAppts.length}</p>
-                <p className="text-sm text-gray-500">Confirmed</p>
-              </div>
-            </Card>
-
-            <Card className="border-0 shadow-sm p-4 flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center text-green-700 flex-shrink-0">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{completedAppts.length}</p>
-                <p className="text-sm text-gray-500">Completed</p>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Inventory Status Overview */}
-        <div className="mb-8">
+        {/* 1. Inventory & Stock Status (Top Stat Cards) */}
+        <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Package className="w-5 h-5 text-violet-600" />
-              Inventory & Stock Status
+              Inventory &amp; Stock Status
             </h2>
             <Link to={createPageUrl('AdminInventory')}>
               <Button variant="ghost" size="sm" className="text-violet-600 hover:text-violet-700 gap-1 text-xs font-medium">
@@ -205,6 +139,25 @@ export default function ClinicAdminDashboard() {
           </div>
         </div>
 
+        {/* 2. Overview Metrics (Total Pets, Total Appointments, Veterinarians, Pet Owners) */}
+        <div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat) => (
+              <Card key={stat.label} className="border-0 shadow-sm overflow-hidden">
+                <div className="p-5">
+                  <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
+                    <stat.icon className={`w-6 h-6 ${stat.text}`} />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
+                </div>
+                <div className={`h-1 bg-gradient-to-r ${stat.color}`} />
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Today's Appointments & Veterinarian Staff */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Today's Appointments */}
           <Card className="border-0 shadow-sm">
@@ -270,7 +223,7 @@ export default function ClinicAdminDashboard() {
             <div className="p-4 border-t border-gray-50">
               <Link to={createPageUrl('AdminStaff')}>
                 <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700 w-full">
-                  View Staff <ChevronRight className="w-4 h-4 ml-1" />
+                  View Accounts <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
             </div>

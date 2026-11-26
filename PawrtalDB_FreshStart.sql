@@ -151,12 +151,13 @@ CREATE TABLE [Appointments] (
         'ultrasound', 'ultra_sound', 'Ultra Sound'
     ))
 );
--- Unique index: Prevents double-booking for the same vet, date, and timeslot
+-- Unique index: Prevents double-booking for the same vet, date, and timeslot (scheduled appointments only)
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_Appointments_Vet_Date_Slot]
 ON [Appointments] ([VetEmail], [Date], [TimeSlot])
 WHERE [IsDeleted] = 0 
   AND [Status] IN ('pending', 'confirmed', 'accepted') 
-  AND [VetEmail] IS NOT NULL;
+  AND [VetEmail] IS NOT NULL
+  AND [IsWalkIn] = 0;
 GO
 
 -- 4.4 HealthRecords

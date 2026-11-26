@@ -267,17 +267,13 @@ export default function SignIn() {
               </div>
             </form>
 
-            <div className="mt-6 pt-5 border-t border-gray-100 text-center space-y-2">
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-600">
                 New pet owner?{' '}
                 <Link to="/create-account" className="text-amber-600 font-semibold hover:underline">
                   Create an account
                 </Link>
               </p>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200/60 rounded-full text-xs text-amber-800">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>Pet owners, Veterinarians, and Admins can sign in directly</span>
-              </div>
             </div>
           </motion.div>
         </div>

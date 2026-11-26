@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { api } from '@/api/apiClient';
 import {
   LayoutDashboard, Calendar, Users, Stethoscope, BarChart2,
-  Settings, LogOut, Menu, ShieldCheck, ChevronRight, Package,
+  Settings, LogOut, Menu, ShieldCheck, ChevronRight, Package, UserCog,
 } from 'lucide-react';
 import logo from '@/assets/LOGO.png';
 import AdminNotificationPanel from '@/components/dashboard/AdminNotificationPanel';
@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'ClinicAdminDashboard' },
   { label: 'Appointments', icon: Calendar, page: 'AdminAppointments' },
-  { label: 'Staff', icon: Stethoscope, page: 'AdminStaff' },
+  { label: 'Accounts', icon: UserCog, page: 'AdminStaff' },
   { label: 'Patients', icon: Users, page: 'AdminPatients' },
   { label: 'Inventory', icon: Package, page: 'AdminInventory' },
   { label: 'Reports', icon: BarChart2, page: 'AdminReports' },

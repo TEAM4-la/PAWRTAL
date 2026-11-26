@@ -61,6 +61,55 @@ public class NotificationsController : ControllerBase
         return Ok(new { success, message = providerMessage });
     }
 
+    [HttpPost("test-email")]
+    public async Task<ActionResult> TestEmail([FromServices] PawtralWeb.Services.IEmailService emailService, [FromBody] TestEmailRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new { error = "Email address is required." });
+
+        var subject = request.Subject ?? "🐾 PAWRTAL Email System Test - VM Veterinary Clinic";
+        var message = request.Message ?? "Your Gmail SMTP connection (pawrtal.vmclinic@gmail.com) is successfully configured and active!";
+        var html = $@"
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b; }}
+    .container {{ max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }}
+    .header {{ background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #ffffff; padding: 28px 24px; text-align: center; }}
+    .content {{ padding: 28px 24px; }}
+    .card {{ background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 18px; margin: 18px 0; }}
+    .footer {{ background: #f8fafc; padding: 16px 24px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }}
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <div class='header'>
+      <h1 style='margin: 0; font-size: 22px;'>PAWRTAL EMAIL SYSTEM ACTIVE</h1>
+      <p style='margin: 6px 0 0; font-size: 13px; opacity: 0.9;'>VM Veterinary Clinic Notification Service</p>
+    </div>
+    <div class='content'>
+      <p style='font-size: 15px; margin-top: 0;'>Hello!</p>
+      <div class='card'>
+        <p style='margin: 0; font-size: 15px; color: #0f766e; font-weight: 600;'>{System.Net.WebUtility.HtmlEncode(subject)}</p>
+        <p style='margin: 8px 0 0; font-size: 14px; color: #334155; line-height: 1.6;'>{System.Net.WebUtility.HtmlEncode(message)}</p>
+      </div>
+      <p style='font-size: 13px; color: #64748b; margin-top: 20px;'>
+        This test confirms that your clinic email (<strong>pawrtal.vmclinic@gmail.com</strong>) is able to dispatch real-time transactional emails to pet owners and clinic staff.
+      </p>
+    </div>
+    <div class='footer'>
+      <p style='margin: 0;'>VM Veterinary Clinic • Automated Healthcare Communications</p>
+    </div>
+  </div>
+</body>
+</html>";
+
+        var success = await emailService.SendEmailAsync(request.Email, subject, html, message);
+        return Ok(new { success, recipient = request.Email });
+    }
+
     private static NotificationDto ToDto(Notification n) => new()
     {
         Id = n.Id.ToString(),

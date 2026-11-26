@@ -161,7 +161,7 @@ export default function Dashboard() {
           title="Upcoming Appointments"
           value={upcomingAppointments.length}
           icon={Calendar}
-          color="teal"
+          color="orange"
         />
         <StatsCard
           title="Due Vaccinations"
@@ -271,7 +271,7 @@ export default function Dashboard() {
         <Card className="border-0 shadow-sm flex flex-col h-[550px] bg-white">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
             <h2 className="font-semibold text-gray-900 text-lg">Upcoming</h2>
-            <span className="text-xs bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full font-medium">
+            <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium">
               {upcomingAppointments.length} scheduled
             </span>
           </div>
@@ -284,7 +284,7 @@ export default function Dashboard() {
                 description="Book your next vet visit"
                 actionLabel="Book Appointment"
                 onAction={() => navigate(createPageUrl('BookAppointment'))}
-                colorScheme="teal"
+                colorScheme="orange"
                 className="py-10"
               />
             ) : (
@@ -303,7 +303,7 @@ export default function Dashboard() {
 
           <div className="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex-shrink-0">
             <Link to={createPageUrl('Appointments')}>
-              <Button variant="ghost" size="sm" className="text-teal-650 hover:text-teal-700 hover:bg-teal-50/50 w-full flex items-center justify-center gap-1 font-medium">
+              <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-800 hover:bg-amber-50/50 w-full flex items-center justify-center gap-1 font-medium">
                 View All Appointments <ChevronRight className="w-4 h-4" />
               </Button>
             </Link>

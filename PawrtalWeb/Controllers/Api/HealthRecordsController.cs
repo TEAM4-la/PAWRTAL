@@ -133,6 +133,20 @@ public class HealthRecordsController : ControllerBase
                     $"A new health record ({record.Title}) has been added for {pet.Name}.",
                     "vaccinations"
                 );
+
+                if (record.RecordType == "diagnosis" && !string.IsNullOrWhiteSpace(record.Description))
+                {
+                    var owner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == pet.OwnerEmail);
+                    _notifications.SendClinicalVisitSummaryEmail(
+                        pet.OwnerEmail,
+                        owner?.FullName ?? owner?.DisplayName ?? "Pet Parent",
+                        pet.Name,
+                        record.Date.ToString("MMMM d, yyyy"),
+                        record.VetName ?? "Attending Veterinarian",
+                        record.Description,
+                        "Please follow the treatment and care recommendations provided in your consultation summary above."
+                    );
+                }
             }
         }
 

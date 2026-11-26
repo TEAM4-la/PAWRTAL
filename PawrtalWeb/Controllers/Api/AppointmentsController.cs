@@ -431,6 +431,20 @@ public class AppointmentsController : ControllerBase
                         msg,
                         "appointments"
                     );
+
+                    if (notifyStatus && appt.Status == "confirmed" && !string.IsNullOrWhiteSpace(appt.OwnerEmail))
+                    {
+                        var oUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail);
+                        _notifications.SendAppointmentConfirmationEmail(
+                            appt.OwnerEmail,
+                            oUser?.FullName ?? oUser?.DisplayName ?? "Pet Parent",
+                            petName,
+                            appt.Date.ToString("MMMM d, yyyy"),
+                            appt.TimeSlot,
+                            appt.Reason ?? "General Veterinary Consultation",
+                            vetDisplayName
+                        );
+                    }
                 }
             }
 
@@ -515,7 +529,15 @@ public class AppointmentsController : ControllerBase
             IsDeleted = false
         };
         _db.Pets.Add(pet);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            return BadRequest(new { error = $"Failed to register walk-in patient: {msg}" });
+        }
 
         // Generate next daily W-XX ticket
         var todayWalkIns = await _db.Appointments.AsNoTracking()
@@ -556,7 +578,15 @@ public class AppointmentsController : ControllerBase
         };
 
         _db.Appointments.Add(appt);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            return BadRequest(new { error = $"Failed to register walk-in appointment: {msg}" });
+        }
 
         string? vetName = null;
         if (!string.IsNullOrWhiteSpace(appt.VetEmail))
@@ -649,6 +679,16 @@ public class AppointmentsController : ControllerBase
         {
             var oUser = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == appt.OwnerEmail, ct);
             ownerName = oUser?.FullName;
+
+            var ticketDisplay = !string.IsNullOrWhiteSpace(appt.QueueNumber) ? appt.QueueNumber : "Your Ticket";
+            var petName = pet?.Name ?? "Your pet";
+            _notifications.SendQueueTicketAlertEmail(
+                appt.OwnerEmail,
+                ownerName ?? "Pet Parent",
+                petName,
+                ticketDisplay,
+                $"{petName} has been called into the consultation room! Please proceed inside with your pet."
+            );
         }
 
         return Ok(ToDto(appt, vetName, pet?.Name, ownerName));

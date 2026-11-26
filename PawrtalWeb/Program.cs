@@ -45,6 +45,7 @@ builder.Services.AddDbContext<PawrtalDbContext>(options =>
 });
 
 builder.Services.AddHttpClient<ISmsService, UniSmsService>();
+builder.Services.AddScoped<IEmailService, GmailSmtpEmailService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHostedService<AppointmentExpirationService>();
 

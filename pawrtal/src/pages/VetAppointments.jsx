@@ -16,8 +16,9 @@ import EmptyState from "@/components/shared/EmptyState";
 import VetSidebar from '@/components/layout/VetSidebar';
 import BackButton from '@/components/ui/BackButton';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft, XCircle } from 'lucide-react';
-import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, CheckCircle, Search, Filter, ChevronLeft, ChevronDown, ChevronUp, AlertCircle, XCircle } from 'lucide-react';
+import { format, isToday, isTomorrow, isAfter, isBefore, startOfDay, parse } from 'date-fns';
+import { cn } from "@/lib/utils";
 import { createPageUrl, getAppointmentStatus } from "@/utils";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ export default function VetAppointments() {
   const [scopeFilter, setScopeFilter] = useState('all'); // 'all' | 'mine' | 'unassigned'
   const [completingApt, setCompletingApt] = useState(null);
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
 
   const checkInMutation = useMutation({
     mutationFn: ({ apt, isStandby }) => api.entities.Appointment.checkIn(apt.id, isStandby),
@@ -169,18 +171,73 @@ export default function VetAppointments() {
     return filtered;
   };
 
-  const todayAppointments = filterAppointments(
+  const parseAppointmentDateTime = (apt) => {
+    if (!apt || !apt.date) return new Date(8640000000000000);
+    try {
+      if (apt.time) {
+        const dt = parse(`${apt.date} ${apt.time}`, 'yyyy-MM-dd hh:mm a', new Date());
+        if (!isNaN(dt.getTime())) return dt;
+      }
+      const d = new Date(apt.date + 'T00:00:00');
+      if (!isNaN(d.getTime())) return d;
+    } catch {
+      // fallback
+    }
+    return new Date(apt.date);
+  };
+
+  const getStatusPriority = (apt) => {
+    const status = getAppointmentStatus(apt);
+    // Priority 1: Unconfirmed pending bookings require immediate vet attention
+    if (status === 'pending') return 1;
+
+    // Priority 2: Active in-clinic queue (patients currently in clinic or room)
+    if (apt.queue_status === 'in_consultation' || apt.queue_status === 'in_room') return 2;
+    if (apt.queue_status === 'called') return 3;
+    if (apt.queue_status === 'waiting' || apt.queue_status === 'priority_standby') return 4;
+
+    // Priority 3: Confirmed upcoming appointments
+    if (status === 'confirmed') return 5;
+
+    // Priority 4: Completed visits (already finished)
+    if (status === 'completed') return 6;
+
+    // Priority 5: Cancelled / Expired
+    return 7;
+  };
+
+  const sortAppointmentsByPriority = (list) => {
+    return [...list].sort((a, b) => {
+      const priorityA = getStatusPriority(a);
+      const priorityB = getStatusPriority(b);
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      // Secondary sort: chronological by date and time (earlier first)
+      const timeA = parseAppointmentDateTime(a).getTime();
+      const timeB = parseAppointmentDateTime(b).getTime();
+      return timeA - timeB;
+    });
+  };
+
+  const rawToday = filterAppointments(
     appointments.filter(apt => {
       const status = getAppointmentStatus(apt);
       return isToday(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
     })
   );
+  const todayAppointments = sortAppointmentsByPriority(rawToday);
+  const todayActive = todayAppointments.filter(apt => getAppointmentStatus(apt) !== 'completed');
+  const todayCompleted = todayAppointments.filter(apt => getAppointmentStatus(apt) === 'completed');
+  const todayPendingCount = todayAppointments.filter(apt => getAppointmentStatus(apt) === 'pending').length;
 
-  const tomorrowAppointments = filterAppointments(
-    appointments.filter(apt => {
-      const status = getAppointmentStatus(apt);
-      return isTomorrow(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
-    })
+  const tomorrowAppointments = sortAppointmentsByPriority(
+    filterAppointments(
+      appointments.filter(apt => {
+        const status = getAppointmentStatus(apt);
+        return isTomorrow(new Date(apt.date + 'T00:00:00')) && status !== 'cancelled';
+      })
+    )
   );
 
   const pendingAppointments = filterAppointments(
@@ -191,25 +248,27 @@ export default function VetAppointments() {
       const status = getAppointmentStatus(apt);
       return status === 'pending' && aptDate >= todayStart;
     })
-  );
+  ).sort((a, b) => parseAppointmentDateTime(a).getTime() - parseAppointmentDateTime(b).getTime());
 
-  const upcomingAppointments = filterAppointments(
-    appointments.filter(apt => {
-      const status = getAppointmentStatus(apt);
-      return status !== 'cancelled' && 
-      status !== 'completed' && 
-      status !== 'expired' && 
-      !isBefore(new Date(apt.date + 'T00:00:00'), today);
-    })
+  const upcomingAppointments = sortAppointmentsByPriority(
+    filterAppointments(
+      appointments.filter(apt => {
+        const status = getAppointmentStatus(apt);
+        return status !== 'cancelled' && 
+        status !== 'completed' && 
+        status !== 'expired' && 
+        !isBefore(new Date(apt.date + 'T00:00:00'), today);
+      })
+    )
   );
 
   const completedAppointments = filterAppointments(
     appointments.filter(apt => getAppointmentStatus(apt) === 'completed')
-  );
+  ).sort((a, b) => parseAppointmentDateTime(b).getTime() - parseAppointmentDateTime(a).getTime());
 
   const cancelledAppointments = filterAppointments(
     appointments.filter(apt => getAppointmentStatus(apt) === 'cancelled')
-  );
+  ).sort((a, b) => parseAppointmentDateTime(b).getTime() - parseAppointmentDateTime(a).getTime());
 
   const renderAppointmentList = (appointments) => {
     if (appointments.length === 0) {
@@ -322,9 +381,18 @@ export default function VetAppointments() {
           <TabsTrigger value="tomorrow" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             Tomorrow ({tomorrowAppointments.length})
           </TabsTrigger>
-          <TabsTrigger value="pending" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
-            <Clock className="w-4 h-4" />
+          <TabsTrigger 
+            value="pending" 
+            className={cn(
+              "gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm",
+              pendingAppointments.length > 0 && "text-amber-800 font-semibold"
+            )}
+          >
+            <Clock className={cn("w-4 h-4", pendingAppointments.length > 0 && "text-amber-600")} />
             Pending ({pendingAppointments.length})
+            {pendingAppointments.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse ml-0.5" />
+            )}
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="gap-1.5 whitespace-nowrap px-3 py-2 flex-shrink-0 text-xs sm:text-sm">
             Upcoming ({upcomingAppointments.length})
@@ -339,8 +407,98 @@ export default function VetAppointments() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="today" className="mt-6">
-          {renderAppointmentList(todayAppointments)}
+        <TabsContent value="today" className="mt-6 space-y-4">
+          {todayPendingCount > 0 && (
+            <div className="flex items-center justify-between p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-sm">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <span>
+                  <strong>{todayPendingCount} appointment{todayPendingCount === 1 ? '' : 's'}</strong> awaiting confirmation today.
+                </span>
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
+                Needs Attention
+              </span>
+            </div>
+          )}
+
+          {todayAppointments.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-300 bg-white">
+              <EmptyState
+                icon={CalendarIcon}
+                title="No appointments found"
+                colorScheme="teal"
+                description="No appointments match your current filters"
+              />
+            </Card>
+          ) : todayActive.length > 0 ? (
+            <>
+              {/* Active & Pending Appointments */}
+              {renderAppointmentList(todayActive)}
+
+              {/* Completed Appointments Collapsible Section */}
+              {todayCompleted.length > 0 && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                    className="w-full flex items-center justify-between p-3.5 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors text-left group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span className="font-semibold text-gray-800 text-sm">
+                        Completed Visits Today ({todayCompleted.length})
+                      </span>
+                      <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                        Finished
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium group-hover:text-gray-700">
+                      <span>{isCompletedExpanded ? 'Hide completed' : 'Show completed'}</span>
+                      {isCompletedExpanded ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </div>
+                  </button>
+
+                  {isCompletedExpanded && (
+                    <div className="mt-3 space-y-4">
+                      {renderAppointmentList(todayCompleted)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* All appointments today are completed */}
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-emerald-900 text-sm">All visits completed for today!</h4>
+                    <p className="text-xs text-emerald-700">All {todayCompleted.length} scheduled visits have been finished.</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                  className="bg-white text-xs border-emerald-300 text-emerald-800 hover:bg-emerald-100/50"
+                >
+                  {isCompletedExpanded ? 'Hide Visits' : `View Completed (${todayCompleted.length})`}
+                </Button>
+              </div>
+
+              {isCompletedExpanded && (
+                <div className="space-y-4">
+                  {renderAppointmentList(todayCompleted)}
+                </div>
+              )}
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="tomorrow" className="mt-6">

@@ -31,7 +31,7 @@ export default function ClinicQueueTracker({
   onCompleteAppointment,
 }) {
   const queryClient = useQueryClient();
-  const [showFullQueue, setShowFullQueue] = useState(false);
+  const [showFullQueue, setShowFullQueue] = useState(true);
 
   // Filter today's appointments that are active in the clinic queue
   const todayStr = new Date().toISOString().split('T')[0];
@@ -245,36 +245,52 @@ export default function ClinicQueueTracker({
           </div>
         </div>
 
-        {/* Collapsible Full Waiting List */}
+        {/* Collapsible Full Waiting List (Open by default, scrollable horizontally) */}
         {showFullQueue && waitingQueue.length > 0 && (
           <div className="mt-4 pt-3.5 border-t border-teal-100/80 space-y-2">
-            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
-              Waiting Patients Sequence ({waitingQueue.length})
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div>
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block">
+                Waiting Patients Sequence ({waitingQueue.length})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-0.5 scrollbar-thin scrollbar-thumb-teal-200">
               {waitingQueue.map((apt, idx) => (
                 <div
                   key={apt.id}
-                  className={`p-2.5 rounded-lg border text-xs flex items-center justify-between gap-2 ${
+                  className={`shrink-0 min-w-[200px] sm:min-w-[220px] max-w-[260px] p-2.5 rounded-lg border text-xs flex items-center justify-between gap-2 shadow-xs transition-shadow hover:shadow-sm ${
                     apt.queue_status === 'priority_standby'
-                      ? 'bg-amber-50/70 border-amber-200 text-amber-900'
+                      ? 'bg-amber-50/80 border-amber-300 text-amber-900 ring-1 ring-amber-200'
                       : apt.is_walk_in
-                      ? 'bg-blue-50/70 border-blue-200 text-blue-900'
+                      ? 'bg-blue-50/80 border-blue-200 text-blue-900'
                       : 'bg-white border-gray-200 text-gray-800'
                   }`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-gray-500">{idx + 1}.</span>
-                      <span className="font-bold truncate">{apt.pet_name || 'Patient'}</span>
+                      <span className="font-bold truncate text-gray-900">{apt.pet_name || 'Patient'}</span>
                     </div>
-                    <p className="text-[10px] text-gray-500 truncate">
-                      {apt.owner_name || apt.guest_owner_name}
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                      {apt.owner_name || apt.guest_owner_name || 'Walk-In Client'}
                     </p>
                   </div>
-                  <Badge variant="outline" className="font-bold text-xs bg-white shrink-0">
-                    #{apt.queue_number || '00'}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant="outline" className={`font-bold text-xs ${
+                      apt.queue_status === 'priority_standby' 
+                        ? 'bg-amber-100 text-amber-800 border-amber-300' 
+                        : apt.is_walk_in 
+                        ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                        : 'bg-white text-gray-800'
+                    }`}>
+                      #{apt.queue_number || '00'}
+                    </Badge>
+                    {apt.queue_status === 'priority_standby' && (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-1 py-0.2 rounded">
+                        Priority
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
